@@ -11,7 +11,9 @@ import {
   CheckCircle,
   Search,
   Filter,
-  Eye
+  Eye,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -32,6 +34,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { OfflineBanner, UpdateBanner } from '@/components/PWABanners';
+import logoAguia from '@/assets/logo-aguia.png';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', active: true },
@@ -76,6 +80,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -104,17 +109,46 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-muted/30">
+      {/* Mobile menu button */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="fixed left-4 top-4 z-50 rounded-lg bg-card p-2 shadow-md lg:hidden"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card">
+      <aside className={`
+        fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-border bg-card
+        transition-transform duration-300 lg:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        {/* Close button - mobile only */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="absolute right-4 top-4 lg:hidden"
+        >
+          <X className="h-6 w-6" />
+        </button>
+
         {/* Logo */}
         <div className="flex h-16 items-center gap-3 border-b border-border px-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <TruckIcon className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-12 w-24 items-center justify-center rounded-lg bg-white p-1">
+            <img 
+              src={logoAguia} 
+              alt="Águia Transportes" 
+              className="h-full w-full object-contain"
+            />
           </div>
-          <div>
-            <h1 className="font-bold text-foreground">AguiaLog</h1>
-            <p className="text-xs text-muted-foreground">Admin</p>
-          </div>
+          <p className="text-xs text-muted-foreground">Admin</p>
         </div>
 
         {/* Navigation */}
@@ -122,6 +156,7 @@ const Dashboard = () => {
           {menuItems.map((item, index) => (
             <button
               key={index}
+              onClick={() => setSidebarOpen(false)}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 item.active
                   ? 'bg-primary text-primary-foreground'
@@ -157,71 +192,71 @@ const Dashboard = () => {
       </aside>
 
       {/* Main content */}
-      <main className="ml-64 flex-1 p-8">
+      <main className="flex-1 p-4 pt-16 lg:ml-64 lg:p-8 lg:pt-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Dashboard Admin</h1>
-          <p className="text-muted-foreground">Visão geral do sistema de logística</p>
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-xl font-bold text-foreground lg:text-2xl">Dashboard Admin</h1>
+          <p className="text-sm text-muted-foreground lg:text-base">Visão geral do sistema de logística</p>
         </div>
 
         {/* Stats Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-border bg-card p-5">
+        <div className="mb-6 grid gap-3 grid-cols-2 lg:mb-8 lg:gap-4 lg:grid-cols-4">
+          <div className="rounded-xl border border-border bg-card p-4 lg:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total de Solicitações</p>
-                <p className="mt-1 text-3xl font-bold text-foreground">4</p>
+                <p className="text-xs text-muted-foreground lg:text-sm">Total</p>
+                <p className="mt-1 text-2xl font-bold text-foreground lg:text-3xl">4</p>
               </div>
-              <div className="rounded-lg bg-primary/10 p-3">
-                <Package className="h-6 w-6 text-primary" />
+              <div className="rounded-lg bg-primary/10 p-2 lg:p-3">
+                <Package className="h-5 w-5 text-primary lg:h-6 lg:w-6" />
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-border bg-card p-4 lg:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Hoje</p>
-                <p className="mt-1 text-3xl font-bold text-foreground">0</p>
-                <p className="mt-1 text-xs text-green-600">↗ +12% vs ontem</p>
+                <p className="text-xs text-muted-foreground lg:text-sm">Hoje</p>
+                <p className="mt-1 text-2xl font-bold text-foreground lg:text-3xl">0</p>
+                <p className="mt-1 text-xs text-green-600">↗ +12%</p>
               </div>
-              <div className="rounded-lg bg-orange-100 p-3">
-                <Clock className="h-6 w-6 text-orange-600" />
+              <div className="rounded-lg bg-orange-100 p-2 lg:p-3">
+                <Clock className="h-5 w-5 text-orange-600 lg:h-6 lg:w-6" />
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-border bg-card p-4 lg:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Em Andamento</p>
-                <p className="mt-1 text-3xl font-bold text-foreground">2</p>
+                <p className="text-xs text-muted-foreground lg:text-sm">Em Andamento</p>
+                <p className="mt-1 text-2xl font-bold text-foreground lg:text-3xl">2</p>
               </div>
-              <div className="rounded-lg bg-primary/10 p-3">
-                <TruckIcon className="h-6 w-6 text-primary" />
+              <div className="rounded-lg bg-primary/10 p-2 lg:p-3">
+                <TruckIcon className="h-5 w-5 text-primary lg:h-6 lg:w-6" />
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-border bg-card p-4 lg:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Entregues</p>
-                <p className="mt-1 text-3xl font-bold text-foreground">2</p>
+                <p className="text-xs text-muted-foreground lg:text-sm">Entregues</p>
+                <p className="mt-1 text-2xl font-bold text-foreground lg:text-3xl">2</p>
               </div>
-              <div className="rounded-lg bg-green-100 p-3">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="rounded-lg bg-green-100 p-2 lg:p-3">
+                <CheckCircle className="h-5 w-5 text-green-600 lg:h-6 lg:w-6" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Search and Filter */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
+        <div className="mb-4 flex flex-col gap-3 lg:mb-6 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <div className="relative flex-1 lg:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por cliente ou material..."
+              placeholder="Buscar..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -243,8 +278,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="rounded-xl border border-border bg-card">
+        {/* Table - Desktop */}
+        <div className="hidden rounded-xl border border-border bg-card lg:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -288,7 +323,45 @@ const Dashboard = () => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Cards - Mobile */}
+        <div className="space-y-3 lg:hidden">
+          {filteredDeliveries.map((delivery) => (
+            <div key={delivery.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-foreground">{delivery.cliente}</p>
+                  <p className="text-sm text-muted-foreground">{delivery.telefone}</p>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={getStatusBadge(delivery.status)}
+                >
+                  {delivery.status}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Material</p>
+                  <p className="font-medium">{delivery.material}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Transporte</p>
+                  <p className="font-medium">{delivery.transporte}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Data</p>
+                  <p className="font-medium">{delivery.data}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </main>
+
+      {/* PWA Banners */}
+      <OfflineBanner />
+      <UpdateBanner />
     </div>
   );
 };
