@@ -113,14 +113,51 @@ const RegisterForm = ({ onToggleMode }: RegisterFormProps) => {
             description: 'Este email já está em uso. Tente fazer login.',
           });
         } else {
-          toast({
-            title: 'Conta criada!',
-            description: 'Verifique seu email para confirmar o cadastro.',
-          });
+          // Create user profile in users table
+          const { error: profileError } = await supabase
+            .from('users')
+            .insert({
+              auth_id: data.user.id,
+              name: name.trim(),
+              email: email.trim().toLowerCase(),
+            });
+
+          if (profileError) {
+            console.error('Error creating user profile:', profileError);
+          }
+
+          // Check if this is the first user and assign admin role
+          const { count, error: countError } = await supabase
+            .from('user_roles')
+            .select('*', { count: 'exact', head: true });
+
+          if (!countError && count === 0) {
+            // First user gets admin role
+            await supabase
+              .from('user_roles')
+              .insert({ user_id: data.user.id, role: 'admin' });
+            
+            toast({
+              title: 'Conta de Administrador criada!',
+              description: 'Você é o primeiro usuário e foi definido como Administrador.',
+            });
+          } else {
+            // Other users get cliente role by default
+            await supabase
+              .from('user_roles')
+              .insert({ user_id: data.user.id, role: 'cliente' });
+            
+            toast({
+              title: 'Conta criada!',
+              description: 'Sua conta foi criada com sucesso.',
+            });
+          }
+          
           onToggleMode();
         }
       }
     } catch (error) {
+      console.error('Registration error:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
