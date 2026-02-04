@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Solicitacoes from "./pages/Solicitacoes";
 import Usuarios from "./pages/Usuarios";
 import Motoristas from "./pages/Motoristas";
+import Clientes from "./pages/Clientes";
+import Veiculos from "./pages/Veiculos";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -54,6 +56,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Motoristas />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/clientes" 
+              element={
+                <ProtectedRoute>
+                  <Clientes />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/veiculos" 
+              element={
+                <ProtectedRoute>
+                  <Veiculos />
                 </ProtectedRoute>
               } 
             />
