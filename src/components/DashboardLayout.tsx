@@ -5,6 +5,8 @@ import {
   FileText, 
   Users, 
   Truck as TruckIcon,
+  Building2,
+  Car,
   LogOut,
   Menu,
   ChevronLeft,
@@ -20,8 +22,10 @@ import { cn } from '@/lib/utils';
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: FileText, label: 'Solicitações', path: '/solicitacoes' },
+  { icon: Building2, label: 'Clientes', path: '/clientes' },
   { icon: Users, label: 'Usuários', path: '/usuarios' },
   { icon: TruckIcon, label: 'Motoristas', path: '/motoristas' },
+  { icon: Car, label: 'Veículos', path: '/veiculos' },
 ];
 
 interface DashboardLayoutProps {
