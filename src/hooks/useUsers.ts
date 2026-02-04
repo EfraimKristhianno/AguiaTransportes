@@ -83,46 +83,27 @@ export const useCreateUser = () => {
       phone?: string;
       role: UserRole;
     }) => {
-      // Create auth user via Supabase Admin API (requires service role or edge function)
-      // For now, we'll use signUp and handle the user creation
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            phone,
-          },
-          emailRedirectTo: window.location.origin,
-        },
+      // Use Edge Function to create user without logging out current user
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('Sessão não encontrada. Faça login novamente.');
+      }
+
+      const response = await supabase.functions.invoke('create-user', {
+        body: { email, password, name, phone, role },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Falha ao criar usuário');
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao criar usuário');
+      }
 
-      // Create user profile in users table
-      const { error: userError } = await supabase
-        .from('users')
-        .insert({
-          auth_id: authData.user.id,
-          name,
-          email,
-          phone: phone || null,
-        });
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
 
-      if (userError) throw userError;
-
-      // Create user role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role,
-        });
-
-      if (roleError) throw roleError;
-
-      return authData.user;
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -130,10 +111,10 @@ export const useCreateUser = () => {
     },
     onError: (error: Error) => {
       const message = error.message.toLowerCase();
-      if (message.includes('user_already_exists') || message.includes('already registered')) {
+      if (message.includes('já está cadastrado') || message.includes('already registered')) {
         toast.error('Este email já está cadastrado');
       } else {
-        toast.error(`Erro ao cadastrar usuário: ${error.message}`);
+        toast.error(error.message);
       }
     },
   });
