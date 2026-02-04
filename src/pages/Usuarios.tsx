@@ -4,7 +4,9 @@ import {
   Search, 
   Filter, 
   Pencil,
-  Loader2
+  Plus,
+  Loader2,
+  ShieldAlert
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Input } from '@/components/ui/input';
@@ -25,14 +27,23 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useUsers } from '@/hooks/useUsers';
-import { UserRole } from '@/types/database';
+import { useUsers, useCreateUser, useUpdateUser } from '@/hooks/useUsers';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserRole, UserWithRole } from '@/types/database';
+import UserFormDialog from '@/components/UserFormDialog';
 
 const Usuarios = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [perfilFilter, setPerfilFilter] = useState('todos');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   
+  const { role: currentUserRole, roleLoading } = useAuth();
   const { data: usuarios, isLoading, error } = useUsers();
+  const createUser = useCreateUser();
+  const updateUser = useUpdateUser();
+
+  const isAdmin = currentUserRole === 'admin';
 
   const getRoleLabel = (role: UserRole): string => {
     const labels: Record<UserRole, string> = {
@@ -89,6 +100,59 @@ const Usuarios = () => {
     clientes: (usuarios || []).filter(u => u.role === 'cliente').length,
   };
 
+  const handleOpenDialog = (user?: UserWithRole) => {
+    setSelectedUser(user || null);
+    setDialogOpen(true);
+  };
+
+  const handleSubmitUser = async (
+    data: { name: string; email: string; phone?: string; password?: string; role: UserRole },
+    userId?: string
+  ) => {
+    if (userId && selectedUser) {
+      // Update existing user
+      await updateUser.mutateAsync({
+        userId,
+        authId: selectedUser.auth_id,
+        updates: {
+          name: data.name,
+          phone: data.phone,
+        },
+        role: data.role,
+      });
+    } else {
+      // Create new user
+      await createUser.mutateAsync({
+        email: data.email,
+        password: data.password!,
+        name: data.name,
+        phone: data.phone,
+        role: data.role,
+      });
+    }
+    setSelectedUser(null);
+  };
+
+  // Show access denied if not admin
+  if (!roleLoading && !isAdmin) {
+    return (
+      <DashboardLayout 
+        title="Gestão de Usuários" 
+        subtitle="Visualize e gerencie todos os usuários do sistema"
+        icon={<Users className="h-5 w-5" />}
+      >
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Acesso Restrito</h2>
+          <p className="text-muted-foreground max-w-md">
+            Apenas administradores podem acessar a gestão de usuários. 
+            Entre em contato com um administrador se precisar de suporte.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (error) {
     return (
       <DashboardLayout 
@@ -132,7 +196,7 @@ const Usuarios = () => {
         </div>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search, Filter, and Add Button */}
       <div className="mb-6 rounded-xl border border-border bg-card p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative flex-1 lg:max-w-xl">
@@ -158,11 +222,15 @@ const Usuarios = () => {
                 <SelectItem value="cliente">Cliente</SelectItem>
               </SelectContent>
             </Select>
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Usuário
+            </Button>
           </div>
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || roleLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -174,6 +242,10 @@ const Usuarios = () => {
               ? 'Nenhum usuário encontrado com os filtros aplicados' 
               : 'Nenhum usuário cadastrado'}
           </p>
+          <Button onClick={() => handleOpenDialog()} className="mt-4">
+            <Plus className="h-4 w-4 mr-2" />
+            Cadastrar primeiro usuário
+          </Button>
         </div>
       ) : (
         <>
@@ -214,7 +286,11 @@ const Usuarios = () => {
                     </TableCell>
                     <TableCell>{formatDate(item.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleOpenDialog(item)}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -238,7 +314,11 @@ const Usuarios = () => {
                       <p className="text-sm text-muted-foreground">{item.phone || item.email}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleOpenDialog(item)}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
                 </div>
@@ -256,6 +336,15 @@ const Usuarios = () => {
           </div>
         </>
       )}
+
+      {/* User Form Dialog */}
+      <UserFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        user={selectedUser}
+        onSubmit={handleSubmitUser}
+        isSubmitting={createUser.isPending || updateUser.isPending}
+      />
     </DashboardLayout>
   );
 };

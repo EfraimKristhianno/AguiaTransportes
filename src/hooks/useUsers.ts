@@ -24,7 +24,7 @@ export const useUsers = () => {
 
       // Map roles to users
       const usersWithRoles: UserWithRole[] = (users || []).map((user: any) => {
-        const userRole = roles?.find((r: any) => r.user_id === user.id);
+        const userRole = roles?.find((r: any) => r.user_id === user.auth_id);
         return {
           ...user,
           role: (userRole?.role as UserRole) || 'cliente',
@@ -52,7 +52,7 @@ export const useUser = (userId: string) => {
       const { data: role, error: roleError } = await supabase
         .from('user_roles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.auth_id)
         .single();
 
       if (roleError && roleError.code !== 'PGRST116') throw roleError;
@@ -66,16 +66,91 @@ export const useUser = (userId: string) => {
   });
 };
 
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      email,
+      password,
+      name,
+      phone,
+      role,
+    }: {
+      email: string;
+      password: string;
+      name: string;
+      phone?: string;
+      role: UserRole;
+    }) => {
+      // Create auth user via Supabase Admin API (requires service role or edge function)
+      // For now, we'll use signUp and handle the user creation
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            phone,
+          },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Falha ao criar usuário');
+
+      // Create user profile in users table
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          auth_id: authData.user.id,
+          name,
+          email,
+          phone: phone || null,
+        });
+
+      if (userError) throw userError;
+
+      // Create user role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authData.user.id,
+          role,
+        });
+
+      if (roleError) throw roleError;
+
+      return authData.user;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Usuário cadastrado com sucesso');
+    },
+    onError: (error: Error) => {
+      const message = error.message.toLowerCase();
+      if (message.includes('user_already_exists') || message.includes('already registered')) {
+        toast.error('Este email já está cadastrado');
+      } else {
+        toast.error(`Erro ao cadastrar usuário: ${error.message}`);
+      }
+    },
+  });
+};
+
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
       userId,
+      authId,
       updates,
       role,
     }: {
       userId: string;
+      authId: string;
       updates: Partial<User>;
       role?: UserRole;
     }) => {
@@ -91,7 +166,7 @@ export const useUpdateUser = () => {
       if (role) {
         const { error: roleError } = await supabase
           .from('user_roles')
-          .upsert({ user_id: userId, role }, { onConflict: 'user_id' });
+          .upsert({ user_id: authId, role }, { onConflict: 'user_id' });
 
         if (roleError) throw roleError;
       }
@@ -113,18 +188,10 @@ export const useCurrentUserRole = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data: dbUser, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
-
-      if (userError || !dbUser) return null;
-
       const { data: role, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', dbUser.id)
+        .eq('user_id', user.id)
         .single();
 
       if (roleError) return 'cliente';
