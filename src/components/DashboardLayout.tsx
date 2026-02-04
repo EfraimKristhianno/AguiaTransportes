@@ -19,13 +19,13 @@ import logoAguia from '@/assets/logo-aguia.png';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types/database';
 
-// Define menu items with role access
+// Define menu items with role access (Usuários é o último)
 const allMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'gestor'] as UserRole[] },
   { icon: FileText, label: 'Solicitações', path: '/solicitacoes', roles: ['admin', 'gestor', 'motorista', 'cliente'] as UserRole[] },
   { icon: Building2, label: 'Clientes', path: '/clientes', roles: ['admin', 'gestor'] as UserRole[] },
-  { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] as UserRole[] },
   { icon: TruckIcon, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'gestor'] as UserRole[] },
+  { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] as UserRole[] },
 ];
 
 const getRoleLabel = (role: UserRole | null): string => {
