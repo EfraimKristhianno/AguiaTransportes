@@ -53,22 +53,26 @@ const RegisterForm = ({ onToggleMode }: RegisterFormProps) => {
   };
 
   const getErrorMessage = (errorCode: string): string => {
-    const errorMessages: Record<string, string> = {
-      'user_already_exists': 'Este email já está cadastrado.',
-      'email_address_invalid': 'Email inválido.',
-      'weak_password': 'Senha muito fraca. Use pelo menos 6 caracteres.',
-      'over_email_send_rate_limit': 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.',
-      'email rate limit exceeded': 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.',
-      'too_many_requests': 'Muitas tentativas. Aguarde alguns minutos.',
-    };
+    const normalizedError = errorCode.toLowerCase();
     
-    // Check for partial matches
-    for (const [key, message] of Object.entries(errorMessages)) {
-      if (errorCode.toLowerCase().includes(key.toLowerCase())) {
-        return message;
-      }
+    // Exact matches first (more specific)
+    if (normalizedError === 'user_already_exists' || normalizedError.includes('user already registered')) {
+      return 'Este email já está cadastrado. Tente fazer login.';
     }
     
+    if (normalizedError.includes('email_address_invalid') || normalizedError.includes('invalid email')) {
+      return 'Email inválido.';
+    }
+    
+    if (normalizedError.includes('weak_password')) {
+      return 'Senha muito fraca. Use pelo menos 6 caracteres.';
+    }
+    
+    if (normalizedError.includes('rate_limit') || normalizedError.includes('rate limit') || normalizedError.includes('too_many_requests')) {
+      return 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.';
+    }
+    
+    console.error('Unhandled auth error:', errorCode);
     return 'Erro ao criar conta. Tente novamente.';
   };
 
