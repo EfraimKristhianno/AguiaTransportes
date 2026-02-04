@@ -5,7 +5,6 @@ import {
   FileText, 
   Users, 
   Truck as TruckIcon,
-  Building2,
   LogOut,
   Menu,
   ChevronLeft,
@@ -23,7 +22,6 @@ import { UserRole } from '@/types/database';
 const allMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'gestor'] as UserRole[] },
   { icon: FileText, label: 'Solicitações', path: '/solicitacoes', roles: ['admin', 'gestor', 'motorista', 'cliente'] as UserRole[] },
-  { icon: Building2, label: 'Clientes', path: '/clientes', roles: ['admin', 'gestor'] as UserRole[] },
   { icon: TruckIcon, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'gestor'] as UserRole[] },
   { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] as UserRole[] },
 ];
