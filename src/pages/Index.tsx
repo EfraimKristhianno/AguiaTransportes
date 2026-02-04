@@ -61,9 +61,9 @@ const Index = () => {
           <div className="absolute -bottom-10 -left-10 h-60 w-60 rounded-full bg-white/5" />
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 flex flex-col items-center text-center">
           {/* Logo */}
-          <div className="mb-6 flex h-24 w-48 items-center justify-center rounded-2xl bg-white/95 p-4 backdrop-blur-sm">
+          <div className="mb-6 flex h-28 w-56 items-center justify-center rounded-2xl bg-white/95 p-4 backdrop-blur-sm">
             <img 
               src={logoAguia} 
               alt="Águia Transportes" 
@@ -72,10 +72,10 @@ const Index = () => {
           </div>
 
           {/* Brand */}
-          <p className="mb-12 text-lg text-white/90">Sistema de Controle Logístico</p>
+          <p className="mb-12 text-xl font-medium text-white/90">Sistema de Controle Logístico</p>
 
           {/* Features */}
-          <div className="space-y-4">
+          <div className="w-full max-w-md space-y-4">
             <FeatureCard
               icon={MapPin}
               title="Rastreamento em tempo real"
@@ -105,8 +105,8 @@ const Index = () => {
       <div className="flex w-full items-center justify-center bg-background px-6 lg:w-1/2">
         {/* Mobile header */}
         <div className="absolute left-0 top-0 w-full hero-gradient p-6 lg:hidden">
-          <div className="flex items-center gap-3">
-            <div className="flex h-14 w-28 items-center justify-center rounded-xl bg-white/95 p-2">
+          <div className="flex items-center justify-center">
+            <div className="flex h-16 w-32 items-center justify-center rounded-xl bg-white/95 p-2">
               <img 
                 src={logoAguia} 
                 alt="Águia Transportes" 
@@ -114,16 +114,17 @@ const Index = () => {
               />
             </div>
           </div>
-          
           {/* Mobile install button */}
           {(canInstall || isIOS) && !isInstalled && (
-            <button
-              onClick={() => setShowInstallPrompt(true)}
-              className="mt-4 flex items-center gap-2 rounded-lg bg-white/20 px-3 py-2 text-sm text-white"
-            >
-              <Download className="h-4 w-4" />
-              <span>Instalar app</span>
-            </button>
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowInstallPrompt(true)}
+                className="flex items-center gap-2 rounded-lg bg-white/20 px-3 py-2 text-sm text-white"
+              >
+                <Download className="h-4 w-4" />
+                <span>Instalar app</span>
+              </button>
+            </div>
           )}
         </div>
 
