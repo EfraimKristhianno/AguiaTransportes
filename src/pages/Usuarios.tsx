@@ -371,6 +371,7 @@ const Usuarios = () => {
                   <TableHead>Nome</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Perfil</TableHead>
+                  <TableHead>Tipo de Transporte</TableHead>
                   <TableHead>Cadastro</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -397,18 +398,26 @@ const Usuarios = () => {
                       >
                         {getRoleLabel(item.role)}
                       </Badge>
-                      {item.role === 'motorista' && item.vehicleTypes && item.vehicleTypes.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {item.vehicleTypes.map((vt) => (
-                            <Badge 
-                              key={vt} 
-                              variant="secondary" 
-                              className="text-xs font-normal"
-                            >
-                              {vt}
-                            </Badge>
-                          ))}
-                        </div>
+                    </TableCell>
+                    <TableCell>
+                      {item.role === 'motorista' ? (
+                        item.vehicleTypes && item.vehicleTypes.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {item.vehicleTypes.map((vt) => (
+                              <Badge 
+                                key={vt} 
+                                variant="secondary" 
+                                className="text-xs font-normal"
+                              >
+                                {vt}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Não definido</span>
+                        )
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>{formatDate(item.created_at)}</TableCell>
@@ -503,21 +512,28 @@ const Usuarios = () => {
                   >
                     {getRoleLabel(item.role)}
                   </Badge>
-                  {item.role === 'motorista' && item.vehicleTypes && item.vehicleTypes.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {item.vehicleTypes.map((vt) => (
-                        <Badge 
-                          key={vt} 
-                          variant="secondary" 
-                          className="text-xs font-normal"
-                        >
-                          {vt}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                   <span className="text-muted-foreground">{formatDate(item.created_at)}</span>
                 </div>
+                {item.role === 'motorista' && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Tipo de Transporte:</p>
+                    {item.vehicleTypes && item.vehicleTypes.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {item.vehicleTypes.map((vt) => (
+                          <Badge 
+                            key={vt} 
+                            variant="secondary" 
+                            className="text-xs font-normal"
+                          >
+                            {vt}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Não definido</span>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
