@@ -161,6 +161,25 @@ Deno.serve(async (req) => {
       )
     }
 
+    // If role is motorista, create driver record
+    if (role === 'motorista') {
+      const { error: driverError } = await adminClient
+        .from('drivers')
+        .insert({
+          user_id: authData.user.id,
+          name,
+          email,
+          phone: phone || null,
+          status: 'available',
+          is_fixed: true,
+        })
+
+      if (driverError) {
+        console.error('Error creating driver record:', driverError)
+        // Don't rollback, just log - driver record is optional for initial creation
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

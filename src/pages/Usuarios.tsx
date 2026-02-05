@@ -220,6 +220,9 @@ const Usuarios = () => {
         await saveDriverVehicleTypes.mutateAsync({
           authId: selectedUser.auth_id,
           vehicleTypes: data.vehicleTypes,
+          userName: data.name,
+          userEmail: selectedUser.email,
+          userPhone: data.phone,
         });
       }
     } else {

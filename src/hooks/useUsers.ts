@@ -186,20 +186,43 @@ export const useSaveDriverVehicleTypes = () => {
     mutationFn: async ({
       authId,
       vehicleTypes,
+      userName,
+      userEmail,
+      userPhone,
     }: {
       authId: string;
       vehicleTypes: string[];
+      userName?: string;
+      userEmail?: string;
+      userPhone?: string;
     }) => {
       // First get the driver record for this auth_id
-      const { data: driver, error: driverError } = await supabase
+      let { data: driver, error: driverError } = await supabase
         .from('drivers')
         .select('id')
         .eq('user_id', authId)
         .single();
       
       if (driverError || !driver) {
-        // Driver doesn't exist yet, need to create one
-        return;
+        // Driver doesn't exist yet, create one
+        const { data: newDriver, error: createError } = await supabase
+          .from('drivers')
+          .insert({
+            user_id: authId,
+            name: userName || 'Motorista',
+            email: userEmail || null,
+            phone: userPhone || null,
+            status: 'available',
+            is_fixed: true,
+          })
+          .select('id')
+          .single();
+        
+        if (createError || !newDriver) {
+          throw new Error('Erro ao criar registro de motorista');
+        }
+        
+        driver = newDriver;
       }
       
       // Delete existing vehicle types
@@ -224,6 +247,7 @@ export const useSaveDriverVehicleTypes = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['driverVehicleTypes', variables.authId] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error: Error) => {
       toast.error(`Erro ao salvar tipos de veículo: ${error.message}`);
