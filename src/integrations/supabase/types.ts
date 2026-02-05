@@ -136,6 +136,35 @@ export type Database = {
           },
         ]
       }
+      driver_vehicle_types: {
+        Row: {
+          created_at: string | null
+          driver_id: string
+          id: string
+          vehicle_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id: string
+          id?: string
+          vehicle_type: string
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string
+          id?: string
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_vehicle_types_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string | null

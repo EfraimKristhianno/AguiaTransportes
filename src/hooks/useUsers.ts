@@ -1,7 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { User, UserWithRole, UserRole } from '@/types/database';
+import { User, UserWithRole, UserRole, DriverVehicleType } from '@/types/database';
 import { toast } from 'sonner';
+
+// Fetch driver vehicle types for a user
+export const useDriverVehicleTypes = (authId: string | undefined) => {
+  return useQuery({
+    queryKey: ['driverVehicleTypes', authId],
+    queryFn: async (): Promise<string[]> => {
+      if (!authId) return [];
+      
+      // First get the driver record for this auth_id
+      const { data: driver, error: driverError } = await supabase
+        .from('drivers')
+        .select('id')
+        .eq('user_id', authId)
+        .single();
+      
+      if (driverError || !driver) return [];
+      
+      // Then get the vehicle types for this driver
+      const { data: vehicleTypes, error } = await supabase
+        .from('driver_vehicle_types')
+        .select('vehicle_type')
+        .eq('driver_id', driver.id);
+      
+      if (error) return [];
+      
+      return vehicleTypes?.map((vt: { vehicle_type: string }) => vt.vehicle_type) || [];
+    },
+    enabled: !!authId,
+  });
+};
 
 export const useUsers = () => {
   return useQuery({
@@ -116,6 +146,59 @@ export const useCreateUser = () => {
       } else {
         toast.error(error.message);
       }
+    },
+  });
+};
+
+// Helper function to save driver vehicle types
+export const useSaveDriverVehicleTypes = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({
+      authId,
+      vehicleTypes,
+    }: {
+      authId: string;
+      vehicleTypes: string[];
+    }) => {
+      // First get the driver record for this auth_id
+      const { data: driver, error: driverError } = await supabase
+        .from('drivers')
+        .select('id')
+        .eq('user_id', authId)
+        .single();
+      
+      if (driverError || !driver) {
+        // Driver doesn't exist yet, need to create one
+        return;
+      }
+      
+      // Delete existing vehicle types
+      await supabase
+        .from('driver_vehicle_types')
+        .delete()
+        .eq('driver_id', driver.id);
+      
+      // Insert new vehicle types
+      if (vehicleTypes.length > 0) {
+        const { error: insertError } = await supabase
+          .from('driver_vehicle_types')
+          .insert(
+            vehicleTypes.map(vt => ({
+              driver_id: driver.id,
+              vehicle_type: vt,
+            }))
+          );
+        
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['driverVehicleTypes', variables.authId] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao salvar tipos de veículo: ${error.message}`);
     },
   });
 };

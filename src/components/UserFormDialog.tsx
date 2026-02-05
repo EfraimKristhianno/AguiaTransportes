@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { UserWithRole, UserRole } from '@/types/database';
+
+const VEHICLE_TYPES = [
+  { value: 'Moto', label: 'Moto' },
+  { value: 'Carro', label: 'Carro' },
+  { value: 'Van', label: 'Van' },
+  { value: 'Caminhão', label: 'Caminhão' },
+  { value: 'Caminhão Baú', label: 'Caminhão Baú' },
+  { value: 'Carreta', label: 'Carreta' },
+];
 
 const userFormSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
@@ -34,6 +45,7 @@ const userFormSchema = z.object({
   phone: z.string().optional(),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
   role: z.enum(['admin', 'gestor', 'motorista', 'cliente']),
+  vehicleTypes: z.array(z.string()).optional(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -42,8 +54,9 @@ interface UserFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user?: UserWithRole | null;
-  onSubmit: (data: UserFormValues, userId?: string) => Promise<void>;
+  onSubmit: (data: UserFormValues, userId?: string, authId?: string) => Promise<void>;
   isSubmitting: boolean;
+  initialVehicleTypes?: string[];
 }
 
 const UserFormDialog = ({
@@ -52,8 +65,10 @@ const UserFormDialog = ({
   user,
   onSubmit,
   isSubmitting,
+  initialVehicleTypes = [],
 }: UserFormDialogProps) => {
   const isEditing = !!user;
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(initialVehicleTypes);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(
@@ -69,8 +84,11 @@ const UserFormDialog = ({
       phone: '',
       password: '',
       role: 'cliente',
+      vehicleTypes: [],
     },
   });
+
+  const watchedRole = form.watch('role');
 
   useEffect(() => {
     if (user) {
@@ -79,7 +97,9 @@ const UserFormDialog = ({
         email: user.email || '',
         phone: user.phone || '',
         role: user.role,
+        vehicleTypes: initialVehicleTypes,
       });
+      setSelectedVehicleTypes(initialVehicleTypes);
     } else {
       form.reset({
         name: '',
@@ -87,12 +107,30 @@ const UserFormDialog = ({
         phone: '',
         password: '',
         role: 'cliente',
+        vehicleTypes: [],
       });
+      setSelectedVehicleTypes([]);
     }
-  }, [user, form]);
+  }, [user, form, initialVehicleTypes]);
+
+  // Reset vehicle types when role changes away from motorista
+  useEffect(() => {
+    if (watchedRole !== 'motorista') {
+      setSelectedVehicleTypes([]);
+      form.setValue('vehicleTypes', []);
+    }
+  }, [watchedRole, form]);
+
+  const toggleVehicleType = (type: string) => {
+    const newTypes = selectedVehicleTypes.includes(type)
+      ? selectedVehicleTypes.filter(t => t !== type)
+      : [...selectedVehicleTypes, type];
+    setSelectedVehicleTypes(newTypes);
+    form.setValue('vehicleTypes', newTypes);
+  };
 
   const handleSubmit = async (values: UserFormValues) => {
-    await onSubmit(values, user?.id);
+    await onSubmit({ ...values, vehicleTypes: selectedVehicleTypes }, user?.id, user?.auth_id);
     onOpenChange(false);
   };
 
@@ -207,6 +245,46 @@ const UserFormDialog = ({
                 </FormItem>
               )}
             />
+
+            {watchedRole === 'motorista' && (
+              <div className="space-y-2">
+                <FormLabel>Tipos de Veículo</FormLabel>
+                <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/30 min-h-[42px]">
+                  {selectedVehicleTypes.length > 0 ? (
+                    selectedVehicleTypes.map((type) => (
+                      <Badge
+                        key={type}
+                        variant="secondary"
+                        className="flex items-center gap-1 cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                        onClick={() => toggleVehicleType(type)}
+                      >
+                        {type}
+                        <X className="h-3 w-3" />
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Nenhum tipo selecionado</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {VEHICLE_TYPES.map((type) => (
+                    <div key={type.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`vehicle-${type.value}`}
+                        checked={selectedVehicleTypes.includes(type.value)}
+                        onCheckedChange={() => toggleVehicleType(type.value)}
+                      />
+                      <label
+                        htmlFor={`vehicle-${type.value}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {type.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button

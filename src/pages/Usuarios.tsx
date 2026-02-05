@@ -28,6 +28,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUsers, useCreateUser, useUpdateUser } from '@/hooks/useUsers';
+import { useDriverVehicleTypes, useSaveDriverVehicleTypes } from '@/hooks/useUsers';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole, UserWithRole } from '@/types/database';
 import UserFormDialog from '@/components/UserFormDialog';
@@ -42,6 +43,12 @@ const Usuarios = () => {
   const { data: usuarios, isLoading, error } = useUsers();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const saveDriverVehicleTypes = useSaveDriverVehicleTypes();
+  
+  // Fetch vehicle types for the selected user if they're a motorista
+  const { data: selectedUserVehicleTypes = [] } = useDriverVehicleTypes(
+    selectedUser?.role === 'motorista' ? selectedUser?.auth_id : undefined
+  );
 
   const isAdmin = currentUserRole === 'admin';
 
@@ -106,8 +113,9 @@ const Usuarios = () => {
   };
 
   const handleSubmitUser = async (
-    data: { name: string; email: string; phone?: string; password?: string; role: UserRole },
-    userId?: string
+    data: { name: string; email: string; phone?: string; password?: string; role: UserRole; vehicleTypes?: string[] },
+    userId?: string,
+    authId?: string
   ) => {
     if (userId && selectedUser) {
       // Update existing user
@@ -120,6 +128,14 @@ const Usuarios = () => {
         },
         role: data.role,
       });
+      
+      // Save vehicle types if user is a motorista
+      if (data.role === 'motorista' && data.vehicleTypes) {
+        await saveDriverVehicleTypes.mutateAsync({
+          authId: selectedUser.auth_id,
+          vehicleTypes: data.vehicleTypes,
+        });
+      }
     } else {
       // Create new user
       await createUser.mutateAsync({
@@ -129,6 +145,9 @@ const Usuarios = () => {
         phone: data.phone,
         role: data.role,
       });
+      
+      // Note: For new users, we need to update the edge function to handle vehicle types
+      // For now, vehicle types for new users will need to be added after creation via edit
     }
     setSelectedUser(null);
   };
@@ -352,7 +371,8 @@ const Usuarios = () => {
         onOpenChange={setDialogOpen}
         user={selectedUser}
         onSubmit={handleSubmitUser}
-        isSubmitting={createUser.isPending || updateUser.isPending}
+        isSubmitting={createUser.isPending || updateUser.isPending || saveDriverVehicleTypes.isPending}
+        initialVehicleTypes={selectedUserVehicleTypes}
       />
     </DashboardLayout>
   );
