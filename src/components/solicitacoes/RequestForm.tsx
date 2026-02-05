@@ -2,18 +2,20 @@
  import { useForm } from 'react-hook-form';
  import { zodResolver } from '@hookform/resolvers/zod';
  import { z } from 'zod';
- import { Plus, User, Phone, MapPin, Calendar, Upload, X, FileText, Send } from 'lucide-react';
+import { Plus, User, Phone, MapPin, Calendar, Upload, X, FileText, Send, Info } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
  import { Textarea } from '@/components/ui/textarea';
  import { Label } from '@/components/ui/label';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
  import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
  import { useMaterialTypes } from '@/hooks/useMaterialTypes';
  import { useTransportTypes, useCreateDeliveryRequest, useUploadAttachment } from '@/hooks/useDeliveryRequests';
  import { useAuth } from '@/contexts/AuthContext';
  import { supabase } from '@/integrations/supabase/client';
  import { useQuery } from '@tanstack/react-query';
+import VehicleDetailsPopover from '@/components/VehicleDetailsPopover';
  
  const requestSchema = z.object({
    clientName: z.string().min(1, 'Nome do cliente é obrigatório'),
@@ -273,7 +275,12 @@
                name="transportType"
                render={({ field }) => (
                  <FormItem>
-                   <FormLabel>Tipo de transporte *</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Tipo de transporte *</FormLabel>
+                      {field.value && (
+                        <VehicleDetailsPopover vehicleType={field.value} />
+                      )}
+                    </div>
                    <Select onValueChange={field.onChange} value={field.value}>
                      <FormControl>
                        <SelectTrigger>
@@ -282,8 +289,11 @@
                      </FormControl>
                      <SelectContent>
                        {transportTypes.map((type) => (
-                         <SelectItem key={type} value={type}>
-                           {type}
+                          <SelectItem key={type} value={type} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span>{type}</span>
+                              <VehicleDetailsPopover vehicleType={type} triggerClassName="ml-auto" />
+                            </div>
                          </SelectItem>
                        ))}
                      </SelectContent>
