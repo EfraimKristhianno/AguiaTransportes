@@ -38,7 +38,12 @@ export const useDriver = (driverId: string) => {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Cast status to the expected union type
+      return data ? {
+        ...data,
+        status: (data.status as Driver['status']) || 'available',
+      } : null;
     },
     enabled: !!driverId,
   });
