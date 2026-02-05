@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   try {
     // Verify admin authorization
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ error: 'Token de autorização não fornecido' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -42,21 +42,30 @@ Deno.serve(async (req) => {
       )
     }
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
+    // Use service role client for all operations
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     })
 
-    // Get current user
-    const { data: { user: currentUser }, error: authError } = await userClient.auth.getUser()
-    if (authError || !currentUser) {
+    // Validate user using the token - use service role to get user from token
+    const token = authHeader.replace('Bearer ', '')
+    
+    // Use admin client to get user from JWT token
+    const { data: { user: currentUser }, error: userError } = await adminClient.auth.getUser(token)
+
+    if (userError || !currentUser) {
+      console.error('Auth error:', userError)
       return new Response(
         JSON.stringify({ error: 'Usuário não autenticado' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Verify if current user is admin
-    const { data: roleData, error: roleError } = await userClient
+    // Verify if current user is admin using service role
+    const { data: roleData, error: roleError } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', currentUser.id)
@@ -78,14 +87,6 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Use service role client to create user
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
 
     // Create auth user
     const { data: authData, error: createAuthError } = await adminClient.auth.admin.createUser({
@@ -122,7 +123,7 @@ Deno.serve(async (req) => {
     }
 
     // Create user profile in users table
-    const { error: userError } = await adminClient
+    const { error: profileError } = await adminClient
       .from('users')
       .insert({
         auth_id: authData.user.id,
@@ -131,8 +132,8 @@ Deno.serve(async (req) => {
         phone: phone || null,
       })
 
-    if (userError) {
-      console.error('Error creating user profile:', userError)
+    if (profileError) {
+      console.error('Error creating user profile:', profileError)
       // Rollback: delete auth user if profile creation fails
       await adminClient.auth.admin.deleteUser(authData.user.id)
       return new Response(
