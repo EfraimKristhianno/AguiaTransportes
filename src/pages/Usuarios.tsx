@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { 
   Users, 
   Search, 
@@ -6,17 +6,20 @@ import {
   Pencil,
   Plus,
   Loader2,
-  ShieldAlert
-} from 'lucide-react';
-import DashboardLayout from '@/components/DashboardLayout';
-import { Input } from '@/components/ui/input';
+  ShieldAlert,
+  Trash2,
+  KeyRound,
+  MoreHorizontal,
+} from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,87 +27,128 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useUsers, useCreateUser, useUpdateUser } from '@/hooks/useUsers';
-import { useDriverVehicleTypes, useSaveDriverVehicleTypes } from '@/hooks/useUsers';
-import { useAuth } from '@/contexts/AuthContext';
-import { UserRole, UserWithRole } from '@/types/database';
-import UserFormDialog from '@/components/UserFormDialog';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+  useResetUserPassword,
+  useDriverVehicleTypes,
+  useSaveDriverVehicleTypes,
+} from "@/hooks/useUsers";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserRole, UserWithRole } from "@/types/database";
+import UserFormDialog from "@/components/UserFormDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const Usuarios = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [perfilFilter, setPerfilFilter] = useState('todos');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [perfilFilter, setPerfilFilter] = useState("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
-  
-  const { role: currentUserRole, roleLoading } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [userToResetPassword, setUserToResetPassword] =
+    useState<UserWithRole | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+
+  const { role: currentUserRole, roleLoading, user: currentAuthUser } = useAuth();
   const { data: usuarios, isLoading, error } = useUsers();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
+  const resetUserPassword = useResetUserPassword();
   const saveDriverVehicleTypes = useSaveDriverVehicleTypes();
-  
+
   // Fetch vehicle types for the selected user if they're a motorista
   const { data: selectedUserVehicleTypes = [] } = useDriverVehicleTypes(
-    selectedUser?.role === 'motorista' ? selectedUser?.auth_id : undefined
+    selectedUser?.role === "motorista" ? selectedUser?.auth_id : undefined
   );
 
-  const isAdmin = currentUserRole === 'admin';
+  const isAdmin = currentUserRole === "admin";
 
   const getRoleLabel = (role: UserRole): string => {
     const labels: Record<UserRole, string> = {
-      admin: 'Administrador',
-      gestor: 'Gestor',
-      motorista: 'Motorista',
-      cliente: 'Cliente',
+      admin: "Administrador",
+      gestor: "Gestor",
+      motorista: "Motorista",
+      cliente: "Cliente",
     };
-    return labels[role] || 'Cliente';
+    return labels[role] || "Cliente";
   };
 
   const getPerfilBadge = (role: UserRole) => {
     const styles: Record<UserRole, string> = {
-      admin: 'bg-destructive/10 text-destructive border-destructive/20',
-      gestor: 'bg-primary/10 text-primary border-primary/20',
-      motorista: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      cliente: 'bg-muted text-muted-foreground border-border',
+      admin: "bg-destructive/10 text-destructive border-destructive/20",
+      gestor: "bg-primary/10 text-primary border-primary/20",
+      motorista: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      cliente: "bg-muted text-muted-foreground border-border",
     };
-    return styles[role] || 'bg-muted text-muted-foreground';
+    return styles[role] || "bg-muted text-muted-foreground";
   };
 
   const getUserInitial = (nome: string) => {
-    return nome?.charAt(0).toUpperCase() || '?';
+    return nome?.charAt(0).toUpperCase() || "?";
   };
 
   const getInitialBgColor = (role: UserRole) => {
     const colors: Record<UserRole, string> = {
-      admin: 'bg-destructive/10 text-destructive',
-      gestor: 'bg-primary/10 text-primary',
-      motorista: 'bg-emerald-100 text-emerald-700',
-      cliente: 'bg-muted text-muted-foreground',
+      admin: "bg-destructive/10 text-destructive",
+      gestor: "bg-primary/10 text-primary",
+      motorista: "bg-emerald-100 text-emerald-700",
+      cliente: "bg-muted text-muted-foreground",
     };
-    return colors[role] || 'bg-muted text-muted-foreground';
+    return colors[role] || "bg-muted text-muted-foreground";
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
-  const filteredUsuarios = (usuarios || []).filter(item => {
-    const matchesSearch = 
+  const filteredUsuarios = (usuarios || []).filter((item) => {
+    const matchesSearch =
       item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.phone?.includes(searchQuery) ||
       item.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPerfil = perfilFilter === 'todos' || item.role === perfilFilter;
+    const matchesPerfil =
+      perfilFilter === "todos" || item.role === perfilFilter;
     return matchesSearch && matchesPerfil;
   });
 
   // Stats
   const stats = {
-    administradores: (usuarios || []).filter(u => u.role === 'admin').length,
-    gestores: (usuarios || []).filter(u => u.role === 'gestor').length,
-    motoristas: (usuarios || []).filter(u => u.role === 'motorista').length,
-    clientes: (usuarios || []).filter(u => u.role === 'cliente').length,
+    administradores: (usuarios || []).filter((u) => u.role === "admin").length,
+    gestores: (usuarios || []).filter((u) => u.role === "gestor").length,
+    motoristas: (usuarios || []).filter((u) => u.role === "motorista").length,
+    clientes: (usuarios || []).filter((u) => u.role === "cliente").length,
   };
 
   const handleOpenDialog = (user?: UserWithRole) => {
@@ -112,8 +156,50 @@ const Usuarios = () => {
     setDialogOpen(true);
   };
 
+  const handleDeleteClick = (user: UserWithRole) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (userToDelete) {
+      await deleteUser.mutateAsync({ authId: userToDelete.auth_id });
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleResetPasswordClick = (user: UserWithRole) => {
+    setUserToResetPassword(user);
+    setNewPassword("");
+    setResetPasswordDialogOpen(true);
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (userToResetPassword && newPassword.length >= 6) {
+      await resetUserPassword.mutateAsync({
+        authId: userToResetPassword.auth_id,
+        newPassword,
+      });
+      setResetPasswordDialogOpen(false);
+      setUserToResetPassword(null);
+      setNewPassword("");
+    }
+  };
+
+  const isCurrentUser = (user: UserWithRole) => {
+    return currentAuthUser?.id === user.auth_id;
+  };
+
   const handleSubmitUser = async (
-    data: { name: string; email: string; phone?: string; password?: string; role: UserRole; vehicleTypes?: string[] },
+    data: {
+      name: string;
+      email: string;
+      phone?: string;
+      password?: string;
+      role: UserRole;
+      vehicleTypes?: string[];
+    },
     userId?: string,
     authId?: string
   ) => {
@@ -314,13 +400,35 @@ const Usuarios = () => {
                     </TableCell>
                     <TableCell>{formatDate(item.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleOpenDialog(item)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenDialog(item)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleResetPasswordClick(item)}>
+                            <KeyRound className="mr-2 h-4 w-4" />
+                            Redefinir Senha
+                          </DropdownMenuItem>
+                          {!isCurrentUser(item) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(item)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -343,11 +451,36 @@ const Usuarios = () => {
                     </div>
                   </div>
                   <Button 
-                    variant="ghost" 
+                    variant="ghost"
                     size="icon"
-                    onClick={() => handleOpenDialog(item)}
                   >
-                    <Pencil className="h-4 w-4" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenDialog(item)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResetPasswordClick(item)}>
+                          <KeyRound className="mr-2 h-4 w-4" />
+                          Redefinir Senha
+                        </DropdownMenuItem>
+                        {!isCurrentUser(item) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(item)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </Button>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -371,9 +504,88 @@ const Usuarios = () => {
         onOpenChange={setDialogOpen}
         user={selectedUser}
         onSubmit={handleSubmitUser}
-        isSubmitting={createUser.isPending || updateUser.isPending || saveDriverVehicleTypes.isPending}
+        isSubmitting={
+          createUser.isPending ||
+          updateUser.isPending ||
+          saveDriverVehicleTypes.isPending
+        }
         initialVehicleTypes={selectedUserVehicleTypes}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o usuário{" "}
+              <strong>{userToDelete?.name}</strong>? Esta ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteUser.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteUser.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteUser.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog
+        open={resetPasswordDialogOpen}
+        onOpenChange={setResetPasswordDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Redefinir Senha</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Definir nova senha para{" "}
+              <strong>{userToResetPassword?.name}</strong>
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nova Senha</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setResetPasswordDialogOpen(false)}
+              disabled={resetUserPassword.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmResetPassword}
+              disabled={newPassword.length < 6 || resetUserPassword.isPending}
+            >
+              {resetUserPassword.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Redefinir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
