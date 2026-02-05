@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     // Create Supabase client with user's token to verify admin
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {

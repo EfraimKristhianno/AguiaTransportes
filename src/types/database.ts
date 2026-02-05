@@ -83,6 +83,13 @@ export interface MaterialType {
   created_at: string;
 }
 
+export interface DriverVehicleType {
+  id: string;
+  driver_id: string;
+  vehicle_type: string;
+  created_at: string;
+}
+
 export interface DeliveryRequest {
   id: string;
   client_id: string;
