@@ -245,6 +245,61 @@ export const useUpdateUser = () => {
   });
 };
 
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ authId }: { authId: string }) => {
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { authId },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao excluir usuário');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Usuário excluído com sucesso');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+export const useResetUserPassword = () => {
+  return useMutation({
+    mutationFn: async ({ authId, newPassword }: { authId: string; newPassword: string }) => {
+      const response = await supabase.functions.invoke('reset-password', {
+        body: { authId, newPassword },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao redefinir senha');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Senha redefinida com sucesso');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
 export const useCurrentUserRole = () => {
   return useQuery({
     queryKey: ['currentUserRole'],

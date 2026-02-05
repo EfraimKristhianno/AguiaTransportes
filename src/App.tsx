@@ -11,6 +11,7 @@ import Usuarios from "./pages/Usuarios";
 import Motoristas from "./pages/Motoristas";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route 
               path="/dashboard" 
               element={
