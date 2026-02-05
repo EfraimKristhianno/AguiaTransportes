@@ -61,6 +61,7 @@ export type Database = {
       }
       delivery_requests: {
         Row: {
+          attachments: Json | null
           client_id: string | null
           created_at: string | null
           delivered_at: string | null
@@ -70,12 +71,15 @@ export type Database = {
           material_type_id: string | null
           notes: string | null
           origin_address: string
+          requester: string | null
           scheduled_date: string | null
           status: string | null
+          transport_type: string | null
           updated_at: string | null
           vehicle_id: string | null
         }
         Insert: {
+          attachments?: Json | null
           client_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
@@ -85,12 +89,15 @@ export type Database = {
           material_type_id?: string | null
           notes?: string | null
           origin_address: string
+          requester?: string | null
           scheduled_date?: string | null
           status?: string | null
+          transport_type?: string | null
           updated_at?: string | null
           vehicle_id?: string | null
         }
         Update: {
+          attachments?: Json | null
           client_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
@@ -100,8 +107,10 @@ export type Database = {
           material_type_id?: string | null
           notes?: string | null
           origin_address?: string
+          requester?: string | null
           scheduled_date?: string | null
           status?: string | null
+          transport_type?: string | null
           updated_at?: string | null
           vehicle_id?: string | null
         }
