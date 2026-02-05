@@ -278,7 +278,7 @@ const UserFormDialog = ({
                       >
                         {type.label}
                       </label>
-                       <VehicleDetailsPopover vehicleType={type.value} triggerClassName="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                       <VehicleDetailsPopover vehicleType={type.value} triggerClassName="h-6 w-6 p-0" />
                     </div>
                   ))}
                 </div>

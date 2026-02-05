@@ -8,18 +8,20 @@
  
  interface VehicleSpec {
    type: string;
-   length: number;
-   width: number;
-   height: number;
-   capacity: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  capacity?: number;
  }
  
  // Vehicle specifications from database
  const VEHICLE_SPECS: VehicleSpec[] = [
-   { type: 'Moto', length: 0.60, width: 0.60, height: 0.50, capacity: 25 },
-   { type: 'Fiorino', length: 1.60, width: 1.10, height: 1.45, capacity: 450 },
-   { type: 'Caminhão (3/4)', length: 6.18, width: 2.39, height: 2.39, capacity: 5000 },
-   { type: 'Caminhão (Truck)', length: 8.30, width: 2.45, height: 3.00, capacity: 14000 },
+  { type: 'Moto', length: 0.60, width: 0.60, height: 0.50, capacity: 25 },
+  { type: 'Carro', length: 1.20, width: 1.00, height: 0.80, capacity: 200 },
+  { type: 'Van', length: 2.50, width: 1.50, height: 1.60, capacity: 1500 },
+  { type: 'Caminhão', length: 6.00, width: 2.40, height: 2.40, capacity: 5000 },
+  { type: 'Caminhão Baú', length: 7.00, width: 2.45, height: 2.80, capacity: 8000 },
+  { type: 'Carreta', length: 14.00, width: 2.60, height: 2.80, capacity: 25000 },
  ];
  
  interface VehicleDetailsPopoverProps {
