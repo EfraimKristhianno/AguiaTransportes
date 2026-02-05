@@ -390,13 +390,26 @@ const Usuarios = () => {
                       </div>
                     </TableCell>
                     <TableCell>{item.phone || '-'}</TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-[140px]">
                       <Badge 
                         variant="outline" 
                         className={getPerfilBadge(item.role)}
                       >
                         {getRoleLabel(item.role)}
                       </Badge>
+                      {item.role === 'motorista' && item.vehicleTypes && item.vehicleTypes.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {item.vehicleTypes.map((vt) => (
+                            <Badge 
+                              key={vt} 
+                              variant="secondary" 
+                              className="text-xs font-normal"
+                            >
+                              {vt}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>{formatDate(item.created_at)}</TableCell>
                     <TableCell className="text-right">
@@ -490,6 +503,19 @@ const Usuarios = () => {
                   >
                     {getRoleLabel(item.role)}
                   </Badge>
+                  {item.role === 'motorista' && item.vehicleTypes && item.vehicleTypes.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {item.vehicleTypes.map((vt) => (
+                        <Badge 
+                          key={vt} 
+                          variant="secondary" 
+                          className="text-xs font-normal"
+                        >
+                          {vt}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   <span className="text-muted-foreground">{formatDate(item.created_at)}</span>
                 </div>
               </div>

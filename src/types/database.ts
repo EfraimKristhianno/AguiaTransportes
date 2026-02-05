@@ -15,6 +15,7 @@ export interface User {
 
 export interface UserWithRole extends User {
   role: UserRole;
+  vehicleTypes?: string[];
 }
 
 export interface UserRole_DB {

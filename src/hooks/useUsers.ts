@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { User, UserWithRole, UserRole, DriverVehicleType } from '@/types/database';
+import { User, UserWithRole, UserRole } from '@/types/database';
 import { toast } from 'sonner';
 
 // Fetch driver vehicle types for a user
@@ -52,12 +52,40 @@ export const useUsers = () => {
 
       if (rolesError) throw rolesError;
 
+      // Fetch drivers with their vehicle types
+      const { data: drivers, error: driversError } = await supabase
+        .from('drivers')
+        .select('id, user_id');
+
+      if (driversError) throw driversError;
+
+      // Fetch all driver vehicle types
+      const driverIds = (drivers || []).map(d => d.id);
+      const { data: vehicleTypes, error: vehicleTypesError } = await supabase
+        .from('driver_vehicle_types')
+        .select('driver_id, vehicle_type')
+        .in('driver_id', driverIds.length > 0 ? driverIds : ['']);
+
+      if (vehicleTypesError) throw vehicleTypesError;
+
+      // Create a map of auth_id to vehicle types
+      const vehicleTypesByAuthId: Record<string, string[]> = {};
+      (drivers || []).forEach(driver => {
+        if (driver.user_id) {
+          vehicleTypesByAuthId[driver.user_id] = (vehicleTypes || [])
+            .filter(vt => vt.driver_id === driver.id)
+            .map(vt => vt.vehicle_type);
+        }
+      });
+
       // Map roles to users
       const usersWithRoles: UserWithRole[] = (users || []).map((user: any) => {
         const userRole = roles?.find((r: any) => r.user_id === user.auth_id);
+        const role = (userRole?.role as UserRole) || 'cliente';
         return {
           ...user,
-          role: (userRole?.role as UserRole) || 'cliente',
+          role,
+          vehicleTypes: role === 'motorista' ? (vehicleTypesByAuthId[user.auth_id] || []) : undefined,
         };
       });
 
