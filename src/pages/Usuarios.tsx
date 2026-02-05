@@ -475,14 +475,16 @@ const Usuarios = () => {
                       <p className="text-sm text-muted-foreground">{item.phone || item.email}</p>
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </DropdownMenuTrigger>
+                   <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                       <Button 
+                         variant="default"
+                         size="icon"
+                         className="bg-primary hover:bg-primary/90"
+                       >
+                         <MoreHorizontal className="h-4 w-4" />
+                       </Button>
+                     </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleOpenDialog(item)}>
                           <Pencil className="mr-2 h-4 w-4" />
@@ -505,8 +507,7 @@ const Usuarios = () => {
                           </>
                         )}
                       </DropdownMenuContent>
-                    </DropdownMenu>
-                  </Button>
+                   </DropdownMenu>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <Badge 
