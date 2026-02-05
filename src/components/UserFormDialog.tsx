@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Loader2, X } from 'lucide-react';
+ import { useState, useEffect } from 'react';
+ import { useForm } from 'react-hook-form';
+ import { zodResolver } from '@hookform/resolvers/zod';
+ import { z } from 'zod';
+ import { Loader2, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,17 +27,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+ import { Badge } from '@/components/ui/badge';
 import { UserWithRole, UserRole } from '@/types/database';
+ import VehicleDetailsPopover, { VEHICLE_SPECS } from './VehicleDetailsPopover';
 
-const VEHICLE_TYPES = [
-  { value: 'Moto', label: 'Moto' },
-  { value: 'Carro', label: 'Carro' },
-  { value: 'Van', label: 'Van' },
-  { value: 'Caminhão', label: 'Caminhão' },
-  { value: 'Caminhão Baú', label: 'Caminhão Baú' },
-  { value: 'Carreta', label: 'Carreta' },
-];
+ // Use vehicle types from the database specs
+ const VEHICLE_TYPES = VEHICLE_SPECS.map(spec => ({
+   value: spec.type,
+   label: spec.type,
+ }));
 
 const userFormSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
@@ -268,7 +266,7 @@ const UserFormDialog = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {VEHICLE_TYPES.map((type) => (
-                    <div key={type.value} className="flex items-center space-x-2">
+                     <div key={type.value} className="flex items-center space-x-2 group">
                       <Checkbox
                         id={`vehicle-${type.value}`}
                         checked={selectedVehicleTypes.includes(type.value)}
@@ -276,10 +274,11 @@ const UserFormDialog = ({
                       />
                       <label
                         htmlFor={`vehicle-${type.value}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
                       >
                         {type.label}
                       </label>
+                       <VehicleDetailsPopover vehicleType={type.value} triggerClassName="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   ))}
                 </div>
