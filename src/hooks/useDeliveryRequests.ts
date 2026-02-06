@@ -66,13 +66,13 @@ export interface DeliveryRequest {
    const queryClient = useQueryClient();
  
    return useMutation({
-     mutationFn: async (request: CreateDeliveryRequestInput) => {
-       const { data, error } = await supabase
-         .from('delivery_requests')
-         .insert({
-           ...request,
-           status: request.status || 'enviada',
-         })
+      mutationFn: async (request: CreateDeliveryRequestInput) => {
+        const { data, error } = await supabase
+          .from('delivery_requests')
+          .insert({
+            ...request,
+            status: request.status || 'solicitada',
+          })
          .select()
          .single();
  
