@@ -10,6 +10,8 @@ import {
   Eye,
   TrendingUp,
   Loader2,
+  Hash,
+  MapPin,
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,45 +37,84 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, isToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/contexts/AuthContext';
 
 type DeliveryRequest = {
   id: string;
+  request_number: number | null;
   status: string | null;
   scheduled_date: string | null;
   created_at: string | null;
   origin_address: string;
   destination_address: string;
-  client: { name: string; phone: string | null } | null;
+  client: { name: string; phone: string | null; email: string | null } | null;
   material_type: { name: string } | null;
   vehicle: { type: string } | null;
 };
 
+const STATUS_OPTIONS = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'solicitada', label: 'Solicitada' },
+  { value: 'aceita', label: 'Aceita' },
+  { value: 'coletada', label: 'Coletada' },
+  { value: 'em_rota', label: 'Em Entrega (Rota)' },
+  { value: 'entregue', label: 'Entregue' },
+];
+
 const Dashboard = () => {
+  const { user, role } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
 
+  const isClient = role === 'cliente';
+
+  // Fetch client record for client users
+  const { data: clientRecord } = useQuery({
+    queryKey: ['clientRecord', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('email', user.email)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user?.email && isClient,
+  });
+
   // Fetch delivery requests with relations
   const { data: deliveryRequests = [], isLoading } = useQuery({
-    queryKey: ['deliveryRequests'],
+    queryKey: ['deliveryRequests', isClient, clientRecord?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('delivery_requests')
         .select(`
           id,
+          request_number,
           status,
           scheduled_date,
           created_at,
           origin_address,
           destination_address,
-          client:clients(name, phone),
+          client:clients(name, phone, email),
           material_type:material_types(name),
           vehicle:vehicles(type)
         `)
         .order('created_at', { ascending: false });
 
+      // Filter by client_id if user is a client
+      if (isClient && clientRecord?.id) {
+        query = query.eq('client_id', clientRecord.id);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
       return data as DeliveryRequest[];
     },
+    enabled: !isClient || !!clientRecord?.id,
   });
 
   // Calculate stats
@@ -83,10 +124,10 @@ const Dashboard = () => {
       (r) => r.created_at && isToday(new Date(r.created_at))
     ).length;
     const inProgress = deliveryRequests.filter(
-      (r) => r.status === 'pending' || r.status === 'in_transit'
+      (r) => r.status === 'solicitada' || r.status === 'aceita' || r.status === 'coletada' || r.status === 'em_rota' || r.status === 'enviada'
     ).length;
     const delivered = deliveryRequests.filter(
-      (r) => r.status === 'delivered'
+      (r) => r.status === 'entregue'
     ).length;
     
     // Calculate yesterday's total for comparison
@@ -108,34 +149,60 @@ const Dashboard = () => {
   // Filter delivery requests
   const filteredRequests = useMemo(() => {
     return deliveryRequests.filter((item) => {
+      const requestNumber = String(item.request_number || '');
       const matchesSearch =
         item.client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.material_type?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus =
-        statusFilter === 'todos' || item.status === statusFilter;
+        item.material_type?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        requestNumber.includes(searchQuery);
+      
+      // Handle legacy status mapping
+      let matchesStatus = statusFilter === 'todos';
+      if (!matchesStatus) {
+        if (statusFilter === 'solicitada') {
+          matchesStatus = item.status === 'solicitada' || item.status === 'enviada';
+        } else {
+          matchesStatus = item.status === statusFilter;
+        }
+      }
+      
       return matchesSearch && matchesStatus;
     });
   }, [deliveryRequests, searchQuery, statusFilter]);
 
   const getStatusBadge = (status: string | null) => {
     const statusConfig: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
-      pending: {
-        label: 'Pendente',
+      solicitada: {
+        label: 'Solicitada',
         className: 'bg-amber-50 text-amber-700 border-amber-200',
         icon: <Clock className="h-3 w-3 mr-1" />,
       },
-      in_transit: {
-        label: 'Enviado',
+      enviada: {
+        label: 'Solicitada',
+        className: 'bg-amber-50 text-amber-700 border-amber-200',
+        icon: <Clock className="h-3 w-3 mr-1" />,
+      },
+      aceita: {
+        label: 'Aceita',
         className: 'bg-blue-50 text-blue-700 border-blue-200',
+        icon: <CheckCircle2 className="h-3 w-3 mr-1" />,
+      },
+      coletada: {
+        label: 'Coletada',
+        className: 'bg-purple-50 text-purple-700 border-purple-200',
+        icon: <Package className="h-3 w-3 mr-1" />,
+      },
+      em_rota: {
+        label: 'Em Rota',
+        className: 'bg-orange-50 text-orange-700 border-orange-200',
         icon: <Truck className="h-3 w-3 mr-1" />,
       },
-      delivered: {
+      entregue: {
         label: 'Entregue',
         className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         icon: <CheckCircle2 className="h-3 w-3 mr-1" />,
       },
     };
-    const config = statusConfig[status || 'pending'] || statusConfig.pending;
+    const config = statusConfig[status || 'solicitada'] || statusConfig.solicitada;
     return (
       <Badge variant="outline" className={`${config.className} flex items-center w-fit`}>
         {config.icon}
@@ -149,10 +216,13 @@ const Dashboard = () => {
     return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
   };
 
+  const dashboardTitle = isClient ? 'Minhas Solicitações' : 'Dashboard Admin';
+  const dashboardSubtitle = isClient ? 'Acompanhe suas solicitações de coleta' : 'Visão geral do sistema de logística';
+
   return (
     <DashboardLayout 
-      title="Dashboard Admin" 
-      subtitle="Visão geral do sistema de logística"
+      title={dashboardTitle}
+      subtitle={dashboardSubtitle}
       icon={<LayoutDashboard className="h-5 w-5" />}
     >
       {/* Stats Cards */}
@@ -225,7 +295,7 @@ const Dashboard = () => {
           <div className="relative flex-1 lg:max-w-xl">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por cliente ou material..."
+              placeholder="Buscar por ID, cliente ou material..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -234,14 +304,15 @@ const Dashboard = () => {
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="in_transit">Enviado</SelectItem>
-                <SelectItem value="delivered">Entregue</SelectItem>
+                {STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -269,6 +340,7 @@ const Dashboard = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>ID</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Material</TableHead>
                   <TableHead>Transporte</TableHead>
@@ -280,6 +352,11 @@ const Dashboard = () => {
               <TableBody>
                 {filteredRequests.map((item) => (
                   <TableRow key={item.id}>
+                    <TableCell>
+                      <span className="font-mono font-bold text-primary">
+                        #{String(item.request_number || '').padStart(6, '0')}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <span className="font-medium text-foreground">
@@ -310,15 +387,18 @@ const Dashboard = () => {
             {filteredRequests.map((item) => (
               <div key={item.id} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <span className="font-medium text-foreground">
-                      {item.client?.name || 'Cliente não informado'}
-                    </span>
-                    {item.client?.phone && (
-                      <p className="text-sm text-muted-foreground">{item.client.phone}</p>
-                    )}
-                  </div>
+                  <span className="font-mono font-bold text-primary">
+                    #{String(item.request_number || '').padStart(6, '0')}
+                  </span>
                   {getStatusBadge(item.status)}
+                </div>
+                <div className="mb-2">
+                  <span className="font-medium text-foreground">
+                    {item.client?.name || 'Cliente não informado'}
+                  </span>
+                  {item.client?.phone && (
+                    <p className="text-sm text-muted-foreground">{item.client.phone}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>

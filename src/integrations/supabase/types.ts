@@ -71,6 +71,7 @@ export type Database = {
           material_type_id: string | null
           notes: string | null
           origin_address: string
+          request_number: number
           requester: string | null
           scheduled_date: string | null
           status: string | null
@@ -89,6 +90,7 @@ export type Database = {
           material_type_id?: string | null
           notes?: string | null
           origin_address: string
+          request_number?: number
           requester?: string | null
           scheduled_date?: string | null
           status?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           material_type_id?: string | null
           notes?: string | null
           origin_address?: string
+          request_number?: number
           requester?: string | null
           scheduled_date?: string | null
           status?: string | null
