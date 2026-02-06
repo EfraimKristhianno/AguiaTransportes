@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import VehicleDetailsPopover from '@/components/VehicleDetailsPopover';
+import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
 
 const requestSchema = z.object({
   clientName: z.string().min(1, 'Nome do cliente é obrigatório'),
@@ -406,12 +407,12 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               <FormItem>
                 <FormLabel>Endereço de coleta *</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input {...field} placeholder="Digite o endereço completo" className="pl-9" />
-                  </div>
+                  <AddressAutocomplete
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Digite o endereço de coleta"
+                  />
                 </FormControl>
-                <p className="text-xs text-muted-foreground">Funcionalidade de mapa será implementada em breve</p>
                 <FormMessage />
               </FormItem>
             )}
@@ -425,10 +426,11 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               <FormItem>
                 <FormLabel>Endereço de entrega *</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input {...field} placeholder="Digite o endereço completo" className="pl-9" />
-                  </div>
+                  <AddressAutocomplete
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Digite o endereço de entrega"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
