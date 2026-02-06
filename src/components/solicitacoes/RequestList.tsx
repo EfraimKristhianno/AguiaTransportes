@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
+import { RequestTimelineDialog } from './RequestTimelineDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -75,6 +76,7 @@ const getStatusClassName = (status: string | null) => {
 export const RequestList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   const { data: requests = [], isLoading } = useDeliveryRequests(
     statusFilter === 'all' ? null : statusFilter
@@ -134,7 +136,8 @@ export const RequestList = () => {
             filteredRequests.map((request) => (
               <div
                 key={request.id}
-                className="bg-background rounded-lg border p-4 hover:shadow-sm transition-shadow"
+                onClick={() => setSelectedRequest(request)}
+                className="bg-background rounded-lg border p-4 hover:shadow-sm transition-shadow cursor-pointer hover:border-primary/30"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -196,6 +199,12 @@ export const RequestList = () => {
           )}
         </div>
       </ScrollArea>
+
+      <RequestTimelineDialog
+        request={selectedRequest}
+        open={!!selectedRequest}
+        onOpenChange={(open) => { if (!open) setSelectedRequest(null); }}
+      />
     </div>
   );
 };

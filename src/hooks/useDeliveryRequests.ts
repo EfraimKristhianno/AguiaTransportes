@@ -22,6 +22,7 @@ export interface DeliveryRequest {
   attachments: string[] | null;
   clients?: { name: string; phone: string | null; email: string | null } | null;
   material_types?: { name: string } | null;
+  drivers?: { name: string } | null;
 }
  
  export interface CreateDeliveryRequestInput {
@@ -43,11 +44,12 @@ export interface DeliveryRequest {
      queryFn: async (): Promise<DeliveryRequest[]> => {
        let query = supabase
          .from('delivery_requests')
-         .select(`
-           *,
-           clients:client_id (name, phone, email),
-           material_types:material_type_id (name)
-         `)
+          .select(`
+            *,
+            clients:client_id (name, phone, email),
+            material_types:material_type_id (name),
+            drivers:driver_id (name)
+          `)
          .order('created_at', { ascending: false });
  
        if (statusFilter && statusFilter !== 'all') {
