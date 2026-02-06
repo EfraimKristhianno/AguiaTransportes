@@ -58,7 +58,7 @@ const STATUS_OPTIONS = [
   { value: 'solicitada', label: 'Solicitada' },
   { value: 'aceita', label: 'Aceita' },
   { value: 'coletada', label: 'Coletada' },
-  { value: 'em_rota', label: 'Em Entrega (Rota)' },
+  { value: 'em_rota', label: 'Em Trânsito' },
   { value: 'entregue', label: 'Entregue' },
 ];
 
@@ -202,7 +202,7 @@ const Dashboard = () => {
         icon: <Package className="h-3 w-3 mr-1" />,
       },
       em_rota: {
-        label: 'Em Rota',
+        label: 'Em Trânsito',
         className: 'bg-orange-50 text-orange-700 border-orange-200',
         icon: <Truck className="h-3 w-3 mr-1" />,
       },

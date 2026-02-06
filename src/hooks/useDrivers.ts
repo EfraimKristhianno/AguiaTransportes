@@ -14,12 +14,26 @@ export const useDrivers = () => {
 
       if (error) throw error;
 
-      // For now, return with default stats - can be enhanced with delivery counts later
+      // Fetch delivery stats per driver
+      const { data: deliveries } = await supabase
+        .from('delivery_requests')
+        .select('driver_id, status')
+        .not('driver_id', 'is', null);
+
+      const statsMap: Record<string, { total: number; completed: number; active: number }> = {};
+      deliveries?.forEach((d) => {
+        const dId = d.driver_id!;
+        if (!statsMap[dId]) statsMap[dId] = { total: 0, completed: 0, active: 0 };
+        statsMap[dId].total++;
+        if (d.status === 'entregue') statsMap[dId].completed++;
+        if (['aceita', 'coletada', 'em_rota'].includes(d.status || '')) statsMap[dId].active++;
+      });
+
       const driversWithStats: DriverWithStats[] = (data || []).map((driver: any) => ({
         ...driver,
-        total_deliveries: 0,
-        completed_deliveries: 0,
-        active_deliveries: 0,
+        total_deliveries: statsMap[driver.id]?.total || 0,
+        completed_deliveries: statsMap[driver.id]?.completed || 0,
+        active_deliveries: statsMap[driver.id]?.active || 0,
       }));
 
       return driversWithStats;

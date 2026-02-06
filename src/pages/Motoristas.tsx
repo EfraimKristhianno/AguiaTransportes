@@ -36,7 +36,7 @@ const Motoristas = () => {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
       available: { label: 'Disponível', variant: 'outline' },
-      busy: { label: 'Em rota', variant: 'default' },
+      busy: { label: 'Em Trânsito', variant: 'default' },
       offline: { label: 'Offline', variant: 'secondary' },
     };
     const config = statusConfig[status] || statusConfig.offline;

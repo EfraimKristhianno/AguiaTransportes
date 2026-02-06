@@ -13,7 +13,7 @@ const STATUS_OPTIONS = [
   { value: 'solicitada', label: 'Solicitada' },
   { value: 'aceita', label: 'Aceita' },
   { value: 'coletada', label: 'Coletada' },
-  { value: 'em_rota', label: 'Em Entrega (Rota)' },
+  { value: 'em_rota', label: 'Em Trânsito' },
   { value: 'entregue', label: 'Entregue' },
 ];
 
@@ -43,7 +43,7 @@ const getStatusLabel = (status: string | null) => {
     case 'coletada':
       return 'Coletada';
     case 'em_rota':
-      return 'Em Rota';
+      return 'Em Trânsito';
     case 'entregue':
       return 'Entregue';
     // Legacy status support
