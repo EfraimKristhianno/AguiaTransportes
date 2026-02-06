@@ -59,6 +59,41 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_request_status_history: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          delivery_request_id: string
+          id: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          delivery_request_id: string
+          id?: string
+          notes?: string | null
+          status: string
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          delivery_request_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_request_status_history_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_requests: {
         Row: {
           attachments: Json | null
