@@ -20,10 +20,11 @@ import { UserRole } from '@/types/database';
 
 // Define menu items with role access (Usuários é o último)
 // Clientes têm acesso apenas ao Dashboard e Solicitações
+// Motoristas têm acesso apenas ao Dashboard e Motoristas (suas corridas)
 const allMenuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'gestor', 'cliente'] as UserRole[] },
-  { icon: FileText, label: 'Solicitações', path: '/solicitacoes', roles: ['admin', 'gestor', 'motorista', 'cliente'] as UserRole[] },
-  { icon: TruckIcon, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'gestor'] as UserRole[] },
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'gestor', 'cliente', 'motorista'] as UserRole[] },
+  { icon: FileText, label: 'Solicitações', path: '/solicitacoes', roles: ['admin', 'gestor', 'cliente'] as UserRole[] },
+  { icon: TruckIcon, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'gestor', 'motorista'] as UserRole[] },
   { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] as UserRole[] },
 ];
 

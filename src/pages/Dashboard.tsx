@@ -38,6 +38,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, isToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentDriver } from '@/hooks/useDriverRequests';
 
 type DeliveryRequest = {
   id: string;
@@ -67,7 +68,10 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState('todos');
 
   const isClient = role === 'cliente';
+  const isDriver = role === 'motorista';
 
+  // Get current driver record for driver users
+  const { data: currentDriver } = useCurrentDriver();
   // Fetch client record for client users
   const { data: clientRecord } = useQuery({
     queryKey: ['clientRecord', user?.email],
@@ -86,7 +90,7 @@ const Dashboard = () => {
 
   // Fetch delivery requests with relations
   const { data: deliveryRequests = [], isLoading } = useQuery({
-    queryKey: ['deliveryRequests', isClient, clientRecord?.id],
+    queryKey: ['deliveryRequests', isClient, isDriver, clientRecord?.id, currentDriver?.id],
     queryFn: async () => {
       let query = supabase
         .from('delivery_requests')
@@ -98,6 +102,7 @@ const Dashboard = () => {
           created_at,
           origin_address,
           destination_address,
+          driver_id,
           client:clients(name, phone, email),
           material_type:material_types(name),
           vehicle:vehicles(type)
@@ -109,12 +114,17 @@ const Dashboard = () => {
         query = query.eq('client_id', clientRecord.id);
       }
 
+      // Filter by driver_id if user is a driver
+      if (isDriver && currentDriver?.id) {
+        query = query.eq('driver_id', currentDriver.id);
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as DeliveryRequest[];
+      return data as (DeliveryRequest & { driver_id: string | null })[];
     },
-    enabled: !isClient || !!clientRecord?.id,
+    enabled: (!isClient || !!clientRecord?.id) && (!isDriver || !!currentDriver?.id),
   });
 
   // Calculate stats
@@ -216,8 +226,16 @@ const Dashboard = () => {
     return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
   };
 
-  const dashboardTitle = isClient ? 'Minhas Solicitações' : 'Dashboard Admin';
-  const dashboardSubtitle = isClient ? 'Acompanhe suas solicitações de coleta' : 'Visão geral do sistema de logística';
+  const dashboardTitle = isClient 
+    ? 'Minhas Solicitações' 
+    : isDriver 
+      ? 'Minhas Entregas' 
+      : 'Dashboard Admin';
+  const dashboardSubtitle = isClient 
+    ? 'Acompanhe suas solicitações de coleta' 
+    : isDriver 
+      ? 'Acompanhe suas entregas aceitas'
+      : 'Visão geral do sistema de logística';
 
   return (
     <DashboardLayout 
