@@ -13,34 +13,23 @@ const Solicitacoes = () => {
     return <Navigate to="/motoristas" replace />;
   }
 
-  // Clientes veem apenas a lista (sem formulário)
-  const isClient = role === 'cliente';
-
   return (
     <DashboardLayout 
       title="Solicitações" 
-      subtitle={isClient ? "Acompanhe suas solicitações de coleta" : "Gerencie as solicitações de coleta"}
+      subtitle={role === 'cliente' ? "Crie e acompanhe suas solicitações de coleta" : "Gerencie as solicitações de coleta"}
       icon={<FileText className="h-5 w-5" />}
     >
-      {isClient ? (
-        // Clientes veem apenas a lista de suas solicitações
-        <div className="h-[calc(100vh-180px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-180px)]">
+        {/* Left side - Form */}
+        <div className="overflow-auto">
+          <RequestForm />
+        </div>
+
+        {/* Right side - Request List */}
+        <div className="h-full">
           <RequestList />
         </div>
-      ) : (
-        // Admin e Gestor veem formulário + lista
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-180px)]">
-          {/* Left side - Form */}
-          <div className="overflow-auto">
-            <RequestForm />
-          </div>
-
-          {/* Right side - Request List */}
-          <div className="h-full">
-            <RequestList />
-          </div>
-        </div>
-      )}
+      </div>
     </DashboardLayout>
   );
 };
