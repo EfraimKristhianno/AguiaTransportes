@@ -12,7 +12,7 @@ const routePermissions: Record<string, UserRole[]> = {
   '/dashboard': ['admin', 'gestor'],
   '/solicitacoes': ['admin', 'gestor', 'motorista', 'cliente'],
   '/usuarios': ['admin'],
-  '/motoristas': ['admin', 'gestor'],
+  '/motoristas': ['admin', 'gestor', 'motorista'],
   '/clientes': ['admin', 'gestor'],
 };
 
@@ -22,7 +22,7 @@ const getDefaultRoute = (role: UserRole | null): string => {
   const defaultRoutes: Record<UserRole, string> = {
     admin: '/dashboard',
     gestor: '/dashboard',
-    motorista: '/solicitacoes',
+    motorista: '/motoristas',
     cliente: '/solicitacoes',
   };
 
