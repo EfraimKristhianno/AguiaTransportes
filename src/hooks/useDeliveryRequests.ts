@@ -2,26 +2,27 @@
  import { supabase } from '@/integrations/supabase/client';
  import { toast } from 'sonner';
  
- export interface DeliveryRequest {
-   id: string;
-   client_id: string | null;
-   origin_address: string;
-   destination_address: string;
-   scheduled_date: string | null;
-   material_type_id: string | null;
-   driver_id: string | null;
-   vehicle_id: string | null;
-   status: string | null;
-   notes: string | null;
-   delivered_at: string | null;
-   created_at: string | null;
-   updated_at: string | null;
-   requester: string | null;
-   transport_type: string | null;
-   attachments: string[] | null;
-   clients?: { name: string; phone: string | null; email: string | null } | null;
-   material_types?: { name: string } | null;
- }
+export interface DeliveryRequest {
+  id: string;
+  request_number: number | null;
+  client_id: string | null;
+  origin_address: string;
+  destination_address: string;
+  scheduled_date: string | null;
+  material_type_id: string | null;
+  driver_id: string | null;
+  vehicle_id: string | null;
+  status: string | null;
+  notes: string | null;
+  delivered_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  requester: string | null;
+  transport_type: string | null;
+  attachments: string[] | null;
+  clients?: { name: string; phone: string | null; email: string | null } | null;
+  material_types?: { name: string } | null;
+}
  
  export interface CreateDeliveryRequestInput {
    client_id?: string | null;
