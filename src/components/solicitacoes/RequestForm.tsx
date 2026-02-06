@@ -140,20 +140,21 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
 
       // Create or find client - essential for RLS to work
       let clientId = clientRecord?.id;
-      const emailToUse = isClient ? user?.email : data.email;
+      // Normalize email to lowercase for case-insensitive matching with RLS policies
+      const emailToUse = (isClient ? user?.email : data.email)?.toLowerCase();
       
       if (!clientId && emailToUse) {
-        // Find existing client by email
+        // Find existing client by email (case-insensitive via ilike)
         const { data: existingClient } = await supabase
           .from('clients')
           .select('id')
-          .eq('email', emailToUse)
+          .ilike('email', emailToUse)
           .maybeSingle();
 
         if (existingClient) {
           clientId = existingClient.id;
         } else {
-          // Create new client record - this is needed for both client and admin/gestor roles
+          // Create new client record - email is normalized to lowercase
           const { data: newClient, error } = await supabase
             .from('clients')
             .insert({
@@ -167,6 +168,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           if (!error && newClient) {
             clientId = newClient.id;
           } else {
+            console.error('Error creating client:', error);
             throw new Error('Não foi possível criar o registro do cliente. Verifique suas permissões.');
           }
         }
