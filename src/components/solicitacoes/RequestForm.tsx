@@ -138,34 +138,42 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         uploadedPaths.push(path);
       }
 
-      // Create or find client
+      // Create or find client - essential for RLS to work
       let clientId = clientRecord?.id;
+      const emailToUse = isClient ? user?.email : data.email;
       
-      if (!clientId && !isClient) {
-        // For admin/gestor, find or create client by email
+      if (!clientId && emailToUse) {
+        // Find existing client by email
         const { data: existingClient } = await supabase
           .from('clients')
           .select('id')
-          .eq('email', data.email)
+          .eq('email', emailToUse)
           .maybeSingle();
 
         if (existingClient) {
           clientId = existingClient.id;
-        } else if (data.email) {
+        } else {
+          // Create new client record - this is needed for both client and admin/gestor roles
           const { data: newClient, error } = await supabase
             .from('clients')
             .insert({
               name: data.clientName,
               phone: data.phone || null,
-              email: data.email || null,
+              email: emailToUse,
             })
             .select('id')
             .single();
           
           if (!error && newClient) {
             clientId = newClient.id;
+          } else {
+            throw new Error('Não foi possível criar o registro do cliente. Verifique suas permissões.');
           }
         }
+      }
+
+      if (!clientId) {
+        throw new Error('É necessário um email válido para criar a solicitação.');
       }
 
       await createRequest.mutateAsync({
