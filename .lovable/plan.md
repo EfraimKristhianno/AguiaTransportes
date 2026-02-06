@@ -1,76 +1,66 @@
 
-# Plano de Correção: Loop Infinito de Redirecionamento
+# Plano: Renomear Status e Corrigir Estatisticas dos Motoristas
 
-## Problema Identificado
+## 1. Renomear "Em Entrega (Rota)" para "Em Transito"
 
-O erro "Maximum update depth exceeded" ocorre devido a um **loop infinito de redirecionamento** entre rotas:
+Trocar o label do status `em_rota` em todos os arquivos onde aparece:
 
-```text
-+-------------------+       +--------------------+       +-------------------+
-|   /solicitacoes   | ----> |   /motoristas      | ----> |   /solicitacoes   |
-| (Solicitacoes.tsx)|       | (ProtectedRoute)   |       | (ProtectedRoute)  |
-| redireciona       |       | motorista nao tem  |       | redireciona       |
-| motorista para    |       | permissao, volta   |       | motorista para    |
-| /motoristas       |       | para default       |       | /motoristas       |
-+-------------------+       +--------------------+       +-------------------+
-         ^                                                       |
-         +-------------------------------------------------------+
-                              LOOP INFINITO
-```
+- **`src/components/solicitacoes/RequestList.tsx`** (linha 16): `'Em Entrega (Rota)'` para `'Em Trânsito'`
+- **`src/components/solicitacoes/RequestList.tsx`** (linha 46): `'Em Rota'` para `'Em Trânsito'`
+- **`src/pages/Dashboard.tsx`** (linha 61): `'Em Entrega (Rota)'` para `'Em Trânsito'`
+- **`src/pages/Dashboard.tsx`** (linha 205): `'Em Rota'` para `'Em Trânsito'`
+- **`src/pages/Motoristas.tsx`** (linha 39): `'Em rota'` para `'Em Trânsito'`
 
-**Causa raiz:**
-1. Em `ProtectedRoute.tsx` (linha 25): A rota padrao do motorista esta definida como `/solicitacoes`
-2. Em `Solicitacoes.tsx`: Motoristas sao redirecionados para `/motoristas`
-3. Em `routePermissions` (linha 15): A rota `/motoristas` so permite `['admin', 'gestor']`, excluindo motoristas
-4. Quando o motorista tenta acessar `/motoristas`, e redirecionado de volta para a rota padrao (`/solicitacoes`), criando o loop
+## 2. Corrigir Estatisticas dos Motoristas (Total, Concluidas, Ativas)
 
-## Solucao
+Atualmente o hook `useDrivers` retorna valores fixos `0` para as estatisticas. Sera atualizado para buscar dados reais da tabela `delivery_requests`:
 
-Atualizar as permissoes e rotas padrao em `ProtectedRoute.tsx`:
+### Arquivo: `src/hooks/useDrivers.ts`
 
-1. Alterar a rota padrao do motorista de `/solicitacoes` para `/motoristas`
-2. Adicionar `motorista` as permissoes da rota `/motoristas`
+Alterar a query para contar as entregas de cada motorista a partir da tabela `delivery_requests`:
+
+- **total_deliveries**: total de `delivery_requests` onde `driver_id` corresponde ao motorista
+- **completed_deliveries**: total onde `status = 'entregue'`
+- **active_deliveries**: total onde `status` esta em `['aceita', 'coletada', 'em_rota']`
+
+A implementacao fara uma consulta adicional agrupada por `driver_id` na tabela `delivery_requests` e combinara os resultados com os dados dos motoristas.
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/components/ProtectedRoute.tsx`
+### Query para estatisticas
 
-**Alteracao 1 - Permissoes de rota (linha 15):**
 ```typescript
-// ANTES
-'/motoristas': ['admin', 'gestor'],
+// Buscar todas as delivery_requests com driver_id
+const { data: deliveries } = await supabase
+  .from('delivery_requests')
+  .select('driver_id, status')
+  .not('driver_id', 'is', null);
 
-// DEPOIS
-'/motoristas': ['admin', 'gestor', 'motorista'],
+// Agrupar por driver_id no frontend
+const statsMap = {};
+deliveries?.forEach(d => {
+  if (!statsMap[d.driver_id]) statsMap[d.driver_id] = { total: 0, completed: 0, active: 0 };
+  statsMap[d.driver_id].total++;
+  if (d.status === 'entregue') statsMap[d.driver_id].completed++;
+  if (['aceita', 'coletada', 'em_rota'].includes(d.status)) statsMap[d.driver_id].active++;
+});
+
+// Combinar com drivers
+const driversWithStats = data.map(driver => ({
+  ...driver,
+  total_deliveries: statsMap[driver.id]?.total || 0,
+  completed_deliveries: statsMap[driver.id]?.completed || 0,
+  active_deliveries: statsMap[driver.id]?.active || 0,
+}));
 ```
 
-**Alteracao 2 - Rota padrao do motorista (linha 25):**
-```typescript
-// ANTES
-const defaultRoutes: Record<UserRole, string> = {
-  admin: '/dashboard',
-  gestor: '/dashboard',
-  motorista: '/solicitacoes',  // <-- PROBLEMA
-  cliente: '/solicitacoes',
-};
+### Arquivos modificados
 
-// DEPOIS
-const defaultRoutes: Record<UserRole, string> = {
-  admin: '/dashboard',
-  gestor: '/dashboard',
-  motorista: '/motoristas',    // <-- CORRIGIDO
-  cliente: '/solicitacoes',
-};
-```
-
----
-
-## Resultado Esperado
-
-Apos as correcoes:
-- Motoristas serao redirecionados diretamente para `/motoristas` apos login
-- Motoristas terao permissao de acessar a rota `/motoristas`
-- O loop infinito sera eliminado
-- A tela de Motoristas exibira corretamente as solicitacoes disponiveis para aceitar
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/components/solicitacoes/RequestList.tsx` | Renomear labels de `em_rota` |
+| `src/pages/Dashboard.tsx` | Renomear labels de `em_rota` |
+| `src/pages/Motoristas.tsx` | Renomear label do status `busy` |
+| `src/hooks/useDrivers.ts` | Buscar estatisticas reais do banco |
