@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -31,13 +31,34 @@ interface RequestDetailsDialogProps {
   driverId: string;
 }
 
-// Simple distance estimation (placeholder - in production would use a geocoding API)
-const estimateDistance = (origin: string, destination: string): string => {
-  // This is a placeholder. In a real app, you would use Google Maps Distance Matrix API
-  // or similar service to calculate actual distance
-  const randomDistance = Math.floor(Math.random() * 50) + 5;
-  return `~${randomDistance} km`;
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
+
+const geocodeAddress = async (address: string): Promise<{ lat: number; lon: number } | null> => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${encodeURIComponent(address)}`,
+      { headers: { 'Accept-Language': 'pt-BR' } }
+    );
+    const data = await res.json();
+    if (data.length > 0) {
+      return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Cache distances by request id
+const distanceCache = new Map<string, string>();
 
 export const RequestDetailsDialog = ({
   request,
@@ -47,6 +68,37 @@ export const RequestDetailsDialog = ({
 }: RequestDetailsDialogProps) => {
   const acceptMutation = useAcceptDeliveryRequest();
   const [isAccepting, setIsAccepting] = useState(false);
+  const [estimatedDistance, setEstimatedDistance] = useState<string>('Calculando...');
+
+  useEffect(() => {
+    if (!request || !open) return;
+    
+    const cached = distanceCache.get(request.id);
+    if (cached) {
+      setEstimatedDistance(cached);
+      return;
+    }
+
+    let cancelled = false;
+    const calculate = async () => {
+      setEstimatedDistance('Calculando...');
+      const [originCoords, destCoords] = await Promise.all([
+        geocodeAddress(request.origin_address),
+        geocodeAddress(request.destination_address),
+      ]);
+      if (cancelled) return;
+      if (originCoords && destCoords) {
+        const dist = haversineDistance(originCoords.lat, originCoords.lon, destCoords.lat, destCoords.lon);
+        const result = `${dist.toFixed(1)} km`;
+        distanceCache.set(request.id, result);
+        setEstimatedDistance(result);
+      } else {
+        setEstimatedDistance('Não disponível');
+      }
+    };
+    calculate();
+    return () => { cancelled = true; };
+  }, [request?.id, open]);
 
   if (!request) return null;
 
@@ -54,8 +106,6 @@ export const RequestDetailsDialog = ({
     if (!dateString) return '-';
     return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   };
-
-  const estimatedDistance = estimateDistance(request.origin_address, request.destination_address);
 
   const handleAccept = async () => {
     setIsAccepting(true);
