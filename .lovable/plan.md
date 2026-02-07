@@ -1,47 +1,49 @@
 
 
-## Correção do Campo de Data da Solicitação
+## Correção Definitiva dos Anexos
 
-### Problemas Identificados
-1. O CSS com `position: absolute` no `::-webkit-calendar-picker-indicator` está fazendo o ícone do calendário sair para fora do campo do formulário
-2. O placeholder padrão do navegador mostra "dd/mm/aaaa --:--" em vez de "Selecione a data"
+### Problema Identificado
 
-### Solução
+Os arquivos estao sendo salvos no bucket com o caminho `status-attachments/{nomeArquivo}`, porem a politica de seguranca (RLS) do bucket exige que o caminho comece com o **ID da solicitacao** (`{delivery_request_id}/...`). Por isso, usuarios que nao sao admin/gestor nunca conseguem visualizar os anexos -- a politica de acesso simplesmente nao reconhece o arquivo como pertencente a nenhuma solicitacao.
 
-**1. Remover o CSS problemático do `src/index.css`**
-- Remover completamente as regras CSS que usam `position: absolute` no picker indicator (linhas 141-153)
-- Essa abordagem de reposicionar o ícone nativo do navegador causa problemas de layout
+### Solucao
 
-**2. Voltar ao ícone manual no `src/components/solicitacoes/RequestForm.tsx`**
-- Restaurar o wrapper `<div className="relative">` com o ícone `Calendar` do Lucide posicionado à esquerda
-- Manter o input com `className="pl-9"` para dar espaço ao ícone
+1. **Corrigir o caminho de upload** no hook `useUpdateRequestStatus.ts`:
+   - Antes: `status-attachments/{fileName}`
+   - Depois: `{requestId}/status-attachments/{fileName}`
+   - Isso faz com que a politica RLS existente reconheca o arquivo e autorize a leitura
 
-**3. Substituir o placeholder "dd/mm/aaaa" por "Selecione a data"**
-- Usar uma abordagem CSS para esconder o texto padrão do navegador quando o campo está vazio: aplicar `color: transparent` ao input quando não tem valor, e mostrar o placeholder via pseudo-elemento ou usar a propriedade `data-placeholder`
-- Alternativa mais simples: adicionar CSS para estilizar o input vazio com `color: gray` e usar o atributo `placeholder`
+2. **Passar o `requestId` para a funcao de upload**:
+   - Alterar `useUploadStatusAttachment` para receber o `requestId` como parametro
+   - Atualizar a chamada no `UnifiedRequestDetailsDialog.tsx` para passar o ID da solicitacao
 
-### Detalhes Técnicos
+3. **Adicionar politica de acesso mais ampla para `status-attachments/`**:
+   - Criar uma politica SELECT adicional que permita usuarios autenticados acessarem arquivos cujo caminho comeca com um `delivery_request_id` ao qual eles estao vinculados (como cliente ou motorista)
+   - Isso garante compatibilidade com arquivos antigos no caminho `status-attachments/` sem prefixo
 
-**`src/index.css`** - Remover linhas 141-153 e adicionar:
-```css
-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-```
-Isso esconde o ícone nativo do navegador para usar o ícone customizado do Lucide.
+4. **Migrar arquivos antigos (SQL)**:
+   - Atualizar os registros existentes na tabela `delivery_request_status_history` para corrigir os caminhos dos anexos ja salvos, adicionando o prefixo do `delivery_request_id`
 
-**`src/components/solicitacoes/RequestForm.tsx`** - Restaurar o layout com ícone:
-```tsx
-<div className="relative">
-  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-  <Input 
-    {...field} 
-    type="datetime-local" 
-    className="pl-9" 
-    placeholder="Selecione a data"
-  />
-</div>
-```
+### Detalhes Tecnicos
+
+**Arquivo: `src/hooks/useUpdateRequestStatus.ts`**
+- `useUploadStatusAttachment` passara a receber `{ file, requestId }` em vez de apenas `file`
+- Caminho gerado: `${requestId}/status-attachments/${fileName}`
+
+**Arquivo: `src/components/shared/UnifiedRequestDetailsDialog.tsx`**
+- Atualizar a chamada de upload para incluir `requestId`:
+  ```
+  uploadMutation.mutateAsync({ file, requestId: request.id })
+  ```
+
+**Migracao SQL:**
+- Atualizar os caminhos dos anexos existentes na tabela `delivery_request_status_history` para incluir o prefixo `delivery_request_id`
+- Mover os objetos no bucket usando funcao SQL ou marcar para reupload
+
+**Nova politica de storage (fallback):**
+- Adicionar politica SELECT para cobrir o padrao `status-attachments/%` vinculando ao `delivery_request_status_history.attachments` contendo o path
+
+### Resultado Esperado
+
+Todos os anexos, novos e antigos, serao acessiveis por clientes e motoristas vinculados a solicitacao, sem erros de carregamento.
 
