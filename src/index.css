@@ -137,4 +137,18 @@
   .input-icon {
     @apply absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground;
   }
+
+  /* Move native date picker icon to the left */
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    left: 8px;
+    right: auto;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  input[type="datetime-local"] {
+    padding-left: 2.25rem !important;
+  }
 }
