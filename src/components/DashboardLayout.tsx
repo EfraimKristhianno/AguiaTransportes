@@ -71,7 +71,7 @@ const DashboardLayout = ({ children, title, subtitle, icon }: DashboardLayoutPro
       {/* Mobile menu button */}
       <button
         onClick={() => setSidebarOpen(true)}
-        className="fixed left-4 top-4 z-50 rounded-lg bg-card p-2 shadow-md lg:hidden"
+        className="fixed left-4 top-4 z-30 rounded-lg bg-card p-2 shadow-md lg:hidden"
       >
         <Menu className="h-6 w-6" />
       </button>
@@ -86,10 +86,10 @@ const DashboardLayout = ({ children, title, subtitle, icon }: DashboardLayoutPro
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border bg-card shadow-[var(--shadow-card)] transition-all duration-300",
+        "fixed left-0 top-0 flex h-screen flex-col border-r border-border bg-card shadow-[var(--shadow-card)] transition-all duration-300",
         sidebarCollapsed ? "w-[72px]" : "w-64",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        "lg:translate-x-0"
+        sidebarOpen ? "translate-x-0 z-50" : "-translate-x-full z-50",
+        "lg:translate-x-0 lg:z-20"
       )}>
         {/* Collapse button - desktop only */}
         <button
@@ -185,7 +185,7 @@ const DashboardLayout = ({ children, title, subtitle, icon }: DashboardLayoutPro
 
       {/* Main content */}
       <main className={cn(
-        "flex-1 p-4 pt-16 transition-all duration-300 lg:p-8 lg:pt-8",
+        "flex-1 p-4 pt-16 transition-all duration-300 lg:p-8 lg:pt-8 relative z-0",
         sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-64"
       )}>
         {/* Header */}
