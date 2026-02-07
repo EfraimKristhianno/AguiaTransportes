@@ -374,11 +374,15 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 <FormItem>
                   <FormLabel>Data da solicitação</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      type="datetime-local" 
-                      placeholder="Selecione a data"
-                    />
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input 
+                        {...field} 
+                        type="datetime-local" 
+                        className="pl-9"
+                        placeholder="Selecione a data"
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
