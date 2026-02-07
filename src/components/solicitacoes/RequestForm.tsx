@@ -365,22 +365,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             />
           </div>
 
-          {/* Requester and Date */}
+          {/* Date and Requester */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="requester"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Solicitante</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Nome do solicitante" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="scheduledDate"
@@ -390,8 +376,27 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                   <FormControl>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input {...field} type="datetime-local" className="pl-9" />
+                      <Input 
+                        {...field} 
+                        type="datetime-local" 
+                        className="pl-9" 
+                        placeholder="Selecione a data"
+                      />
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="requester"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Solicitante</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Nome do solicitante" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
