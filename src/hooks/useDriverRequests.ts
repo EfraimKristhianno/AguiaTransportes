@@ -44,28 +44,52 @@ export const useCurrentDriver = () => {
   });
 };
 
-// Hook to get delivery requests matching driver's transport types
-export const useDriverRequests = (driverVehicleTypes: string[] = []) => {
+// Hook to get delivery requests for the driver:
+// 1. Available requests matching transport types (solicitada/enviada)
+// 2. Requests already assigned to this driver (aceita/coletada/em_rota/entregue)
+export const useDriverRequests = (driverVehicleTypes: string[] = [], driverId?: string) => {
   return useQuery({
-    queryKey: ['driverRequests', driverVehicleTypes],
+    queryKey: ['driverRequests', driverVehicleTypes, driverId],
     queryFn: async (): Promise<DriverRequest[]> => {
-      if (driverVehicleTypes.length === 0) return [];
+      if (driverVehicleTypes.length === 0 && !driverId) return [];
 
-      const { data, error } = await supabase
-        .from('delivery_requests')
-        .select(`
-          *,
-          clients:client_id (name, phone, email),
-          material_types:material_type_id (name)
-        `)
-        .in('transport_type', driverVehicleTypes)
-        .in('status', ['solicitada', 'enviada'])
-        .order('created_at', { ascending: false });
+      const selectQuery = `
+        *,
+        clients:client_id (name, phone, email),
+        material_types:material_type_id (name)
+      `;
 
-      if (error) throw error;
-      return (data as unknown as DriverRequest[]) || [];
+      // Fetch available requests (matching transport types, not yet accepted)
+      const availablePromise = driverVehicleTypes.length > 0
+        ? supabase
+            .from('delivery_requests')
+            .select(selectQuery)
+            .in('transport_type', driverVehicleTypes)
+            .in('status', ['solicitada', 'enviada'])
+            .order('created_at', { ascending: false })
+        : Promise.resolve({ data: [], error: null });
+
+      // Fetch requests assigned to this driver
+      const assignedPromise = driverId
+        ? supabase
+            .from('delivery_requests')
+            .select(selectQuery)
+            .eq('driver_id', driverId)
+            .in('status', ['aceita', 'coletada', 'em_rota'])
+            .order('created_at', { ascending: false })
+        : Promise.resolve({ data: [], error: null });
+
+      const [availableResult, assignedResult] = await Promise.all([availablePromise, assignedPromise]);
+
+      if (availableResult.error) throw availableResult.error;
+      if (assignedResult.error) throw assignedResult.error;
+
+      // Merge and deduplicate
+      const allRequests = [...(assignedResult.data || []), ...(availableResult.data || [])];
+      const uniqueMap = new Map(allRequests.map(r => [r.id, r]));
+      return Array.from(uniqueMap.values()) as unknown as DriverRequest[];
     },
-    enabled: driverVehicleTypes.length > 0,
+    enabled: driverVehicleTypes.length > 0 || !!driverId,
   });
 };
 

@@ -48,6 +48,21 @@ export const DriverRequestsTable = ({
         className: 'bg-amber-50 text-amber-700 border-amber-200',
         icon: <Clock className="h-3 w-3 mr-1" />,
       },
+      aceita: {
+        label: 'Aceita',
+        className: 'bg-blue-50 text-blue-700 border-blue-200',
+        icon: <Package className="h-3 w-3 mr-1" />,
+      },
+      coletada: {
+        label: 'Coletada',
+        className: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+        icon: <Package className="h-3 w-3 mr-1" />,
+      },
+      em_rota: {
+        label: 'Em Trânsito',
+        className: 'bg-green-50 text-green-700 border-green-200',
+        icon: <Package className="h-3 w-3 mr-1" />,
+      },
     };
     const config = statusConfig[status || 'solicitada'] || statusConfig.solicitada;
     return (
@@ -69,7 +84,7 @@ export const DriverRequestsTable = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Solicitações Disponíveis
+            Minhas Corridas
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
