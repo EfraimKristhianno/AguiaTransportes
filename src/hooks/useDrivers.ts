@@ -29,12 +29,18 @@ export const useDrivers = () => {
         if (['aceita', 'coletada', 'em_rota'].includes(d.status || '')) statsMap[dId].active++;
       });
 
-      const driversWithStats: DriverWithStats[] = (data || []).map((driver: any) => ({
-        ...driver,
-        total_deliveries: statsMap[driver.id]?.total || 0,
-        completed_deliveries: statsMap[driver.id]?.completed || 0,
-        active_deliveries: statsMap[driver.id]?.active || 0,
-      }));
+      const driversWithStats: DriverWithStats[] = (data || []).map((driver: any) => {
+        const active = statsMap[driver.id]?.active || 0;
+        // Status: indisponível se tem corrida ativa (aceita/coletada/em_rota), disponível caso contrário
+        const computedStatus = active > 0 ? 'unavailable' : 'available';
+        return {
+          ...driver,
+          status: computedStatus,
+          total_deliveries: statsMap[driver.id]?.total || 0,
+          completed_deliveries: statsMap[driver.id]?.completed || 0,
+          active_deliveries: active,
+        };
+      });
 
       return driversWithStats;
     },
