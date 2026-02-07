@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin, Phone, User, Package, Truck, Calendar, FileText,
   Navigation, Loader2, Hash, Check, Circle, Camera, Paperclip,
-  X, ChevronRight, Image as ImageIcon, Film, File,
+  X, ChevronRight, Image as ImageIcon, Film, File, Send,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,6 +23,8 @@ import { useAcceptDeliveryRequest } from '@/hooks/useDriverRequests';
 import { useUpdateRequestStatus, useUploadStatusAttachment } from '@/hooks/useUpdateRequestStatus';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface RequestData {
   id: string;
@@ -119,11 +122,15 @@ export const UnifiedRequestDetailsDialog = ({
   const updateStatusMutation = useUpdateRequestStatus();
   const uploadMutation = useUploadStatusAttachment();
 
+  const queryClient = useQueryClient();
   const [isAccepting, setIsAccepting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [estimatedDistance, setEstimatedDistance] = useState<string>('Calculando...');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [notesText, setNotesText] = useState('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { data: history = [], isLoading: isLoadingHistory } = useRequestHistory(
     open && request ? request.id : null
@@ -156,10 +163,14 @@ export const UnifiedRequestDetailsDialog = ({
     return () => { cancelled = true; };
   }, [request?.id, open]);
 
-  // Reset pending files when dialog opens/closes
+  // Reset state when dialog opens/closes or request changes
   useEffect(() => {
-    if (!open) setPendingFiles([]);
-  }, [open]);
+    if (!open) {
+      setPendingFiles([]);
+    } else if (request) {
+      setNotesText(request.notes || '');
+    }
+  }, [open, request?.id]);
 
   if (!request) return null;
 
@@ -221,10 +232,30 @@ export const UnifiedRequestDetailsDialog = ({
     const files = Array.from(e.target.files || []);
     setPendingFiles(prev => [...prev, ...files]);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
   const removeFile = (index: number) => {
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveNotes = async () => {
+    if (!request) return;
+    setIsSavingNotes(true);
+    try {
+      const { error } = await supabase
+        .from('delivery_requests')
+        .update({ notes: notesText, updated_at: new Date().toISOString() })
+        .eq('id', request.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
+      toast.success('Observações salvas!');
+    } catch (err: any) {
+      toast.error(`Erro ao salvar observações: ${err.message}`);
+    } finally {
+      setIsSavingNotes(false);
+    }
   };
 
   const getFileIcon = (file: File) => {
@@ -347,17 +378,33 @@ export const UnifiedRequestDetailsDialog = ({
                 <span className="text-lg font-bold text-primary">{estimatedDistance}</span>
               </div>
 
-              {/* Notes */}
-              {request.notes && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <FileText className="h-4 w-4" /> Observações
-                  </h4>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-sm">{request.notes}</p>
-                  </div>
-                </div>
-              )}
+              {/* Observações - editable */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Observações
+                </h4>
+                <Textarea
+                  value={notesText}
+                  onChange={(e) => setNotesText(e.target.value)}
+                  placeholder="Adicione observações sobre esta coleta..."
+                  className="min-h-[80px] resize-none"
+                />
+                {notesText !== (request.notes || '') && (
+                  <Button
+                    size="sm"
+                    onClick={handleSaveNotes}
+                    disabled={isSavingNotes}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isSavingNotes ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+                    ) : (
+                      <><Send className="h-4 w-4 mr-2" /> Salvar Observações</>
+                    )}
+                  </Button>
+                )}
+              </div>
 
               <Separator />
 
@@ -446,16 +493,36 @@ export const UnifiedRequestDetailsDialog = ({
                       onChange={handleFileSelect}
                       className="hidden"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-dashed"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Camera className="h-4 w-4 mr-2" />
-                      Anexar fotos, documentos ou vídeos
-                    </Button>
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-dashed"
+                        onClick={() => cameraInputRef.current?.click()}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Tirar Foto
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-dashed"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        Anexar Arquivo
+                      </Button>
+                    </div>
 
                     {pendingFiles.length > 0 && (
                       <div className="space-y-1">
