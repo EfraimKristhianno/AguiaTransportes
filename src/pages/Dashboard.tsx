@@ -308,7 +308,7 @@ const Dashboard = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-4">
+      <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative flex-1 lg:max-w-xl">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -354,7 +354,7 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Table - Desktop */}
-          <div className="hidden rounded-xl border border-border bg-card lg:block">
+          <div className="hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] lg:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -403,7 +403,7 @@ const Dashboard = () => {
           {/* Cards - Mobile */}
           <div className="space-y-3 lg:hidden">
             {filteredRequests.map((item) => (
-              <div key={item.id} className="rounded-xl border border-border bg-card p-4">
+              <div key={item.id} className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-mono font-bold text-primary">
                     #{String(item.request_number || '').padStart(6, '0')}
