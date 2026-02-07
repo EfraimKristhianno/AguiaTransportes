@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin, Phone, User, Package, Truck, Calendar, FileText,
   Navigation, Loader2, Hash, Check, Circle, Camera, Paperclip,
-  X, ChevronRight, Image as ImageIcon, Film, File, Send,
+  X, ChevronRight, ChevronDown, Image as ImageIcon, Film, File, Send, Eye,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -129,6 +129,7 @@ export const UnifiedRequestDetailsDialog = ({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [notesText, setNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -167,6 +168,7 @@ export const UnifiedRequestDetailsDialog = ({
   useEffect(() => {
     if (!open) {
       setPendingFiles([]);
+      setExpandedSteps({});
     } else if (request) {
       setNotesText(request.notes || '');
     }
@@ -262,6 +264,23 @@ export const UnifiedRequestDetailsDialog = ({
     if (file.type.startsWith('image/')) return <ImageIcon className="h-4 w-4" />;
     if (file.type.startsWith('video/')) return <Film className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
+  };
+
+  const toggleStep = (stepValue: string) => {
+    setExpandedSteps(prev => ({ ...prev, [stepValue]: !prev[stepValue] }));
+  };
+
+  const getAttachmentUrl = (path: string) => {
+    const { data } = supabase.storage.from('request-attachments').getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const getAttachmentName = (path: string) => {
+    return path.split('/').pop() || path;
+  };
+
+  const isImagePath = (path: string) => {
+    return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
   };
 
   // History by status for timeline
@@ -429,11 +448,13 @@ export const UnifiedRequestDetailsDialog = ({
                       const isPending = !isCompleted && !isCurrent;
                       const isLast = index === STATUS_FLOW.length - 1;
                       const StepIcon = step.icon;
+                      const hasDetails = historyEntry && ((historyEntry.notes) || (historyEntry.attachments && historyEntry.attachments.length > 0));
+                      const isExpanded = expandedSteps[step.value] || false;
 
                       return (
                         <div key={step.value} className="flex items-start gap-3 relative">
                           {!isLast && (
-                            <div className={`absolute left-[13px] top-[28px] w-0.5 h-8 ${isCompleted ? 'bg-primary' : 'bg-border'}`} />
+                            <div className={`absolute left-[13px] top-[28px] w-0.5 ${isExpanded ? 'h-full' : 'h-8'} ${isCompleted ? 'bg-primary' : 'bg-border'}`} />
                           )}
                           <div className={`relative z-10 flex items-center justify-center w-7 h-7 rounded-full border-2 shrink-0 ${
                             isCompleted ? 'bg-primary border-primary text-primary-foreground'
@@ -442,21 +463,70 @@ export const UnifiedRequestDetailsDialog = ({
                           }`}>
                             {isCompleted ? <Check className="h-3.5 w-3.5" /> : <StepIcon className="h-3.5 w-3.5" />}
                           </div>
-                          <div className={`pb-8 ${isPending ? 'opacity-40' : ''}`}>
-                            <p className={`text-sm font-medium ${isCurrent ? 'text-primary' : ''}`}>{step.label}</p>
-                            {historyEntry ? (
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(historyEntry.changed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </p>
-                            ) : (
-                              <p className="text-xs text-muted-foreground">Pendente</p>
-                            )}
-                            {historyEntry?.attachments && historyEntry.attachments.length > 0 && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <Paperclip className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
-                                  {historyEntry.attachments.length} anexo(s)
-                                </span>
+                          <div className={`pb-8 flex-1 ${isPending ? 'opacity-40' : ''}`}>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className={`text-sm font-medium ${isCurrent ? 'text-primary' : ''}`}>{step.label}</p>
+                                {historyEntry ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    {format(new Date(historyEntry.changed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">Pendente</p>
+                                )}
+                              </div>
+                              {isCompleted && hasDetails && (
+                                <button
+                                  onClick={() => toggleStep(step.value)}
+                                  className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors p-1 rounded-md hover:bg-muted"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Expanded details */}
+                            {isExpanded && historyEntry && (
+                              <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 border border-border">
+                                {historyEntry.notes && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                    <p className="text-sm">{historyEntry.notes}</p>
+                                  </div>
+                                )}
+                                {historyEntry.attachments && historyEntry.attachments.length > 0 && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                                      Anexos ({historyEntry.attachments.length}):
+                                    </p>
+                                    <div className="space-y-1.5">
+                                      {historyEntry.attachments.map((attachment: string, idx: number) => (
+                                        <div key={idx}>
+                                          {isImagePath(attachment) ? (
+                                            <a href={getAttachmentUrl(attachment)} target="_blank" rel="noopener noreferrer">
+                                              <img
+                                                src={getAttachmentUrl(attachment)}
+                                                alt={`Anexo ${idx + 1}`}
+                                                className="rounded-md max-h-40 object-cover border border-border"
+                                              />
+                                            </a>
+                                          ) : (
+                                            <a
+                                              href={getAttachmentUrl(attachment)}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-2 text-sm text-primary hover:underline"
+                                            >
+                                              <Paperclip className="h-3.5 w-3.5" />
+                                              {getAttachmentName(attachment)}
+                                            </a>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
