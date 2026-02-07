@@ -74,10 +74,10 @@ export const useUpdateRequestStatus = () => {
 
 export const useUploadStatusAttachment = () => {
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, requestId }: { file: File; requestId: string }) => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `status-attachments/${fileName}`;
+      const filePath = `${requestId}/status-attachments/${fileName}`;
 
       const { error } = await supabase.storage
         .from('request-attachments')
