@@ -286,26 +286,26 @@ const Usuarios = () => {
     >
       {/* Stats Cards */}
       <div className="mb-6 grid gap-3 grid-cols-2 lg:gap-4 lg:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
+        <div className="rounded-xl border border-border bg-card p-4 text-center shadow-[var(--shadow-card)]">
           <p className="text-2xl font-bold text-foreground">{stats.administradores}</p>
           <p className="text-sm text-muted-foreground">Administradores</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
+        <div className="rounded-xl border border-border bg-card p-4 text-center shadow-[var(--shadow-card)]">
           <p className="text-2xl font-bold text-foreground">{stats.gestores}</p>
           <p className="text-sm text-muted-foreground">Gestores</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
+        <div className="rounded-xl border border-border bg-card p-4 text-center shadow-[var(--shadow-card)]">
           <p className="text-2xl font-bold text-foreground">{stats.motoristas}</p>
           <p className="text-sm text-muted-foreground">Motoristas</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
+        <div className="rounded-xl border border-border bg-card p-4 text-center shadow-[var(--shadow-card)]">
           <p className="text-2xl font-bold text-foreground">{stats.clientes}</p>
           <p className="text-sm text-muted-foreground">Clientes</p>
         </div>
       </div>
 
       {/* Search and Filter */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-4">
+      <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative flex-1 lg:max-w-xl">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -367,7 +367,7 @@ const Usuarios = () => {
       ) : (
         <>
           {/* Table - Desktop */}
-          <div className="hidden rounded-xl border border-border bg-card lg:block">
+          <div className="hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] lg:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -464,7 +464,7 @@ const Usuarios = () => {
           {/* Cards - Mobile */}
           <div className="space-y-3 lg:hidden">
             {filteredUsuarios.map((item) => (
-              <div key={item.id} className="rounded-xl border border-border bg-card p-4">
+              <div key={item.id} className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold ${getInitialBgColor(item.role)}`}>

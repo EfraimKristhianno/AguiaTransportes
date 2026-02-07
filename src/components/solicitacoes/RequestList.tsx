@@ -97,7 +97,7 @@ export const RequestList = () => {
   });
 
   return (
-    <div className="bg-card rounded-lg border h-full flex flex-col">
+    <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)]">
       {/* Header with search and filter */}
       <div className="p-4 border-b flex gap-3 items-center">
         <div className="relative flex-1">
