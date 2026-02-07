@@ -2,13 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, User, Phone, MapPin, Calendar, Upload, X, FileText, Send, Hash } from 'lucide-react';
+import { Plus, User, Phone, MapPin, CalendarIcon, Upload, X, FileText, Send, Hash, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, parse } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { useMaterialTypes } from '@/hooks/useMaterialTypes';
 import { useTransportTypes, useCreateDeliveryRequest, useUploadAttachment } from '@/hooks/useDeliveryRequests';
 import { useAuth } from '@/contexts/AuthContext';
@@ -370,23 +375,76 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             <FormField
               control={form.control}
               name="scheduledDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da solicitação</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      <Input 
-                        {...field} 
-                        type="datetime-local" 
-                        className="pl-9"
-                        placeholder="Selecione a data"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const dateValue = field.value ? new Date(field.value) : undefined;
+                const timeValue = field.value ? format(new Date(field.value), 'HH:mm') : '';
+
+                const handleDateSelect = (day: Date | undefined) => {
+                  if (!day) { field.onChange(''); return; }
+                  const [hours, minutes] = (timeValue || '08:00').split(':').map(Number);
+                  day.setHours(hours, minutes);
+                  field.onChange(day.toISOString());
+                };
+
+                const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const time = e.target.value;
+                  if (!dateValue) {
+                    const today = new Date();
+                    const [h, m] = time.split(':').map(Number);
+                    today.setHours(h, m, 0, 0);
+                    field.onChange(today.toISOString());
+                  } else {
+                    const [h, m] = time.split(':').map(Number);
+                    const updated = new Date(dateValue);
+                    updated.setHours(h, m);
+                    field.onChange(updated.toISOString());
+                  }
+                };
+
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data da solicitação</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value
+                              ? format(new Date(field.value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                              : "Selecione a data"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateValue}
+                          onSelect={handleDateSelect}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                          locale={ptBR}
+                        />
+                        <div className="border-t px-3 py-2 flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="time"
+                            value={timeValue}
+                            onChange={handleTimeChange}
+                            className="w-auto"
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
