@@ -22,7 +22,7 @@ const Motoristas = () => {
   // Driver-specific data
   const { data: currentDriver, isLoading: isLoadingDriver } = useCurrentDriver();
   const driverVehicleTypes = currentDriver?.driver_vehicle_types?.map((dvt: { vehicle_type: string }) => dvt.vehicle_type) || [];
-  const { data: driverRequests = [], isLoading: isLoadingRequests } = useDriverRequests(driverVehicleTypes);
+  const { data: driverRequests = [], isLoading: isLoadingRequests } = useDriverRequests(driverVehicleTypes, currentDriver?.id);
 
   const filteredDrivers = drivers?.filter(driver =>
     driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
