@@ -98,7 +98,7 @@ const Motoristas = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Seus veículos</p>
-                  <p className="text-sm font-medium truncate max-w-[150px]">
+                  <p className="text-sm font-medium">
                     {driverVehicleTypes.join(', ') || '-'}
                   </p>
                 </div>
