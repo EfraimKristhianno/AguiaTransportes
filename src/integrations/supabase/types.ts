@@ -61,6 +61,7 @@ export type Database = {
       }
       delivery_request_status_history: {
         Row: {
+          attachments: Json | null
           changed_at: string | null
           changed_by: string | null
           delivery_request_id: string
@@ -69,6 +70,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          attachments?: Json | null
           changed_at?: string | null
           changed_by?: string | null
           delivery_request_id: string
@@ -77,6 +79,7 @@ export type Database = {
           status: string
         }
         Update: {
+          attachments?: Json | null
           changed_at?: string | null
           changed_by?: string | null
           delivery_request_id?: string

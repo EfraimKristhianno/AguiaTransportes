@@ -15,7 +15,7 @@ import { Eye, Clock, Package, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DriverRequest } from '@/hooks/useDriverRequests';
-import { RequestDetailsDialog } from './RequestDetailsDialog';
+import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
 
 interface DriverRequestsTableProps {
   requests: DriverRequest[];
@@ -218,7 +218,7 @@ export const DriverRequestsTable = ({
         </CardContent>
       </Card>
 
-      <RequestDetailsDialog
+      <UnifiedRequestDetailsDialog
         request={selectedRequest}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
