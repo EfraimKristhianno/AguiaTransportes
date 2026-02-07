@@ -3,15 +3,12 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { RequestForm } from '@/components/solicitacoes/RequestForm';
 import { RequestList } from '@/components/solicitacoes/RequestList';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+
 
 const Solicitacoes = () => {
   const { role } = useAuth();
   
-  // Motoristas não têm acesso à tela de Solicitações - redirecionar para Motoristas
-  if (role === 'motorista') {
-    return <Navigate to="/motoristas" replace />;
-  }
+  
 
   return (
     <DashboardLayout 

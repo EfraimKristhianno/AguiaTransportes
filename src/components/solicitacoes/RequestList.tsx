@@ -5,7 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
-import { RequestTimelineDialog } from './RequestTimelineDialog';
+import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
+import { useCurrentDriver } from '@/hooks/useDriverRequests';
+import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -74,9 +76,12 @@ const getStatusClassName = (status: string | null) => {
 };
 
 export const RequestList = () => {
+  const { role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const { data: currentDriver } = useCurrentDriver();
+  const driverId = role === 'motorista' ? currentDriver?.id : null;
 
   const { data: requests = [], isLoading } = useDeliveryRequests(
     statusFilter === 'all' ? null : statusFilter
@@ -200,10 +205,11 @@ export const RequestList = () => {
         </div>
       </ScrollArea>
 
-      <RequestTimelineDialog
+      <UnifiedRequestDetailsDialog
         request={selectedRequest}
         open={!!selectedRequest}
         onOpenChange={(open) => { if (!open) setSelectedRequest(null); }}
+        driverId={driverId}
       />
     </div>
   );
