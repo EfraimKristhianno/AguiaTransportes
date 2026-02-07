@@ -239,7 +239,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   };
 
   return (
-    <div className="bg-card rounded-lg border p-6">
+    <div className="bg-card rounded-lg border p-4 md:p-6 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-2 mb-6">
         <Plus className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold">Nova Solicitação de Coleta</h2>

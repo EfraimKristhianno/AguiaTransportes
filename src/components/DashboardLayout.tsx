@@ -86,7 +86,7 @@ const DashboardLayout = ({ children, title, subtitle, icon }: DashboardLayoutPro
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border bg-card transition-all duration-300",
+        "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border bg-card shadow-[var(--shadow-card)] transition-all duration-300",
         sidebarCollapsed ? "w-[72px]" : "w-64",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         "lg:translate-x-0"
