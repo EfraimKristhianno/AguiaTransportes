@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { AttachmentItem } from '@/components/shared/AttachmentItem';
 
 interface RequestData {
   id: string;
@@ -270,18 +271,6 @@ export const UnifiedRequestDetailsDialog = ({
     setExpandedSteps(prev => ({ ...prev, [stepValue]: !prev[stepValue] }));
   };
 
-  const getAttachmentUrl = (path: string) => {
-    const { data } = supabase.storage.from('request-attachments').getPublicUrl(path);
-    return data.publicUrl;
-  };
-
-  const getAttachmentName = (path: string) => {
-    return path.split('/').pop() || path;
-  };
-
-  const isImagePath = (path: string) => {
-    return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
-  };
 
   // History by status for timeline
   const historyByStatus: Record<string, { changed_at: string; notes: string | null; attachments?: string[] }> = {};
@@ -448,7 +437,6 @@ export const UnifiedRequestDetailsDialog = ({
                       const isPending = !isCompleted && !isCurrent;
                       const isLast = index === STATUS_FLOW.length - 1;
                       const StepIcon = step.icon;
-                      const hasDetails = historyEntry && ((historyEntry.notes) || (historyEntry.attachments && historyEntry.attachments.length > 0));
                       const isExpanded = expandedSteps[step.value] || false;
 
                       return (
@@ -475,7 +463,7 @@ export const UnifiedRequestDetailsDialog = ({
                                   <p className="text-xs text-muted-foreground">Pendente</p>
                                 )}
                               </div>
-                              {isCompleted && hasDetails && (
+                              {isCompleted && (
                                 <button
                                   onClick={() => toggleStep(step.value)}
                                   className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors p-1 rounded-md hover:bg-muted"
@@ -489,42 +477,38 @@ export const UnifiedRequestDetailsDialog = ({
                             {/* Expanded details */}
                             {isExpanded && historyEntry && (
                               <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 border border-border">
-                                {historyEntry.notes && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Data e hora:</p>
+                                  <p className="text-sm">
+                                    {format(new Date(historyEntry.changed_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+                                  </p>
+                                </div>
+                                {historyEntry.notes ? (
                                   <div>
                                     <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
                                     <p className="text-sm">{historyEntry.notes}</p>
                                   </div>
+                                ) : (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                    <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
+                                  </div>
                                 )}
-                                {historyEntry.attachments && historyEntry.attachments.length > 0 && (
+                                {historyEntry.attachments && historyEntry.attachments.length > 0 ? (
                                   <div>
                                     <p className="text-xs font-medium text-muted-foreground mb-1">
                                       Anexos ({historyEntry.attachments.length}):
                                     </p>
                                     <div className="space-y-1.5">
                                       {historyEntry.attachments.map((attachment: string, idx: number) => (
-                                        <div key={idx}>
-                                          {isImagePath(attachment) ? (
-                                            <a href={getAttachmentUrl(attachment)} target="_blank" rel="noopener noreferrer">
-                                              <img
-                                                src={getAttachmentUrl(attachment)}
-                                                alt={`Anexo ${idx + 1}`}
-                                                className="rounded-md max-h-40 object-cover border border-border"
-                                              />
-                                            </a>
-                                          ) : (
-                                            <a
-                                              href={getAttachmentUrl(attachment)}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="flex items-center gap-2 text-sm text-primary hover:underline"
-                                            >
-                                              <Paperclip className="h-3.5 w-3.5" />
-                                              {getAttachmentName(attachment)}
-                                            </a>
-                                          )}
-                                        </div>
+                                        <AttachmentItem key={idx} path={attachment} index={idx} />
                                       ))}
                                     </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
+                                    <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
                                   </div>
                                 )}
                               </div>
