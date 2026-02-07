@@ -303,16 +303,6 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
         </button>
       </div>
 
-      <p className="mt-4 text-center text-sm text-muted-foreground">
-        Não tem conta?{' '}
-        <button
-          type="button"
-          onClick={onToggleMode}
-          className="font-medium text-primary hover:underline"
-        >
-          Criar agora
-        </button>
-      </p>
     </div>
   );
 };
