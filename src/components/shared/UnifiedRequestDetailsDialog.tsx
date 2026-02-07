@@ -216,7 +216,7 @@ export const UnifiedRequestDetailsDialog = ({
       // Upload pending files
       const paths: string[] = [];
       for (const file of pendingFiles) {
-        const path = await uploadMutation.mutateAsync(file);
+        const path = await uploadMutation.mutateAsync({ file, requestId: request.id });
         paths.push(path);
       }
       await updateStatusMutation.mutateAsync({
