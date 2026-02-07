@@ -13,6 +13,7 @@ import { format, isToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
+import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
 type DeliveryRequest = {
   id: string;
   request_number: number | null;
@@ -59,6 +60,8 @@ const Dashboard = () => {
   } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const isClient = role === 'cliente';
   const isDriver = role === 'motorista';
 
@@ -126,6 +129,26 @@ const Dashboard = () => {
     },
     enabled: (!isClient || !!clientRecord?.id) && (!isDriver || !!currentDriver?.id)
   });
+
+  // Fetch full details for selected request
+  const { data: selectedRequest } = useQuery({
+    queryKey: ['deliveryRequestDetail', selectedRequestId],
+    enabled: !!selectedRequestId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('delivery_requests')
+        .select(`*, clients:client_id(name, phone, email), material_types:material_type_id(name), drivers:driver_id(name)`)
+        .eq('id', selectedRequestId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleViewDetails = (id: string) => {
+    setSelectedRequestId(id);
+    setDetailsOpen(true);
+  };
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -350,7 +373,7 @@ const Dashboard = () => {
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -388,7 +411,7 @@ const Dashboard = () => {
                     <p className="font-medium">{formatDate(item.scheduled_date || item.created_at)}</p>
                   </div>
                   <div className="flex items-end justify-end">
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                   </div>
@@ -396,6 +419,16 @@ const Dashboard = () => {
               </div>)}
           </div>
         </>}
+
+      <UnifiedRequestDetailsDialog
+        request={selectedRequest as any || null}
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setSelectedRequestId(null);
+        }}
+        driverId={currentDriver?.id}
+      />
     </DashboardLayout>;
 };
 export default Dashboard;
