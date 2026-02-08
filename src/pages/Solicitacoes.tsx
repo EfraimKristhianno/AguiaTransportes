@@ -22,6 +22,7 @@ const Solicitacoes = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   return <DashboardLayout title="Solicitações" subtitle={role === 'cliente' ? "Crie e acompanhe suas solicitações de coleta" : "Gerencie as solicitações de coleta"} icon={<FileText className="h-5 w-5" />}>
+
       <div className="flex flex-col gap-4 md:gap-6 mx-0">
         <RequestForm />
         

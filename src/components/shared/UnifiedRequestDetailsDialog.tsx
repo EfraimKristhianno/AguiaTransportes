@@ -223,6 +223,7 @@ export const UnifiedRequestDetailsDialog = ({
         requestId: request.id,
         status: nextStatus,
         attachmentPaths: paths,
+        notes: notesText !== (request.notes || '') ? notesText : undefined,
       });
       setPendingFiles([]);
       onOpenChange(false);
@@ -537,6 +538,17 @@ export const UnifiedRequestDetailsDialog = ({
                     Atualizar para: <span className="text-primary">{nextStatusLabel}</span>
                   </h4>
 
+                  {/* Observação para esta etapa */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Observação da etapa</p>
+                    <Textarea
+                      value={notesText}
+                      onChange={(e) => setNotesText(e.target.value)}
+                      placeholder="Adicione uma observação para esta etapa..."
+                      className="min-h-[60px] resize-none"
+                    />
+                  </div>
+
                   {/* File upload area */}
                   <div className="space-y-2">
                     <input
@@ -561,7 +573,7 @@ export const UnifiedRequestDetailsDialog = ({
                         variant="outline"
                         size="sm"
                         className="flex-1 border-dashed"
-                        onClick={() => cameraInputRef.current?.click()}
+                        onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
                       >
                         <Camera className="h-4 w-4 mr-2" />
                         Tirar Foto
@@ -571,7 +583,7 @@ export const UnifiedRequestDetailsDialog = ({
                         variant="outline"
                         size="sm"
                         className="flex-1 border-dashed"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                       >
                         <Paperclip className="h-4 w-4 mr-2" />
                         Anexar Arquivo

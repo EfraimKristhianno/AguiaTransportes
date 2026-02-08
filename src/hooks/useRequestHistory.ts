@@ -8,6 +8,7 @@ export interface StatusHistoryEntry {
   changed_by: string | null;
   changed_at: string;
   notes: string | null;
+  attachments: string[] | null;
 }
 
 export const useRequestHistory = (requestId: string | null) => {
