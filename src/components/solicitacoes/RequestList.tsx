@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
+import { cn } from '@/lib/utils';
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
     case 'solicitada':
@@ -88,53 +89,53 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all' }: RequestLi
               Carregando solicitações...
             </div> : filteredRequests.length === 0 ? <div className="text-center text-muted-foreground py-8">
               Nenhuma solicitação encontrada
-            </div> : filteredRequests.map(request => <div key={request.id} onClick={() => setSelectedRequest(request)} className="bg-background rounded-lg border p-4 hover:shadow-sm transition-shadow cursor-pointer hover:border-primary/30 mr-0 px-[8px] py-[12px] my-[15px] mx-0">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-primary" />
+             </div> : filteredRequests.map(request => <div key={request.id} onClick={() => setSelectedRequest(request)} className="bg-background rounded-lg border p-3 sm:p-4 hover:shadow-sm transition-shadow cursor-pointer hover:border-primary/30">
+                <div className="flex items-start justify-between gap-2 flex-wrap mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Hash className="h-4 w-4 text-primary shrink-0" />
                     <span className="font-mono font-bold text-primary">
                       #{String(request.request_number || '').padStart(6, '0')}
                     </span>
                   </div>
-                  <Badge variant={getStatusBadgeVariant(request.status)} className={getStatusClassName(request.status)}>
+                  <Badge variant={getStatusBadgeVariant(request.status)} className={cn("shrink-0 text-xs", getStatusClassName(request.status))}>
                     {getStatusLabel(request.status)}
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-sm font-medium">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium break-words">
                     {request.clients?.name || 'Cliente não especificado'}
                   </span>
                   {request.clients?.phone && <>
-                      <Phone className="h-3 w-3 text-muted-foreground ml-2" />
-                      <span className="text-xs text-muted-foreground">
+                      <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
                         {request.clients.phone}
                       </span>
                     </>}
                 </div>
 
-                <div className="flex items-center gap-2 mb-2">
-                  <Package className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-sm">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <Package className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <span className="text-sm break-words">
                     {request.material_types?.name || 'Material não especificado'}
                   </span>
                   <span className="text-xs text-muted-foreground">•</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground break-words">
                     {request.transport_type || 'Transporte não especificado'}
                   </span>
                 </div>
 
                 <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="truncate">{request.origin_address}</p>
-                    <p className="truncate">→ {request.destination_address}</p>
+                  <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words">{request.origin_address}</p>
+                    <p className="break-words">→ {request.destination_address}</p>
                   </div>
                 </div>
 
                 <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
+                  <Clock className="h-3 w-3 shrink-0" />
                   {request.created_at ? format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", {
               locale: ptBR
             }) : 'Data não disponível'}
