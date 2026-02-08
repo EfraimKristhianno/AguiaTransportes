@@ -27,8 +27,11 @@ const requestSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   requester: z.string().optional(),
+  requesterPhone: z.string().optional(),
   originAddress: z.string().min(1, 'Endereço de coleta é obrigatório'),
   destinationAddress: z.string().min(1, 'Endereço de entrega é obrigatório'),
+  invoiceNumber: z.string().min(1, 'Nota Fiscal é obrigatória'),
+  opNumber: z.string().optional(),
   scheduledDate: z.string().optional(),
   materialTypeId: z.string().min(1, 'Tipo de material é obrigatório'),
   transportType: z.string().min(1, 'Tipo de transporte é obrigatório'),
@@ -107,8 +110,11 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       phone: '',
       email: '',
       requester: '',
+      requesterPhone: '',
       originAddress: '',
       destinationAddress: '',
+      invoiceNumber: '',
+      opNumber: '',
       scheduledDate: '',
       materialTypeId: '',
       transportType: '',
@@ -193,6 +199,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         transport_type: data.transportType,
         notes: data.notes || null,
         requester: data.requester || null,
+        requester_phone: data.requesterPhone || null,
+        invoice_number: data.invoiceNumber || null,
+        op_number: data.opNumber || null,
         attachments: uploadedPaths,
         status: 'solicitada',
       });
@@ -204,8 +213,11 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           phone: userProfile?.phone || '',
           email: userProfile?.email || '',
           requester: '',
+          requesterPhone: '',
           originAddress: '',
           destinationAddress: '',
+          invoiceNumber: '',
+          opNumber: '',
           scheduledDate: '',
           materialTypeId: '',
           transportType: '',
@@ -230,8 +242,11 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         phone: userProfile?.phone || '',
         email: userProfile?.email || '',
         requester: '',
+        requesterPhone: '',
         originAddress: '',
         destinationAddress: '',
+        invoiceNumber: '',
+        opNumber: '',
         scheduledDate: '',
         materialTypeId: '',
         transportType: '',
@@ -371,7 +386,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           </div>
 
           {/* Date and Requester */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
               name="scheduledDate"
@@ -460,6 +475,23 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="requesterPhone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone do solicitante</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input {...field} placeholder="(00) 00000-0000" className="pl-9" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           {/* Origin Address */}
@@ -500,6 +532,40 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             )}
           />
 
+          {/* NF and OP fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="invoiceNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nota Fiscal *</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input {...field} placeholder="Número da NF" className="pl-9" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="opNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>O.P.</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Número da O.P." />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           {/* Notes */}
           <FormField
             control={form.control}
@@ -523,13 +589,15 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           <div>
             <Label>Anexos (fotos, documentos, vídeos)</Label>
             <div
-              className="mt-2 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              className="mt-2 border-2 border-dashed rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Clique para selecionar ou arraste arquivos
-              </p>
+              <div className="text-center">
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Clique para selecionar ou arraste arquivos
+                </p>
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -538,31 +606,31 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 onChange={handleFileSelect}
                 accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
               />
-            </div>
 
-            {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {attachments.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md text-sm"
-                  >
-                    <FileText className="h-4 w-4" />
-                    <span className="max-w-[150px] truncate">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeAttachment(index);
-                      }}
-                      className="text-muted-foreground hover:text-foreground"
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-dashed">
+                  {attachments.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md text-sm"
                     >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+                      <FileText className="h-4 w-4" />
+                      <span className="max-w-[150px] truncate">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeAttachment(index);
+                        }}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Buttons */}

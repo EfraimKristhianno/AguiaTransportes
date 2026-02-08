@@ -106,11 +106,14 @@ export type Database = {
           destination_address: string
           driver_id: string | null
           id: string
+          invoice_number: string | null
           material_type_id: string | null
           notes: string | null
+          op_number: string | null
           origin_address: string
           request_number: number
           requester: string | null
+          requester_phone: string | null
           scheduled_date: string | null
           status: string | null
           transport_type: string | null
@@ -125,11 +128,14 @@ export type Database = {
           destination_address: string
           driver_id?: string | null
           id?: string
+          invoice_number?: string | null
           material_type_id?: string | null
           notes?: string | null
+          op_number?: string | null
           origin_address: string
           request_number?: number
           requester?: string | null
+          requester_phone?: string | null
           scheduled_date?: string | null
           status?: string | null
           transport_type?: string | null
@@ -144,11 +150,14 @@ export type Database = {
           destination_address?: string
           driver_id?: string | null
           id?: string
+          invoice_number?: string | null
           material_type_id?: string | null
           notes?: string | null
+          op_number?: string | null
           origin_address?: string
           request_number?: number
           requester?: string | null
+          requester_phone?: string | null
           scheduled_date?: string | null
           status?: string | null
           transport_type?: string | null

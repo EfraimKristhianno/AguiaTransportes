@@ -91,9 +91,11 @@ export const RequestList = () => {
     const materialName = request.material_types?.name?.toLowerCase() || '';
     const clientName = request.clients?.name?.toLowerCase() || '';
     const requestNumber = String(request.request_number || '');
+    const invoiceNumber = (request.invoice_number || '').toLowerCase();
+    const opNumber = (request.op_number || '').toLowerCase();
     const search = searchTerm.toLowerCase();
     
-    return materialName.includes(search) || clientName.includes(search) || requestNumber.includes(search);
+    return materialName.includes(search) || clientName.includes(search) || requestNumber.includes(search) || invoiceNumber.includes(search) || opNumber.includes(search);
   });
 
   return (
@@ -103,7 +105,7 @@ export const RequestList = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por ID, cliente ou material..."
+            placeholder="Buscar por ID, cliente, material, NF ou O.P..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
