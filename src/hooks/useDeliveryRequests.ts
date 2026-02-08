@@ -18,25 +18,31 @@ export interface DeliveryRequest {
   created_at: string | null;
   updated_at: string | null;
   requester: string | null;
+  requester_phone: string | null;
   transport_type: string | null;
+  invoice_number: string | null;
+  op_number: string | null;
   attachments: string[] | null;
   clients?: { name: string; phone: string | null; email: string | null } | null;
   material_types?: { name: string } | null;
   drivers?: { name: string } | null;
 }
  
- export interface CreateDeliveryRequestInput {
-   client_id?: string | null;
-   origin_address: string;
-   destination_address: string;
-   scheduled_date?: string | null;
-   material_type_id?: string | null;
-   transport_type?: string | null;
-   notes?: string | null;
-   requester?: string | null;
-   attachments?: string[];
-   status?: string;
- }
+export interface CreateDeliveryRequestInput {
+  client_id?: string | null;
+  origin_address: string;
+  destination_address: string;
+  scheduled_date?: string | null;
+  material_type_id?: string | null;
+  transport_type?: string | null;
+  notes?: string | null;
+  requester?: string | null;
+  requester_phone?: string | null;
+  invoice_number?: string | null;
+  op_number?: string | null;
+  attachments?: string[];
+  status?: string;
+}
  
  export const useDeliveryRequests = (statusFilter?: string | null) => {
    return useQuery({
