@@ -1,49 +1,31 @@
 
 
-## Correção Definitiva dos Anexos
+## Aplicar Novo Tema tweakcn.com
 
-### Problema Identificado
+### O que sera feito
 
-Os arquivos estao sendo salvos no bucket com o caminho `status-attachments/{nomeArquivo}`, porem a politica de seguranca (RLS) do bucket exige que o caminho comece com o **ID da solicitacao** (`{delivery_request_id}/...`). Por isso, usuarios que nao sao admin/gestor nunca conseguem visualizar os anexos -- a politica de acesso simplesmente nao reconhece o arquivo como pertencente a nenhuma solicitacao.
+Substituir completamente o tema atual (baseado em HSL) pelo novo tema fornecido (baseado em OKLCH), atualizando cores, fontes, sombras e border-radius em toda a aplicacao.
 
-### Solucao
+### Alteracoes
 
-1. **Corrigir o caminho de upload** no hook `useUpdateRequestStatus.ts`:
-   - Antes: `status-attachments/{fileName}`
-   - Depois: `{requestId}/status-attachments/{fileName}`
-   - Isso faz com que a politica RLS existente reconheca o arquivo e autorize a leitura
+**1. `src/index.css` -- Substituir variaveis CSS**
+- Trocar todas as variaveis `:root` e `.dark` pelas novas variaveis OKLCH fornecidas
+- Manter as classes utilitarias customizadas (hero-gradient, feature-card, etc.) mas atualizar suas referencias de cor para o novo primary
+- Adicionar import das fontes Google: Plus Jakarta Sans, Lora e Roboto Mono (substituindo Inter)
+- Atualizar o `font-family` do body para usar Plus Jakarta Sans
 
-2. **Passar o `requestId` para a funcao de upload**:
-   - Alterar `useUploadStatusAttachment` para receber o `requestId` como parametro
-   - Atualizar a chamada no `UnifiedRequestDetailsDialog.tsx` para passar o ID da solicitacao
+**2. `tailwind.config.ts` -- Atualizar mapeamento de cores**
+- Trocar `hsl(var(--...))` por `oklch(var(--...))` em todas as referencias de cor (background, foreground, primary, secondary, etc.)
+- Atualizar fontFamily para Plus Jakarta Sans, Lora e Roboto Mono
+- Manter keyframes, animacoes e container inalterados
 
-3. **Adicionar politica de acesso mais ampla para `status-attachments/`**:
-   - Criar uma politica SELECT adicional que permita usuarios autenticados acessarem arquivos cujo caminho comeca com um `delivery_request_id` ao qual eles estao vinculados (como cliente ou motorista)
-   - Isso garante compatibilidade com arquivos antigos no caminho `status-attachments/` sem prefixo
+**3. `index.html` -- Adicionar fontes**
+- Adicionar link do Google Fonts para Plus Jakarta Sans, Lora e Roboto Mono no `<head>`
 
-4. **Migrar arquivos antigos (SQL)**:
-   - Atualizar os registros existentes na tabela `delivery_request_status_history` para corrigir os caminhos dos anexos ja salvos, adicionando o prefixo do `delivery_request_id`
+### Observacoes importantes
 
-### Detalhes Tecnicos
-
-**Arquivo: `src/hooks/useUpdateRequestStatus.ts`**
-- `useUploadStatusAttachment` passara a receber `{ file, requestId }` em vez de apenas `file`
-- Caminho gerado: `${requestId}/status-attachments/${fileName}`
-
-**Arquivo: `src/components/shared/UnifiedRequestDetailsDialog.tsx`**
-- Atualizar a chamada de upload para incluir `requestId`:
-  ```
-  uploadMutation.mutateAsync({ file, requestId: request.id })
-  ```
-
-**Migracao SQL:**
-- Atualizar os caminhos dos anexos existentes na tabela `delivery_request_status_history` para incluir o prefixo `delivery_request_id`
-- Mover os objetos no bucket usando funcao SQL ou marcar para reupload
-
-**Nova politica de storage (fallback):**
-- Adicionar politica SELECT para cobrir o padrao `status-attachments/%` vinculando ao `delivery_request_status_history.attachments` contendo o path
-
-### Resultado Esperado
-
-Todos os anexos, novos e antigos, serao acessiveis por clientes e motoristas vinculados a solicitacao, sem erros de carregamento.
+- O bloco `@theme inline` fornecido e especifico do Tailwind CSS v4. Como este projeto usa Tailwind v3, esse bloco sera ignorado -- as variaveis serao mapeadas diretamente via `tailwind.config.ts`
+- As variaveis customizadas `--aguia-red`, `--gradient-hero`, `--shadow-card` etc. serao removidas ou atualizadas para usar o novo primary OKLCH
+- O `--radius` muda de `1rem` para `1.2rem`, aumentando levemente o arredondamento dos componentes
+- O `--spacing` muda de `0.25rem` para `0.23rem`
 
