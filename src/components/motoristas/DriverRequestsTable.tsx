@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DriverRequest } from '@/hooks/useDriverRequests';
 import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
+import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 
 interface DriverRequestsTableProps {
   requests: DriverRequest[];
@@ -30,6 +31,10 @@ export const DriverRequestsTable = ({
 }: DriverRequestsTableProps) => {
   const [selectedRequest, setSelectedRequest] = useState<DriverRequest | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -80,6 +85,14 @@ export const DriverRequestsTable = ({
 
   return (
     <>
+      <div className="mb-4">
+        <RequestSearchBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+        />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -113,7 +126,7 @@ export const DriverRequestsTable = ({
                       <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                     </TableRow>
                   ))
-                ) : requests.length === 0 ? (
+                ) : filteredRequests.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
                       <div className="flex flex-col items-center justify-center gap-2">
@@ -125,7 +138,7 @@ export const DriverRequestsTable = ({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  requests.map((request) => (
+                  filteredRequests.map((request) => (
                     <TableRow key={request.id}>
                       <TableCell>
                         <span className="font-mono font-bold text-primary">
@@ -176,7 +189,7 @@ export const DriverRequestsTable = ({
                   <Skeleton className="h-6 w-20" />
                 </div>
               ))
-            ) : requests.length === 0 ? (
+            ) : filteredRequests.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2">
                 <Package className="h-8 w-8 text-muted-foreground" />
                 <p className="text-muted-foreground text-center">
@@ -184,7 +197,7 @@ export const DriverRequestsTable = ({
                 </p>
               </div>
             ) : (
-              requests.map((request) => (
+              filteredRequests.map((request) => (
                 <div
                   key={request.id}
                   className="rounded-xl border border-border bg-card p-4"

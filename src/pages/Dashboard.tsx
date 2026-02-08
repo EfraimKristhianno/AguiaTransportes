@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
-import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Search, Filter, Eye, TrendingUp, Loader2, Hash, MapPin } from 'lucide-react';
+import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
 import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
+import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 type DeliveryRequest = {
   id: string;
   request_number: number | null;
@@ -34,32 +33,13 @@ type DeliveryRequest = {
     type: string;
   } | null;
 };
-const STATUS_OPTIONS = [{
-  value: 'todos',
-  label: 'Todos'
-}, {
-  value: 'solicitada',
-  label: 'Solicitada'
-}, {
-  value: 'aceita',
-  label: 'Aceita'
-}, {
-  value: 'coletada',
-  label: 'Coletada'
-}, {
-  value: 'em_rota',
-  label: 'Em Trânsito'
-}, {
-  value: 'entregue',
-  label: 'Entregue'
-}];
 const Dashboard = () => {
   const {
     user,
     role
   } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('todos');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isClient = role === 'cliente';
@@ -102,6 +82,8 @@ const Dashboard = () => {
           origin_address,
           destination_address,
           driver_id,
+          invoice_number,
+          op_number,
           client:clients(name, phone, email),
           material_type:material_types(name),
           vehicle:vehicles(type)
@@ -177,21 +159,7 @@ const Dashboard = () => {
 
   // Filter delivery requests
   const filteredRequests = useMemo(() => {
-    return deliveryRequests.filter(item => {
-      const requestNumber = String(item.request_number || '');
-      const matchesSearch = item.client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || item.material_type?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || requestNumber.includes(searchQuery);
-
-      // Handle legacy status mapping
-      let matchesStatus = statusFilter === 'todos';
-      if (!matchesStatus) {
-        if (statusFilter === 'solicitada') {
-          matchesStatus = item.status === 'solicitada' || item.status === 'enviada';
-        } else {
-          matchesStatus = item.status === statusFilter;
-        }
-      }
-      return matchesSearch && matchesStatus;
-    });
+    return filterRequestsBySearch(deliveryRequests, searchQuery, statusFilter);
   }, [deliveryRequests, searchQuery, statusFilter]);
   const getStatusBadge = (status: string | null) => {
     const statusConfig: Record<string, {
@@ -308,26 +276,13 @@ const Dashboard = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-2xl">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1 lg:max-w-xl">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar por ID, cliente ou material..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map(option => <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      <div className="mb-6">
+        <RequestSearchBar
+          searchTerm={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+        />
       </div>
 
       {/* Table */}
@@ -336,7 +291,7 @@ const Dashboard = () => {
         </div> : filteredRequests.length === 0 ? <div className="flex flex-col items-center justify-center py-12 text-center shadow-xl">
           <Package className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-muted-foreground">
-            {searchQuery || statusFilter !== 'todos' ? 'Nenhuma solicitação encontrada com os filtros aplicados' : 'Nenhuma solicitação cadastrada'}
+            {searchQuery || statusFilter !== 'all' ? 'Nenhuma solicitação encontrada com os filtros aplicados' : 'Nenhuma solicitação cadastrada'}
           </p>
         </div> : <>
           {/* Table - Desktop */}

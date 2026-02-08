@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Clock, Package, Hash, MapPin, User, Phone } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Clock, Package, Hash, MapPin, User, Phone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
@@ -10,25 +8,7 @@ import { useCurrentDriver } from '@/hooks/useDriverRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-const STATUS_OPTIONS = [{
-  value: 'all',
-  label: 'Todos'
-}, {
-  value: 'solicitada',
-  label: 'Solicitada'
-}, {
-  value: 'aceita',
-  label: 'Aceita'
-}, {
-  value: 'coletada',
-  label: 'Coletada'
-}, {
-  value: 'em_rota',
-  label: 'Em Trânsito'
-}, {
-  value: 'entregue',
-  label: 'Entregue'
-}];
+import { filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
     case 'solicitada':
@@ -98,16 +78,8 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all' }: RequestLi
   const {
     data: requests = [],
     isLoading
-  } = useDeliveryRequests(statusFilter === 'all' ? null : statusFilter);
-  const filteredRequests = requests.filter(request => {
-    const materialName = request.material_types?.name?.toLowerCase() || '';
-    const clientName = request.clients?.name?.toLowerCase() || '';
-    const requestNumber = String(request.request_number || '');
-    const invoiceNumber = (request.invoice_number || '').toLowerCase();
-    const opNumber = (request.op_number || '').toLowerCase();
-    const search = searchTerm.toLowerCase();
-    return materialName.includes(search) || clientName.includes(search) || requestNumber.includes(search) || invoiceNumber.includes(search) || opNumber.includes(search);
-  });
+  } = useDeliveryRequests();
+  const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter);
   return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)]">
       {/* Request List */}
       <ScrollArea className="flex-1">
