@@ -81,12 +81,15 @@ const getStatusClassName = (status: string | null) => {
       return 'bg-amber-50 text-amber-700 border-amber-200';
   }
 };
-export const RequestList = () => {
+interface RequestListProps {
+  searchTerm?: string;
+  statusFilter?: string;
+}
+
+export const RequestList = ({ searchTerm = '', statusFilter = 'all' }: RequestListProps) => {
   const {
     role
   } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const {
     data: currentDriver
@@ -106,27 +109,6 @@ export const RequestList = () => {
     return materialName.includes(search) || clientName.includes(search) || requestNumber.includes(search) || invoiceNumber.includes(search) || opNumber.includes(search);
   });
   return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)]">
-      {/* Header with search and filter */}
-      <div className="p-4 border-b flex gap-3 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por ID, cliente, material, NF ou O.P..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map(option => <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {/* Request List */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3">
