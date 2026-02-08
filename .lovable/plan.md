@@ -1,30 +1,29 @@
 
-## Layout Horizontal: Formulario em cima, Lista embaixo
 
-### Mudanca principal
+## Aplicar novo tema do tweakcn.com
 
-Alterar o layout da pagina de Solicitacoes de **duas colunas lado a lado** (formulario a esquerda, lista a direita) para **layout vertical empilhado** (formulario na parte de cima ocupando toda a largura, barra de busca logo abaixo, e lista de solicitacoes embaixo).
+### O que sera feito
+
+Atualizar as variaveis CSS no arquivo `src/index.css` com os novos valores de tema fornecidos.
 
 ### Alteracoes
 
-**`src/pages/Solicitacoes.tsx`**
-- Remover o grid de 2 colunas (`grid-cols-1 lg:grid-cols-2`)
-- Substituir por layout vertical (`flex flex-col` ou `space-y-4`) com largura total
-- Manter a ordem: RequestForm > barra de busca/filtro > RequestList
-- Ajustar a altura da RequestList para funcionar bem no layout empilhado (ex: `h-[500px]` fixo ou similar)
+**`src/index.css`** - Atualizar as variaveis `:root` com os novos valores:
 
-### Detalhes tecnicos
+Diferencas principais no modo claro (`:root`):
+- `--background`: de `0.9232` para `0.9158`
+- `--border`: de `0.8687 0.0043 56.3660` para `0.9067 0 0`
+- `--input`: de `0.8687 0.0043 56.3660` para `0.7889 0 0`
+- `--sidebar-accent`: de `0.9376 0.0260 321.9388` para `0.9146 0.0025 345.2172`
 
-Estrutura resultante:
+O modo escuro (`.dark`) permanece praticamente igual.
 
-```text
-+--------------------------------------------------+
-|  RequestForm (largura total, horizontal)          |
-+--------------------------------------------------+
-|  Busca + Filtro de status                         |
-+--------------------------------------------------+
-|  RequestList (largura total, abaixo)              |
-+--------------------------------------------------+
-```
+### Nota tecnica
 
-Apenas o arquivo `src/pages/Solicitacoes.tsx` sera alterado. O formulario e a lista continuam como componentes independentes -- so muda a disposicao no layout pai.
+O bloco `@theme inline` fornecido e uma funcionalidade do Tailwind CSS v4. Este projeto usa Tailwind v3 com `@tailwind base/components/utilities`, entao esse bloco **nao sera adicionado** pois causaria erros. As variaveis CSS ja sao mapeadas pelo `tailwind.config.ts` existente, que cumpre a mesma funcao.
+
+O comando `npx shadcn@latest add` tambem nao sera executado diretamente, pois o tema sera aplicado manualmente atraves das variaveis CSS -- resultado identico e mais seguro.
+
+### Arquivo alterado
+- `src/index.css` (unico arquivo)
+
