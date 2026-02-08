@@ -22,42 +22,39 @@ const Solicitacoes = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   return <DashboardLayout title="Solicitações" subtitle={role === 'cliente' ? "Crie e acompanhe suas solicitações de coleta" : "Gerencie as solicitações de coleta"} icon={<FileText className="h-5 w-5" />}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 h-auto lg:h-[calc(100vh-180px)] mx-0">
-        {/* Left side - Form + Search */}
-        <div className="overflow-auto space-y-4">
-          <RequestForm />
-          
-          {/* Search and filter bar */}
-          <div className="bg-card rounded-lg border p-4 flex gap-3 items-center shadow-[var(--shadow-card)]">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por ID, cliente, material, NF ou O.P..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="flex flex-col gap-4 md:gap-6 mx-0">
+        <RequestForm />
+        
+        {/* Search and filter bar */}
+        <div className="bg-card rounded-lg border p-4 flex gap-3 items-center shadow-[var(--shadow-card)]">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por ID, cliente, material, NF ou O.P..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Right side - Request List */}
-        <div className="h-[500px] lg:h-full">
+        {/* Request List */}
+        <div className="h-[500px]">
           <RequestList searchTerm={searchTerm} statusFilter={statusFilter} />
         </div>
       </div>
