@@ -80,7 +80,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all' }: RequestLi
     isLoading
   } = useDeliveryRequests();
   const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter);
-  return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)]">
+  return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
       {/* Request List */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3">

@@ -129,9 +129,9 @@ const DashboardLayout = ({
       </aside>
 
       {/* Main content */}
-      <main className={cn("flex-1 p-4 pt-16 transition-all duration-300 lg:p-8 lg:pt-8 relative z-0 shadow-xl", sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-64")}>
+      <main className={cn("flex-1 min-w-0 overflow-x-hidden p-4 pt-16 transition-all duration-300 lg:p-8 lg:pt-8 relative z-0", sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-64")}>
         {/* Header */}
-        <div className="mb-6 flex items-center gap-3 lg:mb-8 shadow-xl">
+        <div className="mb-6 flex items-center gap-3 lg:mb-8">
           {icon && <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
               {icon}
             </div>}
