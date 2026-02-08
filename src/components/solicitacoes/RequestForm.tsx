@@ -588,49 +588,54 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           {/* Attachments */}
           <div>
             <Label>Anexos (fotos, documentos, vídeos)</Label>
-            <div
-              className="mt-2 border-2 border-dashed rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <div className="text-center">
-                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Clique para selecionar ou arraste arquivos
-                </p>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleFileSelect}
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              />
-
-              {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-dashed">
-                  {attachments.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md text-sm"
-                    >
-                      <FileText className="h-4 w-4" />
-                      <span className="max-w-[150px] truncate">{file.name}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeAttachment(index);
-                        }}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                handleFileSelect(e);
+                // Reset value so the same file can be re-selected
+                e.target.value = '';
+              }}
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+            />
+            <div className="mt-2 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 border-dashed h-auto py-3"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Selecionar Arquivos
+              </Button>
             </div>
+
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {attachments.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md text-sm"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="max-w-[150px] truncate">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeAttachment(index);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Buttons */}

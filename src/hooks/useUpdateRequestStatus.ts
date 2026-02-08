@@ -6,13 +6,14 @@ interface UpdateStatusInput {
   requestId: string;
   status: string;
   attachmentPaths?: string[];
+  notes?: string;
 }
 
 export const useUpdateRequestStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ requestId, status, attachmentPaths = [] }: UpdateStatusInput) => {
+    mutationFn: async ({ requestId, status, attachmentPaths = [], notes }: UpdateStatusInput) => {
       // 1. Update the delivery request status (trigger will create history entry)
       const updateData: Record<string, unknown> = {
         status,
@@ -29,9 +30,8 @@ export const useUpdateRequestStatus = () => {
 
       if (updateError) throw updateError;
 
-      // 2. If there are attachments, update the latest history entry for this status
-      if (attachmentPaths.length > 0) {
-        // Find the history entry just created by the trigger
+      // 2. Update the latest history entry with attachments and/or notes
+      if (attachmentPaths.length > 0 || notes) {
         const { data: historyEntries, error: historyError } = await supabase
           .from('delivery_request_status_history')
           .select('id')
@@ -43,9 +43,13 @@ export const useUpdateRequestStatus = () => {
         if (historyError) throw historyError;
 
         if (historyEntries && historyEntries.length > 0) {
+          const historyUpdate: Record<string, unknown> = {};
+          if (attachmentPaths.length > 0) historyUpdate.attachments = attachmentPaths;
+          if (notes) historyUpdate.notes = notes;
+
           const { error: attachError } = await supabase
             .from('delivery_request_status_history')
-            .update({ attachments: attachmentPaths })
+            .update(historyUpdate)
             .eq('id', historyEntries[0].id);
 
           if (attachError) throw attachError;
