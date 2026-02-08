@@ -1,31 +1,30 @@
 
+## Layout Horizontal: Formulario em cima, Lista embaixo
 
-## Aplicar Novo Tema tweakcn.com
+### Mudanca principal
 
-### O que sera feito
-
-Substituir completamente o tema atual (baseado em HSL) pelo novo tema fornecido (baseado em OKLCH), atualizando cores, fontes, sombras e border-radius em toda a aplicacao.
+Alterar o layout da pagina de Solicitacoes de **duas colunas lado a lado** (formulario a esquerda, lista a direita) para **layout vertical empilhado** (formulario na parte de cima ocupando toda a largura, barra de busca logo abaixo, e lista de solicitacoes embaixo).
 
 ### Alteracoes
 
-**1. `src/index.css` -- Substituir variaveis CSS**
-- Trocar todas as variaveis `:root` e `.dark` pelas novas variaveis OKLCH fornecidas
-- Manter as classes utilitarias customizadas (hero-gradient, feature-card, etc.) mas atualizar suas referencias de cor para o novo primary
-- Adicionar import das fontes Google: Plus Jakarta Sans, Lora e Roboto Mono (substituindo Inter)
-- Atualizar o `font-family` do body para usar Plus Jakarta Sans
+**`src/pages/Solicitacoes.tsx`**
+- Remover o grid de 2 colunas (`grid-cols-1 lg:grid-cols-2`)
+- Substituir por layout vertical (`flex flex-col` ou `space-y-4`) com largura total
+- Manter a ordem: RequestForm > barra de busca/filtro > RequestList
+- Ajustar a altura da RequestList para funcionar bem no layout empilhado (ex: `h-[500px]` fixo ou similar)
 
-**2. `tailwind.config.ts` -- Atualizar mapeamento de cores**
-- Trocar `hsl(var(--...))` por `oklch(var(--...))` em todas as referencias de cor (background, foreground, primary, secondary, etc.)
-- Atualizar fontFamily para Plus Jakarta Sans, Lora e Roboto Mono
-- Manter keyframes, animacoes e container inalterados
+### Detalhes tecnicos
 
-**3. `index.html` -- Adicionar fontes**
-- Adicionar link do Google Fonts para Plus Jakarta Sans, Lora e Roboto Mono no `<head>`
+Estrutura resultante:
 
-### Observacoes importantes
+```text
++--------------------------------------------------+
+|  RequestForm (largura total, horizontal)          |
++--------------------------------------------------+
+|  Busca + Filtro de status                         |
++--------------------------------------------------+
+|  RequestList (largura total, abaixo)              |
++--------------------------------------------------+
+```
 
-- O bloco `@theme inline` fornecido e especifico do Tailwind CSS v4. Como este projeto usa Tailwind v3, esse bloco sera ignorado -- as variaveis serao mapeadas diretamente via `tailwind.config.ts`
-- As variaveis customizadas `--aguia-red`, `--gradient-hero`, `--shadow-card` etc. serao removidas ou atualizadas para usar o novo primary OKLCH
-- O `--radius` muda de `1rem` para `1.2rem`, aumentando levemente o arredondamento dos componentes
-- O `--spacing` muda de `0.25rem` para `0.23rem`
-
+Apenas o arquivo `src/pages/Solicitacoes.tsx` sera alterado. O formulario e a lista continuam como componentes independentes -- so muda a disposicao no layout pai.
