@@ -137,6 +137,7 @@ export const UnifiedRequestDetailsDialog = ({
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const isProcessingFile = useRef(false);
 
   const { data: history = [], isLoading: isLoadingHistory } = useRequestHistory(
     open && request ? request.id : null
@@ -268,7 +269,18 @@ export const UnifiedRequestDetailsDialog = ({
     } finally { setIsUpdatingStatus(false); }
   };
 
+  const triggerFileInput = (inputRef: React.RefObject<HTMLInputElement>) => {
+    isProcessingFile.current = true;
+    const resetOnFocus = () => {
+      setTimeout(() => { isProcessingFile.current = false; }, 500);
+      window.removeEventListener('focus', resetOnFocus);
+    };
+    window.addEventListener('focus', resetOnFocus);
+    inputRef.current?.click();
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    isProcessingFile.current = false;
     const files = Array.from(e.target.files || []);
     setPendingFiles(prev => [...prev, ...files]);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -322,7 +334,10 @@ export const UnifiedRequestDetailsDialog = ({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!newOpen && isProcessingFile.current) return;
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()}>
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
@@ -650,7 +665,7 @@ export const UnifiedRequestDetailsDialog = ({
                         variant="outline"
                         size="sm"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+                        onClick={(e) => { e.stopPropagation(); triggerFileInput(cameraInputRef); }}
                       >
                         <Camera className="h-4 w-4 mr-2" />
                         Tirar Foto
@@ -660,7 +675,7 @@ export const UnifiedRequestDetailsDialog = ({
                         variant="outline"
                         size="sm"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                        onClick={(e) => { e.stopPropagation(); triggerFileInput(fileInputRef); }}
                       >
                         <Paperclip className="h-4 w-4 mr-2" />
                         Anexar Arquivo
@@ -741,7 +756,7 @@ export const UnifiedRequestDetailsDialog = ({
                         variant="outline"
                         size="sm"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+                        onClick={(e) => { e.stopPropagation(); triggerFileInput(cameraInputRef); }}
                       >
                         <Camera className="h-4 w-4 mr-2" />
                         Tirar Foto
@@ -751,7 +766,7 @@ export const UnifiedRequestDetailsDialog = ({
                         variant="outline"
                         size="sm"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                        onClick={(e) => { e.stopPropagation(); triggerFileInput(fileInputRef); }}
                       >
                         <Paperclip className="h-4 w-4 mr-2" />
                         Anexar Arquivo
