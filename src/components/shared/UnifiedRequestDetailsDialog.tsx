@@ -523,6 +523,21 @@ export const UnifiedRequestDetailsDialog = ({
                 )}
               </div>
 
+              {/* Anexos do solicitante */}
+              {request.attachments && Array.isArray(request.attachments) && (request.attachments as string[]).length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    <h4 className="text-sm font-medium text-muted-foreground">Anexos</h4>
+                  </div>
+                  <div className="grid gap-2">
+                    {(request.attachments as string[]).map((path, index) => (
+                      <AttachmentItem key={path} path={path} index={index} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Separator />
 
               {/* Timeline */}
