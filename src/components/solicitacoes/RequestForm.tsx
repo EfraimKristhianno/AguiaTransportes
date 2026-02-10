@@ -143,13 +143,6 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const onSubmit = async (data: RequestFormData) => {
     setIsSubmitting(true);
     try {
-      // Upload attachments
-      const uploadedPaths: string[] = [];
-      for (const file of attachments) {
-        const path = await uploadAttachment.mutateAsync(file);
-        uploadedPaths.push(path);
-      }
-
       // Create or find client - essential for RLS to work
       let clientId = clientRecord?.id;
       // Normalize email to lowercase for case-insensitive matching with RLS policies
@@ -190,7 +183,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         throw new Error('É necessário um email válido para criar a solicitação.');
       }
 
-      await createRequest.mutateAsync({
+      // 1. Create the request first (without attachments)
+      const createdRequest = await createRequest.mutateAsync({
         client_id: clientId,
         origin_address: data.originAddress,
         destination_address: data.destinationAddress,
@@ -202,9 +196,32 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         requester_phone: data.requesterPhone || null,
         invoice_number: data.invoiceNumber || null,
         op_number: data.opNumber || null,
-        attachments: uploadedPaths,
+        attachments: [],
         status: 'solicitada',
       });
+
+      // 2. Upload attachments using the requestId in the path (required by RLS)
+      if (attachments.length > 0 && createdRequest?.id) {
+        const uploadedPaths: string[] = [];
+        for (const file of attachments) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `${createdRequest.id}/status-attachments/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('request-attachments')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+          uploadedPaths.push(filePath);
+        }
+
+        // 3. Update the request with attachment paths
+        await supabase
+          .from('delivery_requests')
+          .update({ attachments: uploadedPaths })
+          .eq('id', createdRequest.id);
+      }
 
       // Reset form (keep client data for clients)
       if (isClient) {
