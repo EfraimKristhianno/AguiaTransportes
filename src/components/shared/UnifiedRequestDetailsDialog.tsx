@@ -137,8 +137,11 @@ export const UnifiedRequestDetailsDialog = ({
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const isProcessingFile = useRef(false);
-  const fileProcessingTimerRef = useRef<number | null>(null);
+
+  // Manual close handler - the ONLY way to close this dialog
+  const handleClose = () => {
+    onOpenChange(false);
+  };
 
   const { data: history = [], isLoading: isLoadingHistory } = useRequestHistory(
     open && request ? request.id : null
@@ -242,7 +245,7 @@ export const UnifiedRequestDetailsDialog = ({
       }
       setPendingFiles([]);
       setStepNotesText('');
-      onOpenChange(false);
+      handleClose();
     } finally { setIsAccepting(false); }
   };
 
@@ -264,24 +267,13 @@ export const UnifiedRequestDetailsDialog = ({
       });
       setPendingFiles([]);
       setStepNotesText('');
-      onOpenChange(false);
+      handleClose();
     } catch {
       // errors handled by mutation
     } finally { setIsUpdatingStatus(false); }
   };
 
-  const markFileProcessing = () => {
-    isProcessingFile.current = true;
-    // Safety reset after 10s in case onChange never fires (e.g. rare edge cases)
-    if (fileProcessingTimerRef.current) clearTimeout(fileProcessingTimerRef.current);
-    fileProcessingTimerRef.current = window.setTimeout(() => {
-      isProcessingFile.current = false;
-    }, 10000);
-  };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (fileProcessingTimerRef.current) clearTimeout(fileProcessingTimerRef.current);
-    isProcessingFile.current = false;
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       setPendingFiles(prev => [...prev, ...files]);
@@ -337,45 +329,58 @@ export const UnifiedRequestDetailsDialog = ({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      if (!newOpen && isProcessingFile.current) return;
-      onOpenChange(newOpen);
-    }}>
-      <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()}>
-        {/* Hidden file inputs - using id+label pattern for reliable mobile access */}
-        <input
-          id="unified-file-input"
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*,application/pdf,.doc,.docx"
-          multiple
-          onChange={handleFileSelect}
-          className="sr-only"
-          tabIndex={-1}
-        />
-        <input
-          id="unified-camera-input"
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileSelect}
-          className="sr-only"
-          tabIndex={-1}
-        />
-        <ScrollArea className="max-h-[90vh]">
-          <div className="p-6">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Hash className="h-5 w-5 text-primary" />
-                <span className="font-mono font-bold text-primary">
-                  #{String(request.request_number || '').padStart(6, '0')}
-                </span>
-                <Badge variant="outline" className={getStatusClassName(request.status)}>
-                  {getStatusLabel(request.status)}
-                </Badge>
-              </DialogTitle>
-            </DialogHeader>
+    <>
+      {/* File inputs OUTSIDE the dialog so they survive dialog state changes on mobile */}
+      <input
+        id="unified-file-input"
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*,application/pdf,.doc,.docx"
+        multiple
+        onChange={handleFileSelect}
+        className="sr-only"
+        tabIndex={-1}
+      />
+      <input
+        id="unified-camera-input"
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="sr-only"
+        tabIndex={-1}
+      />
+      <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
+        <DialogContent
+          className="max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button:last-child]:hidden"
+          onInteractOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onFocusOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={() => handleClose()}
+          aria-describedby={undefined}
+        >
+          {/* Custom close button */}
+          <button
+            onClick={handleClose}
+            className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Fechar</span>
+          </button>
+          <ScrollArea className="max-h-[90vh]">
+            <div className="p-6">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Hash className="h-5 w-5 text-primary" />
+                  <span className="font-mono font-bold text-primary">
+                    #{String(request.request_number || '').padStart(6, '0')}
+                  </span>
+                  <Badge variant="outline" className={getStatusClassName(request.status)}>
+                    {getStatusLabel(request.status)}
+                  </Badge>
+                </DialogTitle>
+              </DialogHeader>
 
             <div className="space-y-4 mt-4">
               {/* Client Info */}
@@ -671,7 +676,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-camera-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <Camera className="h-4 w-4" />
                         Tirar Foto
@@ -679,7 +684,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-file-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
@@ -742,7 +747,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-camera-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <Camera className="h-4 w-4" />
                         Tirar Foto
@@ -750,7 +755,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-file-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
@@ -804,7 +809,8 @@ export const UnifiedRequestDetailsDialog = ({
             </div>
           </div>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
