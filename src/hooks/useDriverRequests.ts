@@ -50,6 +50,7 @@ export const useCurrentDriver = () => {
 export const useDriverRequests = (driverVehicleTypes: string[] = [], driverId?: string) => {
   return useQuery({
     queryKey: ['driverRequests', driverVehicleTypes, driverId],
+    refetchOnWindowFocus: false,
     queryFn: async (): Promise<DriverRequest[]> => {
       if (driverVehicleTypes.length === 0 && !driverId) return [];
 

@@ -15,6 +15,7 @@ export const useRequestHistory = (requestId: string | null) => {
   return useQuery({
     queryKey: ['request_history', requestId],
     enabled: !!requestId,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('delivery_request_status_history')
