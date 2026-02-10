@@ -129,6 +129,7 @@ export const UnifiedRequestDetailsDialog = ({
   const [estimatedDistance, setEstimatedDistance] = useState<string>('Calculando...');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [notesText, setNotesText] = useState('');
+  const [stepNotesText, setStepNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -170,6 +171,7 @@ export const UnifiedRequestDetailsDialog = ({
     if (!open) {
       setPendingFiles([]);
       setExpandedSteps({});
+      setStepNotesText('');
     } else if (request) {
       setNotesText(request.notes || '');
     }
@@ -204,7 +206,34 @@ export const UnifiedRequestDetailsDialog = ({
     if (!driverId) return;
     setIsAccepting(true);
     try {
+      // Upload pending files for accept step
+      const paths: string[] = [];
+      for (const file of pendingFiles) {
+        const path = await uploadMutation.mutateAsync({ file, requestId: request.id });
+        paths.push(path);
+      }
       await acceptMutation.mutateAsync({ requestId: request.id, driverId });
+      // Update history entry with attachments/notes if provided
+      if (paths.length > 0 || stepNotesText) {
+        const { data: historyEntries } = await supabase
+          .from('delivery_request_status_history')
+          .select('id')
+          .eq('delivery_request_id', request.id)
+          .eq('status', 'aceita')
+          .order('changed_at', { ascending: false })
+          .limit(1);
+        if (historyEntries && historyEntries.length > 0) {
+          const historyUpdate: Record<string, unknown> = {};
+          if (paths.length > 0) historyUpdate.attachments = paths;
+          if (stepNotesText) historyUpdate.notes = stepNotesText;
+          await supabase
+            .from('delivery_request_status_history')
+            .update(historyUpdate)
+            .eq('id', historyEntries[0].id);
+        }
+      }
+      setPendingFiles([]);
+      setStepNotesText('');
       onOpenChange(false);
     } finally { setIsAccepting(false); }
   };
@@ -223,9 +252,10 @@ export const UnifiedRequestDetailsDialog = ({
         requestId: request.id,
         status: nextStatus,
         attachmentPaths: paths,
-        notes: notesText !== (request.notes || '') ? notesText : undefined,
+        notes: stepNotesText || undefined,
       });
       setPendingFiles([]);
+      setStepNotesText('');
       onOpenChange(false);
     } catch {
       // errors handled by mutation
@@ -387,31 +417,39 @@ export const UnifiedRequestDetailsDialog = ({
                 <span className="text-lg font-bold text-primary">{estimatedDistance}</span>
               </div>
 
-              {/* Observações - editable */}
+              {/* Observações - editable for non-drivers, read-only for drivers */}
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <FileText className="h-4 w-4" /> Observações
                 </h4>
-                <Textarea
-                  value={notesText}
-                  onChange={(e) => setNotesText(e.target.value)}
-                  placeholder="Adicione observações sobre esta coleta..."
-                  className="min-h-[80px] resize-none"
-                />
-                {notesText !== (request.notes || '') && (
-                  <Button
-                    size="sm"
-                    onClick={handleSaveNotes}
-                    disabled={isSavingNotes}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    {isSavingNotes ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
-                    ) : (
-                      <><Send className="h-4 w-4 mr-2" /> Salvar Observações</>
+                {isDriver ? (
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-sm">{request.notes || <span className="text-muted-foreground italic">Nenhuma observação</span>}</p>
+                  </div>
+                ) : (
+                  <>
+                    <Textarea
+                      value={notesText}
+                      onChange={(e) => setNotesText(e.target.value)}
+                      placeholder="Adicione observações sobre esta coleta..."
+                      className="min-h-[80px] resize-none"
+                    />
+                    {notesText !== (request.notes || '') && (
+                      <Button
+                        size="sm"
+                        onClick={handleSaveNotes}
+                        disabled={isSavingNotes}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        {isSavingNotes ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+                        ) : (
+                          <><Send className="h-4 w-4 mr-2" /> Salvar Observações</>
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                  </>
                 )}
               </div>
 
@@ -522,13 +560,96 @@ export const UnifiedRequestDetailsDialog = ({
                 )}
               </div>
 
-              {/* Driver Actions */}
+              {/* Driver Actions - Accept with observation/attachment fields */}
               {canAccept && (
-                <Button onClick={handleAccept} className="w-full" disabled={isAccepting}>
-                  {isAccepting ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Aceitando...</>
-                  ) : 'Aceitar Coleta'}
-                </Button>
+                <div className="space-y-3 border-t pt-4">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <ChevronRight className="h-4 w-4 text-primary" />
+                    Aceitar e atualizar para: <span className="text-primary">Aceita</span>
+                  </h4>
+
+                  {/* Observação para esta etapa */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Observação da etapa</p>
+                    <Textarea
+                      value={stepNotesText}
+                      onChange={(e) => setStepNotesText(e.target.value)}
+                      placeholder="Adicione uma observação para esta etapa..."
+                      className="min-h-[60px] resize-none"
+                    />
+                  </div>
+
+                  {/* File upload area */}
+                  <div className="space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,video/*,application/pdf,.doc,.docx"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-dashed"
+                        onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Tirar Foto
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-dashed"
+                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                      >
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        Anexar Arquivo
+                      </Button>
+                    </div>
+
+                    {pendingFiles.length > 0 && (
+                      <div className="space-y-1">
+                        {pendingFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2 text-sm"
+                          >
+                            {getFileIcon(file)}
+                            <span className="truncate flex-1">{file.name}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {(file.size / 1024).toFixed(0)} KB
+                            </span>
+                            <button
+                              onClick={() => removeFile(index)}
+                              className="text-muted-foreground hover:text-destructive shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <Button onClick={handleAccept} className="w-full" disabled={isAccepting}>
+                    {isAccepting ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Aceitando...</>
+                    ) : 'Aceitar Coleta'}
+                  </Button>
+                </div>
               )}
 
               {isAssignedDriver && nextStatus && (
@@ -542,8 +663,8 @@ export const UnifiedRequestDetailsDialog = ({
                   <div className="space-y-1">
                     <p className="text-xs font-medium text-muted-foreground">Observação da etapa</p>
                     <Textarea
-                      value={notesText}
-                      onChange={(e) => setNotesText(e.target.value)}
+                      value={stepNotesText}
+                      onChange={(e) => setStepNotesText(e.target.value)}
                       placeholder="Adicione uma observação para esta etapa..."
                       className="min-h-[60px] resize-none"
                     />
