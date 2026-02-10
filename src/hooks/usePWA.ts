@@ -17,6 +17,7 @@ interface PWAStatus {
   isAndroid: boolean;
   isStandalone: boolean;
   canInstall: boolean;
+  notificationPermission: NotificationPermission | 'unsupported';
 }
 
 export const usePWA = () => {
@@ -29,6 +30,7 @@ export const usePWA = () => {
     isAndroid: false,
     isStandalone: false,
     canInstall: false,
+    notificationPermission: 'Notification' in window ? Notification.permission : 'unsupported',
   });
 
   useEffect(() => {
@@ -132,9 +134,18 @@ export const usePWA = () => {
     window.location.reload();
   }, []);
 
+  const requestNotificationPermission = useCallback(async () => {
+    if (!('Notification' in window)) return 'unsupported' as const;
+    
+    const permission = await Notification.requestPermission();
+    setStatus(prev => ({ ...prev, notificationPermission: permission }));
+    return permission;
+  }, []);
+
   return {
     ...status,
     installApp,
     updateApp,
+    requestNotificationPermission,
   };
 };

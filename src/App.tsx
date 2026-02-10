@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OfflineBanner, UpdateBanner, NotificationPermissionBanner } from "@/components/PWABanners";
+import DriverNotificationListener from "@/components/DriverNotificationListener";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Solicitacoes from "./pages/Solicitacoes";
@@ -22,6 +24,10 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <OfflineBanner />
+        <UpdateBanner />
+        <NotificationPermissionBanner />
+        <DriverNotificationListener />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
