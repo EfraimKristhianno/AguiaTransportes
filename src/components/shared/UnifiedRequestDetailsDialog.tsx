@@ -43,6 +43,9 @@ interface RequestData {
   created_at: string | null;
   updated_at?: string | null;
   requester: string | null;
+  requester_phone?: string | null;
+  invoice_number?: string | null;
+  op_number?: string | null;
   transport_type: string | null;
   attachments?: string[] | null;
   clients?: { name: string; phone?: string | null; email?: string | null } | null;
@@ -374,6 +377,12 @@ export const UnifiedRequestDetailsDialog = ({
                   <h4 className="text-sm font-medium text-muted-foreground">Solicitante</h4>
                   <div className="bg-muted/50 rounded-lg p-3">
                     <p className="font-medium">{request.requester || '-'}</p>
+                    {request.requester_phone && (
+                      <a href={`tel:${request.requester_phone}`} className="text-xs text-primary flex items-center gap-1 mt-1">
+                        <Phone className="h-3 w-3" />
+                        {request.requester_phone}
+                      </a>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -385,6 +394,28 @@ export const UnifiedRequestDetailsDialog = ({
                   </div>
                 </div>
               </div>
+
+              {/* Invoice and OP */}
+              {(request.invoice_number || request.op_number) && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <FileText className="h-4 w-4" /> Nota Fiscal
+                    </h4>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="font-medium">{request.invoice_number || '-'}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Hash className="h-4 w-4" /> O.P.
+                    </h4>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="font-medium">{request.op_number || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <Separator />
 
