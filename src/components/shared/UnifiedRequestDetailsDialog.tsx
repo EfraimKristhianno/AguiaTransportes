@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -134,6 +135,7 @@ export const UnifiedRequestDetailsDialog = ({
   const [notesText, setNotesText] = useState('');
   const [stepNotesText, setStepNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -185,6 +187,25 @@ export const UnifiedRequestDetailsDialog = ({
     }
   }, [open, request?.id]);
 
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsProcessingFile(true);
+    const files = Array.from(e.target.files || []);
+    console.log('[FileSelect] onChange fired, files:', files.length);
+    if (files.length > 0) {
+      setPendingFiles(prev => [...prev, ...files]);
+    }
+    e.target.value = '';
+    setTimeout(() => setIsProcessingFile(false), 500);
+  }, []);
+
+  const openFilePicker = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const openCamera = useCallback(() => {
+    cameraInputRef.current?.click();
+  }, []);
+
   if (!request) return null;
 
   const formatDate = (dateString: string | null) => {
@@ -214,17 +235,12 @@ export const UnifiedRequestDetailsDialog = ({
     if (!driverId) return;
     setIsAccepting(true);
     try {
-      // 1. Accept first so driver_id is assigned (required by storage RLS)
       await acceptMutation.mutateAsync({ requestId: request.id, driverId });
-
-      // 2. Upload files AFTER assignment so RLS allows it
       const paths: string[] = [];
       for (const file of pendingFiles) {
         const path = await uploadMutation.mutateAsync({ file, requestId: request.id });
         paths.push(path);
       }
-
-      // 3. Update history entry with attachments/notes if provided
       if (paths.length > 0 || stepNotesText) {
         const { data: historyEntries } = await supabase
           .from('delivery_request_status_history')
@@ -253,7 +269,6 @@ export const UnifiedRequestDetailsDialog = ({
     if (!nextStatus) return;
     setIsUpdatingStatus(true);
     try {
-      // Upload pending files
       const paths: string[] = [];
       for (const file of pendingFiles) {
         const path = await uploadMutation.mutateAsync({ file, requestId: request.id });
@@ -271,24 +286,6 @@ export const UnifiedRequestDetailsDialog = ({
     } catch {
       // errors handled by mutation
     } finally { setIsUpdatingStatus(false); }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    console.log('[FileSelect] onChange fired, files:', files.length);
-    if (files.length > 0) {
-      setPendingFiles(prev => [...prev, ...files]);
-    }
-    // Reset inputs so the same file can be selected again
-    e.target.value = '';
-  };
-
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
-  const openCamera = () => {
-    cameraInputRef.current?.click();
   };
 
   const removeFile = (index: number) => {
@@ -339,25 +336,30 @@ export const UnifiedRequestDetailsDialog = ({
 
   return (
     <>
-      {/* File inputs OUTSIDE the dialog - triggered via refs, not label htmlFor */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*,video/*,application/pdf,.doc,.docx"
-        multiple
-        onChange={handleFileSelect}
-        style={{ position: 'fixed', top: '-9999px', opacity: 0 }}
-        tabIndex={-1}
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFileSelect}
-        style={{ position: 'fixed', top: '-9999px', opacity: 0 }}
-        tabIndex={-1}
-      />
+      {/* File inputs rendered via Portal in document.body to survive re-renders */}
+      {createPortal(
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*,application/pdf,.doc,.docx"
+            multiple
+            onChange={handleFileSelect}
+            style={{ visibility: 'hidden', height: 0, overflow: 'hidden', position: 'absolute' }}
+            tabIndex={-1}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileSelect}
+            style={{ visibility: 'hidden', height: 0, overflow: 'hidden', position: 'absolute' }}
+            tabIndex={-1}
+          />
+        </>,
+        document.body
+      )}
       <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
         <DialogContent
           className="max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button:last-child]:hidden"
@@ -683,18 +685,20 @@ export const UnifiedRequestDetailsDialog = ({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); openCamera(); }}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        disabled={isProcessingFile}
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
-                        <Camera className="h-4 w-4" />
-                        Tirar Foto
+                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                        {isProcessingFile ? 'Processando...' : 'Tirar Foto'}
                       </button>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        disabled={isProcessingFile}
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
-                        <Paperclip className="h-4 w-4" />
-                        Anexar Arquivo
+                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                        {isProcessingFile ? 'Processando...' : 'Anexar Arquivo'}
                       </button>
                     </div>
 
@@ -754,18 +758,20 @@ export const UnifiedRequestDetailsDialog = ({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); openCamera(); }}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        disabled={isProcessingFile}
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
-                        <Camera className="h-4 w-4" />
-                        Tirar Foto
+                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                        {isProcessingFile ? 'Processando...' : 'Tirar Foto'}
                       </button>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        disabled={isProcessingFile}
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
-                        <Paperclip className="h-4 w-4" />
-                        Anexar Arquivo
+                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                        {isProcessingFile ? 'Processando...' : 'Anexar Arquivo'}
                       </button>
                     </div>
 
