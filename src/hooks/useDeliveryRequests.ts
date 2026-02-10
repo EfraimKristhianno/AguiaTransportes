@@ -46,7 +46,8 @@ export interface CreateDeliveryRequestInput {
  
  export const useDeliveryRequests = (statusFilter?: string | null) => {
    return useQuery({
-     queryKey: ['delivery_requests', statusFilter],
+      queryKey: ['delivery_requests', statusFilter],
+      refetchOnWindowFocus: false,
      queryFn: async (): Promise<DeliveryRequest[]> => {
        let query = supabase
          .from('delivery_requests')

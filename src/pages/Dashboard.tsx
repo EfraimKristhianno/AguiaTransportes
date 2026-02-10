@@ -72,6 +72,7 @@ const Dashboard = () => {
     isLoading
   } = useQuery({
     queryKey: ['deliveryRequests', isClient, isDriver, clientRecord?.id, currentDriver?.id],
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       let query = supabase.from('delivery_requests').select(`
           id,
@@ -116,6 +117,7 @@ const Dashboard = () => {
   const { data: selectedRequest } = useQuery({
     queryKey: ['deliveryRequestDetail', selectedRequestId],
     enabled: !!selectedRequestId,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('delivery_requests')
