@@ -1,4 +1,4 @@
-import { WifiOff, RefreshCw } from 'lucide-react';
+import { WifiOff, RefreshCw, Bell } from 'lucide-react';
 import { usePWA } from '@/hooks/usePWA';
 import { Button } from '@/components/ui/button';
 
@@ -42,4 +42,29 @@ const UpdateBanner = () => {
   );
 };
 
-export { OfflineBanner, UpdateBanner };
+const NotificationPermissionBanner = () => {
+  const { notificationPermission, requestNotificationPermission } = usePWA();
+
+  if (notificationPermission !== 'default') return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-primary px-4 py-3 text-center">
+      <div className="flex items-center justify-center gap-4">
+        <Bell className="h-4 w-4 text-primary-foreground" />
+        <span className="text-sm font-medium text-primary-foreground">
+          Ative as notificações para receber alertas de novas solicitações
+        </span>
+        <Button
+          onClick={requestNotificationPermission}
+          size="sm"
+          variant="secondary"
+          className="gap-2"
+        >
+          Ativar
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export { OfflineBanner, UpdateBanner, NotificationPermissionBanner };
