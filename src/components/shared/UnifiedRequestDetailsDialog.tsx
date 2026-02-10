@@ -339,22 +339,26 @@ export const UnifiedRequestDetailsDialog = ({
       onOpenChange(newOpen);
     }}>
       <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()}>
-        {/* Hidden file inputs - rendered once, outside conditional blocks */}
+        {/* Hidden file inputs - using id+label pattern for reliable mobile access */}
         <input
+          id="unified-file-input"
           ref={fileInputRef}
           type="file"
           accept="image/*,video/*,application/pdf,.doc,.docx"
           multiple
           onChange={handleFileSelect}
-          className="hidden"
+          className="sr-only"
+          tabIndex={-1}
         />
         <input
+          id="unified-camera-input"
           ref={cameraInputRef}
           type="file"
           accept="image/*"
           capture="environment"
           onChange={handleFileSelect}
-          className="hidden"
+          className="sr-only"
+          tabIndex={-1}
         />
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
@@ -661,26 +665,22 @@ export const UnifiedRequestDetailsDialog = ({
                   {/* File upload area */}
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); triggerFileInput(cameraInputRef); }}
+                      <label
+                        htmlFor="unified-camera-input"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
                       >
-                        <Camera className="h-4 w-4 mr-2" />
+                        <Camera className="h-4 w-4" />
                         Tirar Foto
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); triggerFileInput(fileInputRef); }}
+                      </label>
+                      <label
+                        htmlFor="unified-file-input"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
                       >
-                        <Paperclip className="h-4 w-4 mr-2" />
+                        <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
-                      </Button>
+                      </label>
                     </div>
 
                     {pendingFiles.length > 0 && (
@@ -736,26 +736,22 @@ export const UnifiedRequestDetailsDialog = ({
                   {/* File upload area */}
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); triggerFileInput(cameraInputRef); }}
+                      <label
+                        htmlFor="unified-camera-input"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
                       >
-                        <Camera className="h-4 w-4 mr-2" />
+                        <Camera className="h-4 w-4" />
                         Tirar Foto
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); triggerFileInput(fileInputRef); }}
+                      </label>
+                      <label
+                        htmlFor="unified-file-input"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
                       >
-                        <Paperclip className="h-4 w-4 mr-2" />
+                        <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
-                      </Button>
+                      </label>
                     </div>
 
                     {pendingFiles.length > 0 && (
