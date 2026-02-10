@@ -1,75 +1,40 @@
 
+## Correcao do Dialog Fechando no Celular e Etapa "Solicitada" com Dados Originais
 
-## Notificacoes para Motoristas e Ciclo de Vida PWA
+### Problema 1: Dialog fecha ao selecionar arquivo/foto no celular
 
-### Resumo
+O Radix Dialog tem tres eventos que podem fechar o dialog:
+- `onPointerDownOutside` (ja tratado)
+- `onInteractOutside` (ja tratado)
+- `onFocusOutside` (NAO tratado - esta e a causa do problema no celular)
 
-Implementar um sistema de notificacoes em tempo real para motoristas quando novas solicitacoes chegam, utilizando Supabase Realtime. Alem disso, complementar os componentes do ciclo de vida do PWA que ja existem parcialmente.
+Quando o motorista abre a camera ou o seletor de arquivos no celular, o foco sai do dialog, disparando `onFocusOutside`, que fecha o dialog automaticamente. A solucao e adicionar `onFocusOutside={(e) => e.preventDefault()}` no `DialogContent`.
 
-### 1. Hook de Notificacoes do Motorista
+### Problema 2: Etapa "Solicitada" deve exibir dados originais
 
-**Novo arquivo: `src/hooks/useDriverNotifications.ts`**
+Na timeline, a etapa "Solicitada" deve mostrar as observacoes e anexos originais da solicitacao (os campos `notes` e `attachments` do `delivery_requests`), nao os do historico de status. Assim o motorista ve imediatamente o que foi informado quando a solicitacao foi criada.
 
-- Subscribir no canal Realtime do Supabase na tabela `delivery_requests` para eventos INSERT e UPDATE
-- Quando uma nova solicitacao for criada (INSERT) com `transport_type` compativel com os tipos do motorista, exibir toast de notificacao com som
-- Quando uma solicitacao existente for atualizada para status `solicitada`/`enviada` e o `transport_type` for compativel, tambem notificar
-- Solicitar permissao de Push Notification do navegador (API nativa) para exibir notificacoes mesmo com o app minimizado
-- Invalidar automaticamente a query `driverRequests` para atualizar a listagem
+### Alteracoes
 
-### 2. Componente de Notificacao
+**Arquivo: `src/components/shared/UnifiedRequestDetailsDialog.tsx`**
 
-**Novo arquivo: `src/components/DriverNotificationListener.tsx`**
+1. Adicionar `onFocusOutside={(e) => e.preventDefault()}` no `DialogContent` (linha 326) para impedir o fechamento do dialog quando o foco sai para o seletor de arquivos ou camera no celular.
 
-- Componente wrapper que usa o hook acima
-- Renderizado apenas quando o usuario logado tem role `motorista`
-- Integrado no `App.tsx` dentro do `AuthProvider`
-- Exibe notificacoes via:
-  - Toast (sonner) com informacoes da solicitacao (origem, destino, tipo)
-  - Notification API do navegador (push local) quando o app esta em segundo plano
+2. Modificar a logica de exibicao expandida da etapa "Solicitada" na timeline (em torno das linhas 550-588) para:
+   - Quando `step.value === 'solicitada'`, exibir `request.notes` como observacoes e `request.attachments` como anexos (dados originais da solicitacao)
+   - Para todas as outras etapas, manter o comportamento atual usando `historyEntry.notes` e `historyEntry.attachments`
 
-### 3. Componentes do Ciclo de Vida PWA
+### Detalhes Tecnicos
 
-**Atualizar `src/hooks/usePWA.ts`:**
-- Adicionar metodo `requestNotificationPermission()` para solicitar permissao de notificacao
-- Adicionar estado `notificationPermission` (granted/denied/default)
-- Adicionar metodo `showNotification(title, body)` para enviar notificacao via Service Worker
-
-**Atualizar `src/components/PWABanners.tsx`:**
-- Adicionar `NotificationPermissionBanner` que aparece para motoristas pedindo permissao de notificacao
-
-**Atualizar `src/App.tsx`:**
-- Incluir o `DriverNotificationListener` e os banners PWA
-
-### 4. Fluxo Tecnico
-
-```text
-Nova solicitacao criada (admin/gestor/cliente)
-        |
-        v
-Supabase Realtime (canal delivery_requests)
-        |
-        v
-useDriverNotifications (filtra por transport_type)
-        |
-        +---> Toast (sonner) com detalhes
-        |
-        +---> Notification API (se permitido)
-        |
-        +---> Invalidar query para atualizar lista
+Alteracao 1 - Linha 326:
+```
+<DialogContent
+  className="max-w-lg max-h-[90vh] p-0 overflow-hidden"
+  onInteractOutside={(e) => e.preventDefault()}
+  onPointerDownOutside={(e) => e.preventDefault()}
+  onFocusOutside={(e) => e.preventDefault()}
+>
 ```
 
-### Arquivos Alterados
-
-| Arquivo | Acao |
-|---------|------|
-| `src/hooks/useDriverNotifications.ts` | Criar - hook de notificacoes realtime |
-| `src/hooks/usePWA.ts` | Atualizar - adicionar metodos de notificacao |
-| `src/components/DriverNotificationListener.tsx` | Criar - componente listener |
-| `src/components/PWABanners.tsx` | Atualizar - banner de permissao |
-| `src/App.tsx` | Atualizar - integrar listener e banners |
-
-### Observacoes
-
-- Nenhuma alteracao no banco de dados e necessaria, pois o Supabase Realtime ja funciona com as tabelas existentes
-- As notificacoes push locais funcionam apenas quando o usuario concede permissao no navegador
-- No iOS (Safari), as notificacoes push so funcionam se o app estiver instalado como PWA na tela inicial
+Alteracao 2 - Bloco expandido da timeline (linhas ~551-588):
+Para a etapa "solicitada", usar `request.notes` e `request.attachments` em vez de `historyEntry.notes` e `historyEntry.attachments`. Para as demais etapas, manter `historyEntry`.
