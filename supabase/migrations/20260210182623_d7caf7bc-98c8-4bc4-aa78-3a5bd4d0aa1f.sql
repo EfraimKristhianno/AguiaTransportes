@@ -1,0 +1,2 @@
+INSERT INTO delivery_requests (origin_address, destination_address, transport_type, status, driver_id, invoice_number, requester, requester_phone, notes)
+VALUES ('Rua Teste, 123 - São Paulo, SP', 'Av. Brasil, 456 - Rio de Janeiro, RJ', 'Fiorino', 'aceita', 'f13ffe33-ee85-451e-ac9b-0dff5acd7a13', 'NF-TESTE-001', 'Teste Anexo', '11999999999', 'Solicitação criada para testar fluxo de anexos');
