@@ -323,7 +323,7 @@ export const UnifiedRequestDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()}>
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             <DialogHeader>
@@ -548,44 +548,57 @@ export const UnifiedRequestDetailsDialog = ({
                             </div>
 
                             {/* Expanded details */}
-                            {isExpanded && historyEntry && (
-                              <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 border border-border">
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">Data e hora:</p>
-                                  <p className="text-sm">
-                                    {format(new Date(historyEntry.changed_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
-                                  </p>
-                                </div>
-                                {historyEntry.notes ? (
-                                  <div>
-                                    <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
-                                    <p className="text-sm">{historyEntry.notes}</p>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
-                                    <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
-                                  </div>
-                                )}
-                                {historyEntry.attachments && historyEntry.attachments.length > 0 ? (
-                                  <div>
-                                    <p className="text-xs font-medium text-muted-foreground mb-1">
-                                      Anexos ({historyEntry.attachments.length}):
-                                    </p>
-                                    <div className="space-y-1.5">
-                                      {historyEntry.attachments.map((attachment: string, idx: number) => (
-                                        <AttachmentItem key={idx} path={attachment} index={idx} />
-                                      ))}
+                            {isExpanded && (historyEntry || step.value === 'solicitada') && (() => {
+                              const isSolicitada = step.value === 'solicitada';
+                              const stepNotes = isSolicitada ? request.notes : historyEntry?.notes;
+                              const stepAttachments = isSolicitada
+                                ? (Array.isArray(request.attachments) ? request.attachments as string[] : [])
+                                : (historyEntry?.attachments || []);
+                              const stepDate = isSolicitada
+                                ? request.created_at
+                                : historyEntry?.changed_at;
+
+                              return (
+                                <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 border border-border">
+                                  {stepDate && (
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground mb-1">Data e hora:</p>
+                                      <p className="text-sm">
+                                        {format(new Date(stepDate), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+                                      </p>
                                     </div>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
-                                    <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  )}
+                                  {stepNotes ? (
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                      <p className="text-sm">{stepNotes}</p>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                      <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
+                                    </div>
+                                  )}
+                                  {stepAttachments && stepAttachments.length > 0 ? (
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                                        Anexos ({stepAttachments.length}):
+                                      </p>
+                                      <div className="space-y-1.5">
+                                        {stepAttachments.map((attachment: string, idx: number) => (
+                                          <AttachmentItem key={idx} path={attachment} index={idx} />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
+                                      <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       );
