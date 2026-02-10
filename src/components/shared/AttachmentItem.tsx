@@ -21,7 +21,9 @@ export const AttachmentItem = ({ path, index }: AttachmentItemProps) => {
       const { data, error } = await supabase.storage
         .from('request-attachments')
         .createSignedUrl(path, 3600);
-      if (!error && data?.signedUrl) {
+      if (error) {
+        console.error('AttachmentItem: erro ao gerar URL assinada', { path, error });
+      } else if (data?.signedUrl) {
         setUrl(data.signedUrl);
       }
       setLoading(false);
