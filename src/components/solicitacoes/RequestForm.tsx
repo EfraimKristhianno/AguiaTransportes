@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, User, Phone, MapPin, CalendarIcon, Upload, X, FileText, Send, Hash, Clock } from 'lucide-react';
+import { Plus, User, Phone, MapPin, CalendarIcon, Upload, X, FileText, Send, Hash, Clock, Camera, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,6 +49,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { data: materialTypes = [] } = useMaterialTypes();
   const { data: transportTypes = [] } = useTransportTypes();
@@ -612,10 +613,20 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               className="hidden"
               onChange={(e) => {
                 handleFileSelect(e);
-                // Reset value so the same file can be re-selected
                 e.target.value = '';
               }}
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+              accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                handleFileSelect(e);
+                e.target.value = '';
+              }}
             />
             <div className="mt-2 flex gap-2">
               <Button
@@ -623,10 +634,20 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 variant="outline"
                 size="sm"
                 className="flex-1 border-dashed h-auto py-3"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Tirar Foto
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 border-dashed h-auto py-3"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
               >
-                <Upload className="h-4 w-4 mr-2" />
-                Selecionar Arquivos
+                <Paperclip className="h-4 w-4 mr-2" />
+                Anexar Arquivo
               </Button>
             </div>
 
