@@ -339,6 +339,23 @@ export const UnifiedRequestDetailsDialog = ({
       onOpenChange(newOpen);
     }}>
       <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()}>
+        {/* Hidden file inputs - rendered once, outside conditional blocks */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*,application/pdf,.doc,.docx"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             <DialogHeader>
@@ -643,22 +660,6 @@ export const UnifiedRequestDetailsDialog = ({
 
                   {/* File upload area */}
                   <div className="space-y-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,video/*,application/pdf,.doc,.docx"
-                      multiple
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -734,22 +735,6 @@ export const UnifiedRequestDetailsDialog = ({
 
                   {/* File upload area */}
                   <div className="space-y-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,video/*,application/pdf,.doc,.docx"
-                      multiple
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
                     <div className="flex gap-2">
                       <Button
                         type="button"
