@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -134,60 +134,19 @@ export const UnifiedRequestDetailsDialog = ({
   const [notesText, setNotesText] = useState('');
   const [stepNotesText, setStepNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingFilesRef = useRef(pendingFiles);
-  pendingFilesRef.current = pendingFiles;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Create native file inputs in document.body via DOM API (not React Portal)
-  // This ensures they survive any React re-renders and work reliably on mobile
-  useEffect(() => {
-    const handleChange = (e: Event) => {
-      const input = e.target as HTMLInputElement;
-      const files = Array.from(input.files || []);
-      console.log('[FileSelect] native change fired, files:', files.length);
-      if (files.length > 0) {
-        setPendingFiles(prev => [...prev, ...files]);
-      }
-      // Reset input so same file can be re-selected
-      input.value = '';
-      setIsProcessingFile(true);
-      setTimeout(() => setIsProcessingFile(false), 500);
-    };
-
-    // Create file input
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*,video/*,application/pdf,.doc,.docx';
-    fileInput.multiple = true;
-    fileInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;height:0;overflow:hidden;';
-    fileInput.tabIndex = -1;
-    fileInput.addEventListener('change', handleChange);
-    document.body.appendChild(fileInput);
-    fileInputRef.current = fileInput;
-
-    // Create camera input
-    const cameraInput = document.createElement('input');
-    cameraInput.type = 'file';
-    cameraInput.accept = 'image/*';
-    cameraInput.setAttribute('capture', 'environment');
-    cameraInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;height:0;overflow:hidden;';
-    cameraInput.tabIndex = -1;
-    cameraInput.addEventListener('change', handleChange);
-    document.body.appendChild(cameraInput);
-    cameraInputRef.current = cameraInput;
-
-    return () => {
-      fileInput.removeEventListener('change', handleChange);
-      cameraInput.removeEventListener('change', handleChange);
-      fileInput.remove();
-      cameraInput.remove();
-      fileInputRef.current = null;
-      cameraInputRef.current = null;
-    };
-  }, []);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setPendingFiles(prev => [...prev, ...files]);
+    }
+    // Reset so same file can be re-selected
+    e.target.value = '';
+  };
 
   // Manual close handler - the ONLY way to close this dialog
   const handleClose = () => {
@@ -236,13 +195,6 @@ export const UnifiedRequestDetailsDialog = ({
     }
   }, [open, request?.id]);
 
-  const openFilePicker = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const openCamera = useCallback(() => {
-    cameraInputRef.current?.click();
-  }, []);
 
   if (!request) return null;
 
@@ -374,6 +326,23 @@ export const UnifiedRequestDetailsDialog = ({
 
   return (
     <>
+      {/* Hidden file inputs - standard React refs pattern for mobile reliability */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+        onChange={(e) => { handleFileChange(e); }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => { handleFileChange(e); }}
+      />
       <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
         <DialogContent
           className="max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button:last-child]:hidden"
@@ -700,21 +669,19 @@ export const UnifiedRequestDetailsDialog = ({
                         type="button"
                         variant="outline"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); openCamera(); }}
-                        disabled={isProcessingFile}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
                       >
-                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                        {isProcessingFile ? 'Processando...' : 'Tirar Foto'}
+                        <Camera className="h-4 w-4" />
+                        Tirar Foto
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
-                        disabled={isProcessingFile}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
                       >
-                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-                        {isProcessingFile ? 'Processando...' : 'Anexar Arquivo'}
+                        <Paperclip className="h-4 w-4" />
+                        Anexar Arquivo
                       </Button>
                     </div>
 
@@ -775,21 +742,19 @@ export const UnifiedRequestDetailsDialog = ({
                         type="button"
                         variant="outline"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); openCamera(); }}
-                        disabled={isProcessingFile}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
                       >
-                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                        {isProcessingFile ? 'Processando...' : 'Tirar Foto'}
+                        <Camera className="h-4 w-4" />
+                        Tirar Foto
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         className="flex-1 border-dashed"
-                        onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
-                        disabled={isProcessingFile}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
                       >
-                        {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-                        {isProcessingFile ? 'Processando...' : 'Anexar Arquivo'}
+                        <Paperclip className="h-4 w-4" />
+                        Anexar Arquivo
                       </Button>
                     </div>
 
