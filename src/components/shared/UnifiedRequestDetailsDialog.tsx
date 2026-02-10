@@ -696,24 +696,26 @@ export const UnifiedRequestDetailsDialog = ({
                   {/* File upload area */}
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        className="flex-1 border-dashed"
                         onClick={(e) => { e.stopPropagation(); openCamera(); }}
                         disabled={isProcessingFile}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
                         {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                         {isProcessingFile ? 'Processando...' : 'Tirar Foto'}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="outline"
+                        className="flex-1 border-dashed"
                         onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
                         disabled={isProcessingFile}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
                         {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                         {isProcessingFile ? 'Processando...' : 'Anexar Arquivo'}
-                      </button>
+                      </Button>
                     </div>
 
                     {pendingFiles.length > 0 && (
@@ -769,24 +771,26 @@ export const UnifiedRequestDetailsDialog = ({
                   {/* File upload area */}
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        className="flex-1 border-dashed"
                         onClick={(e) => { e.stopPropagation(); openCamera(); }}
                         disabled={isProcessingFile}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
                         {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                         {isProcessingFile ? 'Processando...' : 'Tirar Foto'}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="outline"
+                        className="flex-1 border-dashed"
                         onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
                         disabled={isProcessingFile}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer disabled:opacity-50"
                       >
                         {isProcessingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                         {isProcessingFile ? 'Processando...' : 'Anexar Arquivo'}
-                      </button>
+                      </Button>
                     </div>
 
                     {pendingFiles.length > 0 && (
