@@ -138,6 +138,7 @@ export const UnifiedRequestDetailsDialog = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const isProcessingFile = useRef(false);
+  const fileProcessingTimerRef = useRef<number | null>(null);
 
   const { data: history = [], isLoading: isLoadingHistory } = useRequestHistory(
     open && request ? request.id : null
@@ -269,20 +270,22 @@ export const UnifiedRequestDetailsDialog = ({
     } finally { setIsUpdatingStatus(false); }
   };
 
-  const triggerFileInput = (inputRef: React.RefObject<HTMLInputElement>) => {
+  const markFileProcessing = () => {
     isProcessingFile.current = true;
-    const resetOnFocus = () => {
-      setTimeout(() => { isProcessingFile.current = false; }, 500);
-      window.removeEventListener('focus', resetOnFocus);
-    };
-    window.addEventListener('focus', resetOnFocus);
-    inputRef.current?.click();
+    // Safety reset after 10s in case onChange never fires (e.g. rare edge cases)
+    if (fileProcessingTimerRef.current) clearTimeout(fileProcessingTimerRef.current);
+    fileProcessingTimerRef.current = window.setTimeout(() => {
+      isProcessingFile.current = false;
+    }, 10000);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (fileProcessingTimerRef.current) clearTimeout(fileProcessingTimerRef.current);
     isProcessingFile.current = false;
     const files = Array.from(e.target.files || []);
-    setPendingFiles(prev => [...prev, ...files]);
+    if (files.length > 0) {
+      setPendingFiles(prev => [...prev, ...files]);
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
@@ -668,7 +671,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-camera-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
+                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
                       >
                         <Camera className="h-4 w-4" />
                         Tirar Foto
@@ -676,7 +679,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-file-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
+                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
                       >
                         <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
@@ -739,7 +742,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-camera-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
+                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
                       >
                         <Camera className="h-4 w-4" />
                         Tirar Foto
@@ -747,7 +750,7 @@ export const UnifiedRequestDetailsDialog = ({
                       <label
                         htmlFor="unified-file-input"
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); isProcessingFile.current = true; const reset = () => { setTimeout(() => { isProcessingFile.current = false; }, 500); window.removeEventListener('focus', reset); }; window.addEventListener('focus', reset); }}
+                        onClick={(e) => { e.stopPropagation(); markFileProcessing(); }}
                       >
                         <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
