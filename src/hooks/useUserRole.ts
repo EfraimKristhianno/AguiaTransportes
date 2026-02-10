@@ -5,6 +5,7 @@ import { UserRole } from '@/types/database';
 export const useUserRole = () => {
   return useQuery({
     queryKey: ['currentUserRole'],
+    refetchOnWindowFocus: false,
     queryFn: async (): Promise<UserRole | null> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;

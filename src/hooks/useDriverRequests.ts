@@ -28,6 +28,8 @@ export interface DriverRequest {
 export const useCurrentDriver = () => {
   return useQuery({
     queryKey: ['currentDriver'],
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes - prevent refetch on camera return
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;

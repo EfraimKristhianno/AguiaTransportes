@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 export const useDrivers = () => {
   return useQuery({
     queryKey: ['drivers'],
+    refetchOnWindowFocus: false,
     queryFn: async (): Promise<DriverWithStats[]> => {
       const { data, error } = await supabase
         .from('drivers')
