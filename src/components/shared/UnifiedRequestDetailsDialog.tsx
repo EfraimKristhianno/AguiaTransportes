@@ -209,14 +209,17 @@ export const UnifiedRequestDetailsDialog = ({
     if (!driverId) return;
     setIsAccepting(true);
     try {
-      // Upload pending files for accept step
+      // 1. Accept first so driver_id is assigned (required by storage RLS)
+      await acceptMutation.mutateAsync({ requestId: request.id, driverId });
+
+      // 2. Upload files AFTER assignment so RLS allows it
       const paths: string[] = [];
       for (const file of pendingFiles) {
         const path = await uploadMutation.mutateAsync({ file, requestId: request.id });
         paths.push(path);
       }
-      await acceptMutation.mutateAsync({ requestId: request.id, driverId });
-      // Update history entry with attachments/notes if provided
+
+      // 3. Update history entry with attachments/notes if provided
       if (paths.length > 0 || stepNotesText) {
         const { data: historyEntries } = await supabase
           .from('delivery_request_status_history')
@@ -320,7 +323,7 @@ export const UnifiedRequestDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             <DialogHeader>
