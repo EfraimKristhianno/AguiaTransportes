@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, User, Phone, MapPin, CalendarIcon, Upload, Send, Hash, Clock, FileText } from 'lucide-react';
+import { Plus, User, Phone, MapPin, CalendarIcon, Upload, X, FileText, Send, Hash, Clock, Camera, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,6 +48,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const { user, role } = useAuth();
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { data: materialTypes = [] } = useMaterialTypes();
   const { data: transportTypes = [] } = useTransportTypes();
@@ -130,6 +132,14 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
     }
   }, [isClient, userProfile, form]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setAttachments(prev => [...prev, ...files]);
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
 
   const onSubmit = async (data: RequestFormData) => {
     setIsSubmitting(true);
@@ -593,6 +603,79 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             )}
           />
 
+
+          {/* Attachments */}
+          <div>
+            <Label>Anexos (fotos, documentos, vídeos)</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                handleFileSelect(e);
+                e.target.value = '';
+              }}
+              accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                handleFileSelect(e);
+                e.target.value = '';
+              }}
+            />
+            <div className="mt-2 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 border-dashed h-auto py-3"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Tirar Foto
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 border-dashed h-auto py-3"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
+              >
+                <Paperclip className="h-4 w-4 mr-2" />
+                Anexar Arquivo
+              </Button>
+            </div>
+
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {attachments.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md text-sm"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="max-w-[150px] truncate">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeAttachment(index);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Buttons */}
           <div className="flex gap-3 pt-2">
