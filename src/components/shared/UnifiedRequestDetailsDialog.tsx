@@ -275,11 +275,20 @@ export const UnifiedRequestDetailsDialog = ({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    console.log('[FileSelect] onChange fired, files:', files.length);
     if (files.length > 0) {
       setPendingFiles(prev => [...prev, ...files]);
     }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    // Reset inputs so the same file can be selected again
+    e.target.value = '';
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const openCamera = () => {
+    cameraInputRef.current?.click();
   };
 
   const removeFile = (index: number) => {
@@ -330,25 +339,23 @@ export const UnifiedRequestDetailsDialog = ({
 
   return (
     <>
-      {/* File inputs OUTSIDE the dialog so they survive dialog state changes on mobile */}
+      {/* File inputs OUTSIDE the dialog - triggered via refs, not label htmlFor */}
       <input
-        id="unified-file-input"
         ref={fileInputRef}
         type="file"
         accept="image/*,video/*,application/pdf,.doc,.docx"
         multiple
         onChange={handleFileSelect}
-        className="sr-only"
+        style={{ position: 'fixed', top: '-9999px', opacity: 0 }}
         tabIndex={-1}
       />
       <input
-        id="unified-camera-input"
         ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         onChange={handleFileSelect}
-        className="sr-only"
+        style={{ position: 'fixed', top: '-9999px', opacity: 0 }}
         tabIndex={-1}
       />
       <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
@@ -673,22 +680,22 @@ export const UnifiedRequestDetailsDialog = ({
                   {/* File upload area */}
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <label
-                        htmlFor="unified-camera-input"
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openCamera(); }}
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <Camera className="h-4 w-4" />
                         Tirar Foto
-                      </label>
-                      <label
-                        htmlFor="unified-file-input"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
-                      </label>
+                      </button>
                     </div>
 
                     {pendingFiles.length > 0 && (
@@ -744,22 +751,22 @@ export const UnifiedRequestDetailsDialog = ({
                   {/* File upload area */}
                   <div className="space-y-2">
                     <div className="flex gap-2">
-                      <label
-                        htmlFor="unified-camera-input"
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openCamera(); }}
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <Camera className="h-4 w-4" />
                         Tirar Foto
-                      </label>
-                      <label
-                        htmlFor="unified-file-input"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openFilePicker(); }}
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <Paperclip className="h-4 w-4" />
                         Anexar Arquivo
-                      </label>
+                      </button>
                     </div>
 
                     {pendingFiles.length > 0 && (
