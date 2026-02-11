@@ -39,9 +39,10 @@ export const useOneSignal = () => {
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
           allowLocalhostAsSecureOrigin: true,
-          serviceWorkerParam: { scope: '/onesignal/' },
+          serviceWorkerParam: { scope: '/' },
           serviceWorkerPath: '/OneSignalSDKWorker.js',
           notifyButton: { enable: false },
+          persistNotification: true,
         });
 
         console.log('[OneSignal] SDK initialized');
