@@ -302,12 +302,19 @@ export const UnifiedRequestDetailsDialog = ({
   // History by status for timeline
   const historyByStatus: Record<string, { changed_at: string; notes: string | null; attachments?: string[] }> = {};
   history.forEach((entry: any) => {
-    if (!historyByStatus[entry.status]) {
+    const existing = historyByStatus[entry.status];
+    if (!existing) {
       historyByStatus[entry.status] = {
         changed_at: entry.changed_at,
         notes: entry.notes,
         attachments: entry.attachments || [],
       };
+    } else {
+      // Merge: prefer entry with notes/attachments (handles duplicate trigger entries)
+      if (entry.notes && !existing.notes) existing.notes = entry.notes;
+      if (entry.attachments && entry.attachments.length > 0 && (!existing.attachments || existing.attachments.length === 0)) {
+        existing.attachments = entry.attachments;
+      }
     }
   });
 
