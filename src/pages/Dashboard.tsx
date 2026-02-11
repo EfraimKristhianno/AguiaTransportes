@@ -381,7 +381,7 @@ const Dashboard = () => {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive/80 text-muted-foreground hover:bg-destructive/70">
                                     Excluir
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -448,7 +448,7 @@ const Dashboard = () => {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive/80 text-muted-foreground hover:bg-destructive/70">
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>
