@@ -13,51 +13,76 @@ export const useOneSignal = () => {
 
     const initOneSignal = async () => {
       try {
-        // Wait for OneSignal SDK to load
-        const OneSignal = (window as any).OneSignalDeferred || [];
-        
-        (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
-        (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
-          if (initialized.current) return;
-          initialized.current = true;
+        // Wait for SDK to be available
+        const waitForOneSignal = (): Promise<any> => {
+          return new Promise((resolve) => {
+            // Check if OneSignal is already initialized
+            if ((window as any).OneSignal && typeof (window as any).OneSignal.init === 'function') {
+              resolve((window as any).OneSignal);
+              return;
+            }
 
-          await OneSignal.init({
-            appId: ONESIGNAL_APP_ID,
-            allowLocalhostAsSecureOrigin: true,
-            serviceWorkerParam: { scope: '/onesignal/' },
-            serviceWorkerPath: '/OneSignalSDKWorker.js',
-          });
-
-          // Set external user ID for targeting
-          await OneSignal.login(user.id);
-
-          // Fetch driver's vehicle types and set as tags
-          const { data: driver } = await supabase
-            .from('drivers')
-            .select('id, driver_vehicle_types(vehicle_type)')
-            .eq('user_id', user.id)
-            .single();
-
-          if (driver) {
-            const vehicleTypes = driver.driver_vehicle_types?.map(
-              (dvt: { vehicle_type: string }) => dvt.vehicle_type
-            ) || [];
-
-            // Set tags for targeting
-            await OneSignal.User.addTags({
-              role: 'motorista',
-              driver_id: driver.id,
-              vehicle_types: vehicleTypes.join(','),
+            // Use the deferred queue
+            (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
+            (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
+              resolve(OneSignal);
             });
-          }
+          });
+        };
 
-          console.log('[OneSignal] Initialized for driver:', user.id);
+        const OneSignal = await waitForOneSignal();
+        
+        if (initialized.current) return;
+        initialized.current = true;
+
+        // Initialize OneSignal
+        await OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerParam: { scope: '/onesignal/' },
+          serviceWorkerPath: '/OneSignalSDKWorker.js',
+          notifyButton: { enable: false },
         });
+
+        console.log('[OneSignal] SDK initialized');
+
+        // Request notification permission
+        const permission = await OneSignal.Notifications.requestPermission();
+        console.log('[OneSignal] Permission:', permission);
+
+        // Login with external user ID - this is critical for targeting
+        await OneSignal.login(user.id);
+        console.log('[OneSignal] Logged in as:', user.id);
+
+        // Fetch driver's vehicle types and set as tags
+        const { data: driver } = await supabase
+          .from('drivers')
+          .select('id, driver_vehicle_types(vehicle_type)')
+          .eq('user_id', user.id)
+          .single();
+
+        if (driver) {
+          const vehicleTypes = driver.driver_vehicle_types?.map(
+            (dvt: { vehicle_type: string }) => dvt.vehicle_type
+          ) || [];
+
+          // Set tags for targeting
+          await OneSignal.User.addTags({
+            role: 'motorista',
+            driver_id: driver.id,
+            vehicle_types: vehicleTypes.join(','),
+          });
+          console.log('[OneSignal] Tags set for driver:', driver.id);
+        }
       } catch (error) {
         console.error('[OneSignal] Init error:', error);
+        // Reset so it can retry
+        initialized.current = false;
       }
     };
 
-    initOneSignal();
+    // Small delay to ensure DOM and SDK script are loaded
+    const timer = setTimeout(initOneSignal, 1500);
+    return () => clearTimeout(timer);
   }, [user, role]);
 };
