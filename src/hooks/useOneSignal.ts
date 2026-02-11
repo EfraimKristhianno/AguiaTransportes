@@ -9,7 +9,7 @@ export const useOneSignal = () => {
   const initialized = useRef(false);
 
   useEffect(() => {
-    if (!user || initialized.current) return;
+    if (!user || role !== 'motorista' || initialized.current) return;
 
     const initOneSignal = async () => {
       try {
@@ -54,28 +54,25 @@ export const useOneSignal = () => {
         await OneSignal.login(user.id);
         console.log('[OneSignal] Logged in as:', user.id);
 
-        // Set role tag for all users
-        const tags: Record<string, string> = { role: role || 'unknown' };
+        // Fetch driver's vehicle types and set as tags
+        const { data: driver } = await supabase
+          .from('drivers')
+          .select('id, driver_vehicle_types(vehicle_type)')
+          .eq('user_id', user.id)
+          .single();
 
-        // If driver, add driver-specific tags
-        if (role === 'motorista') {
-          const { data: driver } = await supabase
-            .from('drivers')
-            .select('id, driver_vehicle_types(vehicle_type)')
-            .eq('user_id', user.id)
-            .single();
+        if (driver) {
+          const vehicleTypes = driver.driver_vehicle_types?.map(
+            (dvt: { vehicle_type: string }) => dvt.vehicle_type
+          ) || [];
 
-          if (driver) {
-            tags.driver_id = driver.id;
-            const vehicleTypes = driver.driver_vehicle_types?.map(
-              (dvt: { vehicle_type: string }) => dvt.vehicle_type
-            ) || [];
-            tags.vehicle_types = vehicleTypes.join(',');
-          }
+          await OneSignal.User.addTags({
+            role: 'motorista',
+            driver_id: driver.id,
+            vehicle_types: vehicleTypes.join(','),
+          });
+          console.log('[OneSignal] Tags set for driver:', driver.id);
         }
-
-        await OneSignal.User.addTags(tags);
-        console.log('[OneSignal] Tags set:', tags);
       } catch (error) {
         console.error('[OneSignal] Init error:', error);
         // Reset so it can retry

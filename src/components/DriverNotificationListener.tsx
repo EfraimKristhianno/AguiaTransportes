@@ -4,10 +4,6 @@ import { useOneSignal } from '@/hooks/useOneSignal';
 
 const DriverNotificationListenerInner = () => {
   useDriverNotifications();
-  return null;
-};
-
-const OneSignalInitializer = () => {
   useOneSignal();
   return null;
 };
@@ -15,14 +11,9 @@ const OneSignalInitializer = () => {
 const DriverNotificationListener = () => {
   const { role, user } = useAuth();
 
-  if (!user) return null;
+  if (!user || role !== 'motorista') return null;
 
-  return (
-    <>
-      <OneSignalInitializer />
-      {role === 'motorista' && <DriverNotificationListenerInner />}
-    </>
-  );
+  return <DriverNotificationListenerInner />;
 };
 
 export default DriverNotificationListener;
