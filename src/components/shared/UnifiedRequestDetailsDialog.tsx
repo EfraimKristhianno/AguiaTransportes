@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin, Phone, User, Package, Truck, Calendar, FileText,
   Navigation, Loader2, Hash, Check, Circle, Camera, Paperclip,
-  X, ChevronRight, ChevronDown, Image as ImageIcon, Film, File, Send, Eye,
+  X, ChevronRight, ChevronDown, Image as ImageIcon, Film, File, Send, Eye, Info,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -134,6 +134,7 @@ export const UnifiedRequestDetailsDialog = ({
   const [notesText, setNotesText] = useState('');
   const [stepNotesText, setStepNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [driverStepDialogOpen, setDriverStepDialogOpen] = useState(false);
   
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -193,6 +194,7 @@ export const UnifiedRequestDetailsDialog = ({
       setPendingFiles([]);
       setExpandedSteps({});
       setStepNotesText('');
+      setDriverStepDialogOpen(false);
     } else if (request) {
       setNotesText(request.notes || '');
     }
@@ -661,156 +663,66 @@ export const UnifiedRequestDetailsDialog = ({
                 )}
               </div>
 
-              {/* Driver Actions - Accept with observation/attachment fields */}
+              {/* Driver Actions - Accept */}
               {canAccept && (
                 <div className="space-y-3 border-t pt-4">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <ChevronRight className="h-4 w-4 text-primary" />
-                    Aceitar e atualizar para: <span className="text-primary">Aceita</span>
-                  </h4>
-
-                  {/* Observação para esta etapa */}
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Observação da etapa</p>
-                    <Textarea
-                      value={stepNotesText}
-                      onChange={(e) => setStepNotesText(e.target.value)}
-                      placeholder="Adicione uma observação para esta etapa..."
-                      className="min-h-[60px] resize-none"
-                    />
+                  <div className="flex items-center gap-2">
+                    <Button onClick={handleAccept} className="flex-1" disabled={isAccepting}>
+                      {isAccepting ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Aceitando...</>
+                      ) : 'Aceitar Coleta'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setDriverStepDialogOpen(true)}
+                      title="Adicionar observação e anexos"
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  {/* File upload area */}
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
-                      >
-                        <Camera className="h-4 w-4" />
-                        Tirar Foto
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
-                      >
-                        <Paperclip className="h-4 w-4" />
-                        Anexar Arquivo
-                      </Button>
-                    </div>
-
-                    {pendingFiles.length > 0 && (
-                      <div className="space-y-1">
-                        {pendingFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2 text-sm"
-                          >
-                            {getFileIcon(file)}
-                            <span className="truncate flex-1">{file.name}</span>
-                            <span className="text-xs text-muted-foreground shrink-0">
-                              {(file.size / 1024).toFixed(0)} KB
-                            </span>
-                            <button
-                              onClick={() => removeFile(index)}
-                              className="text-muted-foreground hover:text-destructive shrink-0"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <Button onClick={handleAccept} className="w-full" disabled={isAccepting}>
-                    {isAccepting ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Aceitando...</>
-                    ) : 'Aceitar Coleta'}
-                  </Button>
+                  {(pendingFiles.length > 0 || stepNotesText) && (
+                    <p className="text-xs text-muted-foreground italic">
+                      {stepNotesText ? '📝 Observação adicionada' : ''}
+                      {stepNotesText && pendingFiles.length > 0 ? ' • ' : ''}
+                      {pendingFiles.length > 0 ? `📎 ${pendingFiles.length} arquivo(s)` : ''}
+                    </p>
+                  )}
                 </div>
               )}
 
               {isAssignedDriver && nextStatus && (
                 <div className="space-y-3 border-t pt-4">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <ChevronRight className="h-4 w-4 text-primary" />
-                    Atualizar para: <span className="text-primary">{nextStatusLabel}</span>
-                  </h4>
-
-                  {/* Observação para esta etapa */}
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Observação da etapa</p>
-                    <Textarea
-                      value={stepNotesText}
-                      onChange={(e) => setStepNotesText(e.target.value)}
-                      placeholder="Adicione uma observação para esta etapa..."
-                      className="min-h-[60px] resize-none"
-                    />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={handleUpdateStatus}
+                      className="flex-1"
+                      disabled={isUpdatingStatus}
+                    >
+                      {isUpdatingStatus ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Atualizando...</>
+                      ) : (
+                        <>Confirmar: {nextStatusLabel}</>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setDriverStepDialogOpen(true)}
+                      title="Adicionar observação e anexos"
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  {/* File upload area */}
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
-                      >
-                        <Camera className="h-4 w-4" />
-                        Tirar Foto
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1 border-dashed"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
-                      >
-                        <Paperclip className="h-4 w-4" />
-                        Anexar Arquivo
-                      </Button>
-                    </div>
-
-                    {pendingFiles.length > 0 && (
-                      <div className="space-y-1">
-                        {pendingFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2 text-sm"
-                          >
-                            {getFileIcon(file)}
-                            <span className="truncate flex-1">{file.name}</span>
-                            <span className="text-xs text-muted-foreground shrink-0">
-                              {(file.size / 1024).toFixed(0)} KB
-                            </span>
-                            <button
-                              onClick={() => removeFile(index)}
-                              className="text-muted-foreground hover:text-destructive shrink-0"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    onClick={handleUpdateStatus}
-                    className="w-full"
-                    disabled={isUpdatingStatus}
-                  >
-                    {isUpdatingStatus ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Atualizando...</>
-                    ) : (
-                      <>Confirmar: {nextStatusLabel}</>
-                    )}
-                  </Button>
+                  {(pendingFiles.length > 0 || stepNotesText) && (
+                    <p className="text-xs text-muted-foreground italic">
+                      {stepNotesText ? '📝 Observação adicionada' : ''}
+                      {stepNotesText && pendingFiles.length > 0 ? ' • ' : ''}
+                      {pendingFiles.length > 0 ? `📎 ${pendingFiles.length} arquivo(s)` : ''}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -823,6 +735,127 @@ export const UnifiedRequestDetailsDialog = ({
             </div>
           </div>
         </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Driver Step Dialog - observation & attachments popup */}
+      <Dialog open={driverStepDialogOpen} onOpenChange={setDriverStepDialogOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Detalhes da Etapa
+            </DialogTitle>
+          </DialogHeader>
+
+          {request && (
+            <div className="space-y-4 mt-2">
+              {/* Request summary */}
+              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-primary text-sm">
+                    #{String(request.request_number || '').padStart(6, '0')}
+                  </span>
+                  <Badge variant="outline" className={getStatusClassName(request.status)}>
+                    {getStatusLabel(request.status)}
+                  </Badge>
+                </div>
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Cliente:</span> {request.clients?.name || '-'}</p>
+                  <p><span className="text-muted-foreground">Material:</span> {request.material_types?.name || '-'}</p>
+                  <p><span className="text-muted-foreground">Transporte:</span> {request.transport_type || '-'}</p>
+                </div>
+                <Separator />
+                <div className="text-sm space-y-1">
+                  <div className="flex items-start gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
+                    <p>{request.origin_address}</p>
+                  </div>
+                  <div className="flex items-start gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
+                    <p>{request.destination_address}</p>
+                  </div>
+                </div>
+                {request.notes && (
+                  <>
+                    <Separator />
+                    <div className="text-sm">
+                      <p className="text-muted-foreground text-xs font-medium mb-1">Observações da solicitação:</p>
+                      <p>{request.notes}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Observation field */}
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Observação da etapa</p>
+                <Textarea
+                  value={stepNotesText}
+                  onChange={(e) => setStepNotesText(e.target.value)}
+                  placeholder="Adicione uma observação para esta etapa..."
+                  className="min-h-[80px] resize-none"
+                />
+              </div>
+
+              {/* File upload area */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Anexos</p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 border-dashed"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
+                  >
+                    <Camera className="h-4 w-4" />
+                    Tirar Foto
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 border-dashed"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    Anexar
+                  </Button>
+                </div>
+
+                {pendingFiles.length > 0 && (
+                  <div className="space-y-1">
+                    {pendingFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2 text-sm"
+                      >
+                        {getFileIcon(file)}
+                        <span className="truncate flex-1">{file.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {(file.size / 1024).toFixed(0)} KB
+                        </span>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="text-muted-foreground hover:text-destructive shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setDriverStepDialogOpen(false)}
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Confirmar
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
