@@ -15,6 +15,7 @@ export const useRealtimeDeliveryRequests = () => {
           queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
           queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
           queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
+          queryClient.invalidateQueries({ queryKey: ['deliveryRequestDetail'] });
           queryClient.invalidateQueries({ queryKey: ['nextRequestNumber'] });
         }
       )
@@ -25,6 +26,7 @@ export const useRealtimeDeliveryRequests = () => {
           queryClient.invalidateQueries({ queryKey: ['request_history'] });
           queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
           queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
+          queryClient.invalidateQueries({ queryKey: ['deliveryRequestDetail'] });
           queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
         }
       )
