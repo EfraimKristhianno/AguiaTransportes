@@ -69,6 +69,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       return data;
     },
     enabled: !!user,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch client record if exists
@@ -85,6 +86,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       return data;
     },
     enabled: !!user?.email && role === 'cliente',
+    refetchOnWindowFocus: false,
   });
 
   // Get next request number for display
@@ -99,6 +101,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       if (error || !data || data.length === 0) return 1;
       return (data[0].request_number || 0) + 1;
     },
+    refetchOnWindowFocus: false,
   });
 
   const isClient = role === 'cliente';

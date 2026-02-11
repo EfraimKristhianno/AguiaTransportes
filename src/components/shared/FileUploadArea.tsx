@@ -26,6 +26,9 @@ const formatSize = (bytes: number) => {
 
 const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const filesRef = useRef<UploadedFile[]>(files);
+  filesRef.current = files;
+
   const [isDragging, setIsDragging] = useState(false);
 
   const addFiles = useCallback(
@@ -38,9 +41,10 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         }
         return entry;
       });
-      onFilesChange([...files, ...added]);
+      // Use ref to always get the latest files, avoiding stale closure on mobile
+      onFilesChange([...filesRef.current, ...added]);
     },
-    [files, onFilesChange]
+    [onFilesChange]
   );
 
   const handleAreaClick = (e: React.MouseEvent) => {
@@ -48,6 +52,7 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
     e.stopPropagation();
     inputRef.current?.click();
   };
+
   const removeFile = (id: string) => {
     const updated = files.filter((f) => {
       if (f.id === id && f.preview) URL.revokeObjectURL(f.preview);
@@ -95,13 +100,19 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         </p>
       </div>
 
+      {/* 
+        Mobile-safe file input: 
+        - No width:0/height:0 (some mobile browsers ignore zero-size inputs)
+        - Uses sr-only for visual hiding while keeping it accessible
+        - tabIndex -1 prevents focus via tab (click-only trigger)
+      */}
       <input
         ref={inputRef}
         type="file"
         multiple
         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
         className="sr-only"
-        style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
+        tabIndex={-1}
         onChange={(e) => {
           addFiles(e.target.files);
           e.target.value = "";
