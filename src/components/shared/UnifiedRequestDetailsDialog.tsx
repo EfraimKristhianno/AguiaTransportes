@@ -713,14 +713,28 @@ export const UnifiedRequestDetailsDialog = ({
       </Dialog>
 
       {/* Driver Step Dialog - observation & attachments popup */}
-      <Dialog open={driverStepDialogOpen} onOpenChange={setDriverStepDialogOpen}>
-        <DialogContent className="max-w-md w-[calc(100vw-1rem)] max-h-[90vh] overflow-y-auto rounded-xl" aria-describedby={undefined}>
+      <Dialog open={driverStepDialogOpen} onOpenChange={() => { /* Block auto-close during file picker on mobile */ }}>
+        <DialogContent
+          className="max-w-md w-[calc(100vw-1rem)] max-h-[90vh] overflow-y-auto rounded-xl [&>button:last-child]:hidden"
+          aria-describedby={undefined}
+          onInteractOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onFocusOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Info className="h-5 w-5 text-primary" />
               Detalhes da Etapa
             </DialogTitle>
           </DialogHeader>
+          {/* Manual close button */}
+          <button
+            onClick={() => setDriverStepDialogOpen(false)}
+            className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Fechar</span>
+          </button>
 
           {request && (
             <div className="space-y-4 mt-2">
