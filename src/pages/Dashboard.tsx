@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin } from 'lucide-react';
+import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin, Pencil, Trash2 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,7 +12,11 @@ import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
 import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
+import { EditRequestDialog } from '@/components/solicitacoes/EditRequestDialog';
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 type DeliveryRequest = {
   id: string;
   request_number: number | null;
@@ -42,8 +46,12 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editRequest, setEditRequest] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const queryClient = useQueryClient();
   const isClient = role === 'cliente';
   const isDriver = role === 'motorista';
+  const canEditDelete = role === 'admin' || role === 'gestor' || role === 'cliente';
 
   // Get current driver record for driver users
   const {
@@ -132,6 +140,23 @@ const Dashboard = () => {
   const handleViewDetails = (id: string) => {
     setSelectedRequestId(id);
     setDetailsOpen(true);
+  };
+
+  const handleEdit = (item: any) => {
+    setEditRequest(item);
+    setEditOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('delivery_requests').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Solicitação excluída com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+    } catch (error: any) {
+      toast.error(`Erro ao excluir: ${error.message}`);
+    }
   };
 
   // Calculate stats
@@ -330,9 +355,39 @@ const Dashboard = () => {
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)} title="Visualizar">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {canEditDelete && (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} title="Editar">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" title="Excluir">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir a solicitação #{String(item.request_number || '').padStart(6, '0')}? Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>)}
               </TableBody>
@@ -367,10 +422,38 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">Data</p>
                     <p className="font-medium">{formatDate(item.scheduled_date || item.created_at)}</p>
                   </div>
-                  <div className="flex items-end justify-end">
+                  <div className="flex items-end justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)}>
                       <Eye className="h-4 w-4" />
                     </Button>
+                    {canEditDelete && (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir a solicitação #{String(item.request_number || '').padStart(6, '0')}? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>)}
@@ -385,6 +468,15 @@ const Dashboard = () => {
           if (!open) setSelectedRequestId(null);
         }}
         driverId={currentDriver?.id}
+      />
+
+      <EditRequestDialog
+        request={editRequest}
+        open={editOpen}
+        onOpenChange={(open) => {
+          setEditOpen(open);
+          if (!open) setEditRequest(null);
+        }}
       />
     </DashboardLayout>;
 };
