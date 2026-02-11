@@ -63,7 +63,7 @@ const Index = () => {
 
         <div className="relative z-10 flex flex-col items-center text-center">
           {/* Logo */}
-          <div className="mb-6 flex h-28 w-56 items-center justify-center rounded-2xl bg-white/95 p-4 backdrop-blur-sm">
+          <div className="mb-6 flex h-40 w-80 items-center justify-center rounded-2xl bg-white/95 p-2 backdrop-blur-sm">
             <img 
               src={logoAguia} 
               alt="Águia Transportes" 
@@ -106,7 +106,7 @@ const Index = () => {
         {/* Mobile header */}
         <div className="absolute left-0 top-0 w-full hero-gradient p-6 lg:hidden">
           <div className="flex items-center justify-center">
-            <div className="flex h-16 w-32 items-center justify-center rounded-xl bg-white/95 p-2">
+            <div className="flex h-24 w-48 items-center justify-center rounded-xl bg-white/95 p-1">
               <img 
                 src={logoAguia} 
                 alt="Águia Transportes" 
