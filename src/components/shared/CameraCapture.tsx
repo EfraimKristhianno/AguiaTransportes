@@ -117,7 +117,7 @@ export const CameraCapture = ({ open, onOpenChange, onCapture }: CameraCapturePr
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { stopCamera(); } onOpenChange(v); }}>
       <DialogContent
-        className="max-w-md p-0 overflow-hidden"
+        className="max-w-md w-[calc(100vw-1rem)] p-0 overflow-hidden rounded-xl"
         aria-describedby={undefined}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -160,7 +160,7 @@ export const CameraCapture = ({ open, onOpenChange, onCapture }: CameraCapturePr
           <canvas ref={canvasRef} className="hidden" />
         </div>
 
-        <div className="p-4 flex items-center justify-center gap-4">
+        <div className="p-4 flex items-center justify-center gap-4 pb-6">
           {!capturedImage ? (
             <>
               <Button variant="outline" size="icon" onClick={handleSwitchCamera} disabled={!isStreaming}>

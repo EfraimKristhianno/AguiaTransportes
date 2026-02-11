@@ -342,8 +342,8 @@ export const UnifiedRequestDetailsDialog = ({
         onChange={(e) => { handleFileChange(e); }}
       />
       <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
-        <DialogContent
-          className="max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button:last-child]:hidden"
+         <DialogContent
+          className="max-w-lg w-[calc(100vw-1rem)] max-h-[95vh] sm:max-h-[90vh] p-0 overflow-hidden [&>button:last-child]:hidden rounded-xl sm:rounded-2xl"
           onInteractOutside={(e) => e.preventDefault()}
           onPointerDownOutside={(e) => e.preventDefault()}
           onFocusOutside={(e) => e.preventDefault()}
@@ -359,7 +359,7 @@ export const UnifiedRequestDetailsDialog = ({
             <span className="sr-only">Fechar</span>
           </button>
           <ScrollArea className="max-h-[90vh]">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Hash className="h-5 w-5 text-primary" />
@@ -389,7 +389,7 @@ export const UnifiedRequestDetailsDialog = ({
               </div>
 
               {/* Material and Transport */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Package className="h-4 w-4" /> Material
@@ -409,7 +409,7 @@ export const UnifiedRequestDetailsDialog = ({
               </div>
 
               {/* Requester and Date */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-muted-foreground">Solicitante</h4>
                   <div className="bg-muted/50 rounded-lg p-3">
@@ -434,7 +434,7 @@ export const UnifiedRequestDetailsDialog = ({
 
               {/* Invoice and OP */}
               {(request.invoice_number || request.op_number) && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <FileText className="h-4 w-4" /> Nota Fiscal
@@ -659,16 +659,17 @@ export const UnifiedRequestDetailsDialog = ({
               {/* Driver Actions - Accept */}
               {canAccept && (
                 <div className="space-y-3 border-t pt-4">
-                  <div className="flex items-center gap-2">
-                    <Button onClick={handleAccept} className="flex-1" disabled={isAccepting}>
+                   <div className="flex items-center gap-2">
+                    <Button onClick={handleAccept} className="flex-1 h-12 text-base" disabled={isAccepting}>
                       {isAccepting ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Aceitando...</>
+                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Aceitando...</>
                       ) : 'Aceitar Coleta'}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
+                      className="h-12 w-12"
                       onClick={() => setDriverStepDialogOpen(true)}
                       title="Adicionar observação e anexos"
                     >
@@ -687,14 +688,14 @@ export const UnifiedRequestDetailsDialog = ({
 
               {isAssignedDriver && nextStatus && (
                 <div className="space-y-3 border-t pt-4">
-                  <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2">
                     <Button
                       onClick={handleUpdateStatus}
-                      className="flex-1"
+                      className="flex-1 h-12 text-base"
                       disabled={isUpdatingStatus}
                     >
                       {isUpdatingStatus ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Atualizando...</>
+                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Atualizando...</>
                       ) : (
                         <>Confirmar: {nextStatusLabel}</>
                       )}
@@ -703,6 +704,7 @@ export const UnifiedRequestDetailsDialog = ({
                       type="button"
                       variant="outline"
                       size="icon"
+                      className="h-12 w-12"
                       onClick={() => setDriverStepDialogOpen(true)}
                       title="Adicionar observação e anexos"
                     >
@@ -733,7 +735,7 @@ export const UnifiedRequestDetailsDialog = ({
 
       {/* Driver Step Dialog - observation & attachments popup */}
       <Dialog open={driverStepDialogOpen} onOpenChange={setDriverStepDialogOpen}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="max-w-md w-[calc(100vw-1rem)] max-h-[90vh] overflow-y-auto rounded-xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Info className="h-5 w-5 text-primary" />

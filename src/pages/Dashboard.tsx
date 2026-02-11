@@ -243,7 +243,7 @@ const Dashboard = () => {
   const dashboardSubtitle = isClient ? 'Acompanhe suas solicitações de coleta' : isDriver ? 'Acompanhe suas entregas aceitas' : 'Visão geral do sistema de logística';
   return <DashboardLayout title={dashboardTitle} subtitle={dashboardSubtitle} icon={<LayoutDashboard className="h-5 w-5" />}>
       {/* Stats Cards */}
-      <div className="mb-6 grid gap-3 grid-cols-2 lg:gap-4 lg:grid-cols-4">
+      <div className="mb-4 sm:mb-6 grid gap-3 grid-cols-2 lg:gap-4 lg:grid-cols-4">
         {/* Total Solicitações */}
         <Card className="border-border">
           <CardContent className="flex items-center justify-between p-4">
@@ -305,7 +305,7 @@ const Dashboard = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <RequestSearchBar
           searchTerm={searchQuery}
           onSearchChange={setSearchQuery}
@@ -398,7 +398,7 @@ const Dashboard = () => {
 
           {/* Cards - Mobile */}
           <div className="space-y-3 lg:hidden">
-            {filteredRequests.map(item => <div key={item.id} className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+            {filteredRequests.map(item => <div key={item.id} className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-[var(--shadow-soft)] active:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-mono font-bold text-primary">
                     #{String(item.request_number || '').padStart(6, '0')}
@@ -424,19 +424,19 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">Data</p>
                     <p className="font-medium">{formatDate(item.scheduled_date || item.created_at)}</p>
                   </div>
-                  <div className="flex items-end justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)}>
-                      <Eye className="h-4 w-4" />
+                   <div className="flex items-end justify-end gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => handleViewDetails(item.id)}>
+                      <Eye className="h-5 w-5" />
                     </Button>
                     {canEditDelete && (
                       <>
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                          <Pencil className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => handleEdit(item)}>
+                          <Pencil className="h-5 w-5" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                                <Button variant="ghost" size="icon" className="h-10 w-10">
+                                  <Trash2 className="h-5 w-5 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
