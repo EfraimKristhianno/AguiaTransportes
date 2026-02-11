@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
+import { CameraCapture } from '@/components/shared/CameraCapture';
 
 interface RequestData {
   id: string;
@@ -135,10 +136,10 @@ export const UnifiedRequestDetailsDialog = ({
   const [stepNotesText, setStepNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [driverStepDialogOpen, setDriverStepDialogOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -331,21 +332,13 @@ export const UnifiedRequestDetailsDialog = ({
 
   return (
     <>
-      {/* Hidden file inputs - standard React refs pattern for mobile reliability */}
+      {/* Hidden file input for gallery/files */}
       <input
         ref={fileInputRef}
         type="file"
         multiple
         className="hidden"
         accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
-        onChange={(e) => { handleFileChange(e); }}
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
         onChange={(e) => { handleFileChange(e); }}
       />
       <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
@@ -806,7 +799,7 @@ export const UnifiedRequestDetailsDialog = ({
                     type="button"
                     variant="outline"
                     className="flex-1 border-dashed"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); cameraInputRef.current?.click(); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCameraOpen(true); }}
                   >
                     <Camera className="h-4 w-4" />
                     Tirar Foto
@@ -858,6 +851,17 @@ export const UnifiedRequestDetailsDialog = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* getUserMedia Camera Capture */}
+      <CameraCapture
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onCapture={(file) => {
+          setTimeout(() => {
+            setPendingFiles(prev => [...prev, file]);
+          }, 100);
+        }}
+      />
     </>
   );
 };
