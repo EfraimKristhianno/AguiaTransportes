@@ -80,7 +80,7 @@ export const usePWA = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Auto-apply service worker updates without user interaction
+    // Handle service worker updates - set flag instead of auto-reloading
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
         registration.addEventListener('updatefound', () => {
@@ -88,18 +88,11 @@ export const usePWA = () => {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // Auto-activate new SW and reload
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload();
+                setStatus(prev => ({ ...prev, isUpdateAvailable: true }));
               }
             });
           }
         });
-      });
-
-      // Listen for controller change (new SW activated)
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // Already reloaded above, but as fallback
       });
     }
 
@@ -135,10 +128,13 @@ export const usePWA = () => {
   const updateApp = useCallback(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
         registration.update();
       });
     }
-    window.location.reload();
+    setTimeout(() => window.location.reload(), 500);
   }, []);
 
   const requestNotificationPermission = useCallback(async () => {
