@@ -119,6 +119,8 @@ export const useAcceptDeliveryRequest = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
       queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequestDetail'] });
       toast.success('Solicitação aceita com sucesso!');
     },
     onError: (error: Error) => {
