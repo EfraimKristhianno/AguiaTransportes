@@ -5,11 +5,13 @@ import { RequestForm } from '@/components/solicitacoes/RequestForm';
 import { RequestList } from '@/components/solicitacoes/RequestList';
 import { useAuth } from '@/contexts/AuthContext';
 import { RequestSearchBar } from '@/components/shared/RequestSearchBar';
+import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 
 const Solicitacoes = () => {
   const { role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  useRealtimeDeliveryRequests();
 
   return (
     <DashboardLayout

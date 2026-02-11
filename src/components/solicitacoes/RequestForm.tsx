@@ -134,7 +134,12 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setAttachments(prev => [...prev, ...files]);
+    if (files.length > 0) {
+      // Use setTimeout to ensure React processes state after camera app returns
+      setTimeout(() => {
+        setAttachments(prev => [...prev, ...files]);
+      }, 100);
+    }
   };
 
   const removeAttachment = (index: number) => {
@@ -607,6 +612,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           {/* Attachments */}
           <div>
             <Label>Anexos (fotos, documentos, vídeos)</Label>
+            {/* File inputs moved outside form submit scope for mobile reliability */}
             <input
               ref={fileInputRef}
               type="file"
@@ -614,9 +620,10 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               className="hidden"
               onChange={(e) => {
                 handleFileSelect(e);
-                e.target.value = '';
+                if (e.target) e.target.value = '';
               }}
               accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+              onClick={(e) => e.stopPropagation()}
             />
             <input
               ref={cameraInputRef}
@@ -626,8 +633,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               className="hidden"
               onChange={(e) => {
                 handleFileSelect(e);
-                e.target.value = '';
+                if (e.target) e.target.value = '';
               }}
+              onClick={(e) => e.stopPropagation()}
             />
             <div className="mt-2 flex gap-2">
               <Button

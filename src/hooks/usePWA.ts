@@ -80,7 +80,7 @@ export const usePWA = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Check for service worker updates
+    // Auto-apply service worker updates without user interaction
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
         registration.addEventListener('updatefound', () => {
@@ -88,11 +88,18 @@ export const usePWA = () => {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                setStatus(prev => ({ ...prev, isUpdateAvailable: true }));
+                // Auto-activate new SW and reload
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload();
               }
             });
           }
         });
+      });
+
+      // Listen for controller change (new SW activated)
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // Already reloaded above, but as fallback
       });
     }
 

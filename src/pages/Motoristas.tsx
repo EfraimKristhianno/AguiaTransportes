@@ -11,10 +11,12 @@ import { useDrivers } from '@/hooks/useDrivers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver, useDriverRequests } from '@/hooks/useDriverRequests';
 import { DriverRequestsTable } from '@/components/motoristas/DriverRequestsTable';
+import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 
 const Motoristas = () => {
   const { role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  useRealtimeDeliveryRequests();
   const { data: drivers, isLoading } = useDrivers();
   
   const isDriver = role === 'motorista';

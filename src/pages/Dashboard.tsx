@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
 import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
 import { EditRequestDialog } from '@/components/solicitacoes/EditRequestDialog';
+import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useQueryClient } from '@tanstack/react-query';
@@ -51,6 +52,7 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   const isClient = role === 'cliente';
   const isDriver = role === 'motorista';
+  useRealtimeDeliveryRequests();
   const canEditDelete = role === 'admin' || role === 'gestor' || role === 'cliente';
 
   // Get current driver record for driver users

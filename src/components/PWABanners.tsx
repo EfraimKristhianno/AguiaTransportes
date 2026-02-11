@@ -18,39 +18,8 @@ const OfflineBanner = () => {
   );
 };
 
-const UpdateBanner = () => {
-  const { isUpdateAvailable, updateApp } = usePWA();
-  const [dismissed, setDismissed] = useState(false);
-
-  if (!isUpdateAvailable || dismissed) return null;
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-primary px-4 py-3 text-center">
-      <div className="flex items-center justify-center gap-4">
-        <span className="text-sm font-medium text-primary-foreground">
-          Uma nova versão está disponível!
-        </span>
-        <Button
-          onClick={updateApp}
-          size="sm"
-          variant="secondary"
-          className="gap-2"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Atualizar
-        </Button>
-        <Button
-          onClick={() => setDismissed(true)}
-          size="sm"
-          variant="ghost"
-          className="text-primary-foreground hover:text-primary-foreground/80 p-1 h-auto"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-};
+// UpdateBanner removed - SW updates are now auto-applied
+const UpdateBanner = () => null;
 
 const NotificationPermissionBanner = () => {
   const { notificationPermission, requestNotificationPermission } = usePWA();
