@@ -1,9 +1,9 @@
 import { useRef, useState, useCallback } from "react";
-import { Paperclip, X, FileText, Image, File } from "lucide-react";
+import { Paperclip, X, FileText, Image, File as FileIcon } from "lucide-react";
 
 interface UploadedFile {
   id: string;
-  file: File;
+  file: globalThis.File;
   preview?: string;
 }
 
@@ -15,7 +15,7 @@ interface FileUploadAreaProps {
 const getFileIcon = (type: string) => {
   if (type.startsWith("image/")) return Image;
   if (type.includes("pdf") || type.includes("document") || type.includes("text")) return FileText;
-  return File;
+  return FileIcon;
 };
 
 const formatSize = (bytes: number) => {
