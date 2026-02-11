@@ -142,10 +142,13 @@ export const UnifiedRequestDetailsDialog = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      setPendingFiles(prev => [...prev, ...files]);
+      // Use setTimeout to ensure React processes state after camera app returns on mobile
+      setTimeout(() => {
+        setPendingFiles(prev => [...prev, ...files]);
+      }, 100);
     }
     // Reset so same file can be re-selected
-    e.target.value = '';
+    if (e.target) e.target.value = '';
   };
 
   // Manual close handler - the ONLY way to close this dialog
