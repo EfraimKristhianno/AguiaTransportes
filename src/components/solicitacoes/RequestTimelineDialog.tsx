@@ -39,11 +39,17 @@ export const RequestTimelineDialog = ({ request, open, onOpenChange }: RequestTi
   if (!request) return null;
 
   // Map history entries by status for quick lookup
-  const historyByStatus: Record<string, { changed_at: string; notes: string | null }> = {};
+  const historyByStatus: Record<string, { changed_at: string; notes: string | null; attachments?: string[] }> = {};
   history.forEach((entry) => {
-    // Keep the first occurrence of each status (chronological)
-    if (!historyByStatus[entry.status]) {
-      historyByStatus[entry.status] = { changed_at: entry.changed_at, notes: entry.notes };
+    const existing = historyByStatus[entry.status];
+    if (!existing) {
+      historyByStatus[entry.status] = { changed_at: entry.changed_at, notes: entry.notes, attachments: entry.attachments || [] };
+    } else {
+      // Merge: prefer entry with notes/attachments (handles duplicate trigger entries)
+      if (entry.notes && !existing.notes) existing.notes = entry.notes;
+      if (entry.attachments && entry.attachments.length > 0 && (!existing.attachments || existing.attachments.length === 0)) {
+        existing.attachments = entry.attachments;
+      }
     }
   });
 
