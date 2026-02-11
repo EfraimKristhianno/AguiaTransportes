@@ -61,6 +61,8 @@ export const useUpdateRequestStatus = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
       queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequestDetail'] });
       queryClient.invalidateQueries({ queryKey: ['request_history'] });
       
       const statusLabels: Record<string, string> = {
