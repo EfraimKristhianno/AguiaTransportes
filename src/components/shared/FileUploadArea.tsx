@@ -30,7 +30,7 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
 
   const addFiles = useCallback(
     (newFiles: FileList | null) => {
-      if (!newFiles) return;
+      if (!newFiles || newFiles.length === 0) return;
       const added: UploadedFile[] = Array.from(newFiles).map((file) => {
         const entry: UploadedFile = { id: crypto.randomUUID(), file };
         if (file.type.startsWith("image/")) {
@@ -43,6 +43,11 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
     [files, onFilesChange]
   );
 
+  const handleAreaClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    inputRef.current?.click();
+  };
   const removeFile = (id: string) => {
     const updated = files.filter((f) => {
       if (f.id === id && f.preview) URL.revokeObjectURL(f.preview);
@@ -69,7 +74,7 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
+        onClick={handleAreaClick}
         className={`
           flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 
           cursor-pointer transition-all duration-200
@@ -95,7 +100,8 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         type="file"
         multiple
         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-        className="hidden"
+        className="sr-only"
+        style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
         onChange={(e) => {
           addFiles(e.target.files);
           e.target.value = "";
