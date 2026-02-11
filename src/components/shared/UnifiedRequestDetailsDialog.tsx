@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin, Phone, User, Package, Truck, Calendar, FileText,
-  Navigation, Loader2, Hash, Check, Circle, Camera, Paperclip,
-  X, ChevronRight, ChevronDown, Image as ImageIcon, Film, File, Send, Eye, Info,
+  Navigation, Loader2, Hash, Check, Circle,
+  X, ChevronRight, ChevronDown, Send, Eye, Info,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
-import { CameraCapture } from '@/components/shared/CameraCapture';
+import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 
 interface RequestData {
   id: string;
@@ -131,27 +131,13 @@ export const UnifiedRequestDetailsDialog = ({
   const [isAccepting, setIsAccepting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [estimatedDistance, setEstimatedDistance] = useState<string>('Calculando...');
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<UploadedFile[]>([]);
   const [notesText, setNotesText] = useState('');
   const [stepNotesText, setStepNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [driverStepDialogOpen, setDriverStepDialogOpen] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
   
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      // Use setTimeout to ensure React processes state after camera app returns on mobile
-      setTimeout(() => {
-        setPendingFiles(prev => [...prev, ...files]);
-      }, 100);
-    }
-    // Reset so same file can be re-selected
-    if (e.target) e.target.value = '';
-  };
 
   // Manual close handler - the ONLY way to close this dialog
   const handleClose = () => {
@@ -233,8 +219,8 @@ export const UnifiedRequestDetailsDialog = ({
     try {
       await acceptMutation.mutateAsync({ requestId: request.id, driverId });
       const paths: string[] = [];
-      for (const file of pendingFiles) {
-        const path = await uploadMutation.mutateAsync({ file, requestId: request.id });
+      for (const entry of pendingFiles) {
+        const path = await uploadMutation.mutateAsync({ file: entry.file, requestId: request.id });
         paths.push(path);
       }
       if (paths.length > 0 || stepNotesText) {
@@ -266,8 +252,8 @@ export const UnifiedRequestDetailsDialog = ({
     setIsUpdatingStatus(true);
     try {
       const paths: string[] = [];
-      for (const file of pendingFiles) {
-        const path = await uploadMutation.mutateAsync({ file, requestId: request.id });
+      for (const entry of pendingFiles) {
+        const path = await uploadMutation.mutateAsync({ file: entry.file, requestId: request.id });
         paths.push(path);
       }
       await updateStatusMutation.mutateAsync({
@@ -284,8 +270,8 @@ export const UnifiedRequestDetailsDialog = ({
     } finally { setIsUpdatingStatus(false); }
   };
 
-  const removeFile = (index: number) => {
-    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setPendingFiles(prev => prev.filter((f) => f.id !== id));
   };
 
   const handleSaveNotes = async () => {
@@ -307,11 +293,6 @@ export const UnifiedRequestDetailsDialog = ({
     }
   };
 
-  const getFileIcon = (file: File) => {
-    if (file.type.startsWith('image/')) return <ImageIcon className="h-4 w-4" />;
-    if (file.type.startsWith('video/')) return <Film className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
-  };
 
   const toggleStep = (stepValue: string) => {
     setExpandedSteps(prev => ({ ...prev, [stepValue]: !prev[stepValue] }));
@@ -332,15 +313,6 @@ export const UnifiedRequestDetailsDialog = ({
 
   return (
     <>
-      {/* Hidden file input for gallery/files */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
-        onChange={(e) => { handleFileChange(e); }}
-      />
       <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
          <DialogContent
           className="max-w-lg w-[calc(100vw-1rem)] max-h-[95vh] sm:max-h-[90vh] p-0 overflow-hidden [&>button:last-child]:hidden rounded-xl sm:rounded-2xl"
@@ -525,7 +497,7 @@ export const UnifiedRequestDetailsDialog = ({
               {request.attachments && Array.isArray(request.attachments) && (request.attachments as string[]).length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                     <h4 className="text-sm font-medium text-muted-foreground">Anexos</h4>
                   </div>
                   <div className="grid gap-2">
@@ -794,52 +766,7 @@ export const UnifiedRequestDetailsDialog = ({
               </div>
 
               {/* File upload area */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Anexos</p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1 border-dashed"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCameraOpen(true); }}
-                  >
-                    <Camera className="h-4 w-4" />
-                    Tirar Foto
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1 border-dashed"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileInputRef.current?.click(); }}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    Anexar
-                  </Button>
-                </div>
-
-                {pendingFiles.length > 0 && (
-                  <div className="space-y-1">
-                    {pendingFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2 text-sm"
-                      >
-                        {getFileIcon(file)}
-                        <span className="truncate flex-1">{file.name}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {(file.size / 1024).toFixed(0)} KB
-                        </span>
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="text-muted-foreground hover:text-destructive shrink-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <FileUploadArea files={pendingFiles} onFilesChange={setPendingFiles} />
 
               <Button
                 variant="outline"
@@ -854,16 +781,6 @@ export const UnifiedRequestDetailsDialog = ({
         </DialogContent>
       </Dialog>
 
-      {/* getUserMedia Camera Capture */}
-      <CameraCapture
-        open={cameraOpen}
-        onOpenChange={setCameraOpen}
-        onCapture={(file) => {
-          setTimeout(() => {
-            setPendingFiles(prev => [...prev, file]);
-          }, 100);
-        }}
-      />
     </>
   );
 };
