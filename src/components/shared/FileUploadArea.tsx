@@ -100,18 +100,13 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         </p>
       </div>
 
-      {/* 
-        Mobile-safe file input: 
-        - No width:0/height:0 (some mobile browsers ignore zero-size inputs)
-        - Uses sr-only for visual hiding while keeping it accessible
-        - tabIndex -1 prevents focus via tab (click-only trigger)
-      */}
+      {/* Mobile-safe: opacity 0 instead of display:none/hidden to avoid iOS clickjacking guard */}
       <input
         ref={inputRef}
         type="file"
         multiple
         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-        className="sr-only"
+        style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 1, height: 1, overflow: 'hidden' }}
         tabIndex={-1}
         onChange={(e) => {
           addFiles(e.target.files);
