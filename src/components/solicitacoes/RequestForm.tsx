@@ -152,26 +152,44 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       // Create or find client - essential for RLS to work
       let clientId = clientRecord?.id;
       // Normalize email to lowercase for case-insensitive matching with RLS policies
-      const emailToUse = (isClient ? user?.email : data.email)?.toLowerCase();
+      const emailToUse = (isClient ? user?.email : data.email)?.toLowerCase() || undefined;
       
-      if (!clientId && emailToUse) {
-        // Find existing client by email (case-insensitive via ilike)
-        const { data: existingClient } = await supabase
-          .from('clients')
-          .select('id')
-          .ilike('email', emailToUse)
-          .maybeSingle();
+      if (!clientId) {
+        if (emailToUse) {
+          // Find existing client by email (case-insensitive via ilike)
+          const { data: existingClient } = await supabase
+            .from('clients')
+            .select('id')
+            .ilike('email', emailToUse)
+            .maybeSingle();
 
-        if (existingClient) {
-          clientId = existingClient.id;
-        } else {
-          // Create new client record - email is normalized to lowercase
+          if (existingClient) {
+            clientId = existingClient.id;
+          }
+        }
+        
+        if (!clientId) {
+          // Try to find by name if no email match
+          if (!emailToUse) {
+            const { data: existingByName } = await supabase
+              .from('clients')
+              .select('id')
+              .eq('name', data.clientName)
+              .maybeSingle();
+            if (existingByName) {
+              clientId = existingByName.id;
+            }
+          }
+        }
+
+        if (!clientId) {
+          // Create new client record
           const { data: newClient, error } = await supabase
             .from('clients')
             .insert({
               name: data.clientName,
               phone: data.phone || null,
-              email: emailToUse,
+              email: emailToUse || null,
             })
             .select('id')
             .single();
@@ -186,7 +204,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       }
 
       if (!clientId) {
-        throw new Error('É necessário um email válido para criar a solicitação.');
+        throw new Error('Não foi possível identificar o cliente para a solicitação.');
       }
 
       // 1. Create the request first (without attachments)
