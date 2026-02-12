@@ -96,7 +96,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
       // Upload new files
       const newPaths: string[] = [];
       for (const entry of pendingFiles) {
-        const filePath = `${request.id}/${Date.now()}-${entry.file.name}`;
+        const filePath = `${request.id}/status-attachments/${Date.now()}-${entry.file.name}`;
         const { error: uploadError } = await supabase.storage
           .from('request-attachments')
           .upload(filePath, entry.file);
