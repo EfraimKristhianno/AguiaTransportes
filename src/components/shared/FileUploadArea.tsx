@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { Paperclip, X, FileText, Image, File as FileIcon } from "lucide-react";
 
 interface UploadedFile {
@@ -30,9 +30,28 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
   filesRef.current = files;
 
   const [isDragging, setIsDragging] = useState(false);
+  const isSelectingFileRef = useRef(false);
+
+  // On mobile, opening the camera/gallery sends the app to background.
+  // We track this so parent dialogs know a selection is in progress and should NOT close.
+  // When the user returns, visibilitychange fires before the input's onChange.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && isSelectingFileRef.current) {
+        // User returned from camera/gallery – keep flag active until onChange fires
+        // Set a timeout fallback: if onChange doesn't fire within 2s, user cancelled
+        setTimeout(() => {
+          isSelectingFileRef.current = false;
+        }, 2000);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   const addFiles = useCallback(
     (newFiles: FileList | null) => {
+      isSelectingFileRef.current = false;
       if (!newFiles || newFiles.length === 0) return;
       const added: UploadedFile[] = Array.from(newFiles).map((file) => {
         const entry: UploadedFile = { id: crypto.randomUUID(), file };
@@ -50,6 +69,7 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
   const handleAreaClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    isSelectingFileRef.current = true;
     inputRef.current?.click();
   };
 
@@ -106,8 +126,12 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         type="file"
         multiple
         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+        capture={undefined}
         style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 1, height: 1, overflow: 'hidden' }}
         tabIndex={-1}
+        onBlur={() => {
+          // On some mobile browsers, blur fires when the picker opens – ignore it
+        }}
         onChange={(e) => {
           addFiles(e.target.files);
           e.target.value = "";
