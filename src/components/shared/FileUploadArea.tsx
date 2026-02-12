@@ -125,8 +125,7 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         ref={inputRef}
         type="file"
         multiple
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-        capture={undefined}
+        accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.bmp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt"
         style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 1, height: 1, overflow: 'hidden' }}
         tabIndex={-1}
         onBlur={() => {
