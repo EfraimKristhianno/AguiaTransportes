@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -123,6 +124,9 @@ export const UnifiedRequestDetailsDialog = ({
 }: UnifiedRequestDetailsDialogProps) => {
   const { role } = useAuth();
   const isDriver = role === 'motorista';
+  const isAdmin = role === 'admin';
+  const isAdminOrGestor = role === 'admin' || role === 'gestor';
+  const [adminSelectedStatus, setAdminSelectedStatus] = useState<string>('');
   const acceptMutation = useAcceptDeliveryRequest();
   const updateStatusMutation = useUpdateRequestStatus();
   const uploadMutation = useUploadStatusAttachment();
@@ -182,6 +186,7 @@ export const UnifiedRequestDetailsDialog = ({
       setExpandedSteps({});
       setStepNotesText('');
       setDriverStepDialogOpen(false);
+      setAdminSelectedStatus('');
     } else if (request) {
       setNotesText(request.notes || '');
     }
@@ -634,6 +639,46 @@ export const UnifiedRequestDetailsDialog = ({
                   </div>
                 )}
               </div>
+
+              {/* Admin/Gestor Actions - Change Status */}
+              {isAdminOrGestor && request.status !== 'entregue' && (
+                <div className="space-y-3 border-t pt-4">
+                  <h4 className="text-sm font-medium text-muted-foreground">Alterar Status</h4>
+                  <div className="flex items-center gap-2">
+                    <Select value={adminSelectedStatus} onValueChange={setAdminSelectedStatus}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione o novo status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_FLOW.filter(s => s.value !== request.status).map(s => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      disabled={!adminSelectedStatus || isUpdatingStatus}
+                      onClick={async () => {
+                        if (!adminSelectedStatus) return;
+                        setIsUpdatingStatus(true);
+                        try {
+                          await updateStatusMutation.mutateAsync({
+                            requestId: request.id,
+                            status: adminSelectedStatus,
+                          });
+                          setAdminSelectedStatus('');
+                          handleClose();
+                        } catch {
+                          // handled by mutation
+                        } finally {
+                          setIsUpdatingStatus(false);
+                        }
+                      }}
+                    >
+                      {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Alterar'}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Driver Actions - Accept */}
               {canAccept && (
