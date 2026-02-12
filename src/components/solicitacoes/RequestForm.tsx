@@ -573,7 +573,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                   <FormControl>
                     <div className="relative">
                       <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input {...field} placeholder="Número da NF" className="pl-9" />
+                      <Input {...field} placeholder="Número da NF" className="pl-9" autoComplete="off" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -588,7 +588,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 <FormItem>
                   <FormLabel>O.P.</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Número da O.P." />
+                    <Input {...field} placeholder="Número da O.P." autoComplete="off" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
