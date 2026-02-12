@@ -213,7 +213,7 @@ const Motoristas = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Motorista</TableHead>
-                  <TableHead>Telefone</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead className="text-center">Total</TableHead>
                   <TableHead className="text-center">Concluídas</TableHead>
                   <TableHead className="text-center">Ativas</TableHead>
@@ -230,7 +230,7 @@ const Motoristas = () => {
                           <Skeleton className="h-4 w-32" />
                         </div>
                       </TableCell>
-                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
@@ -258,7 +258,7 @@ const Motoristas = () => {
                           <span className="font-medium">{driver.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{driver.phone || '-'}</TableCell>
+                      <TableCell>{driver.is_fixed ? 'Fixo' : 'Agregado'}</TableCell>
                       <TableCell className="text-center">{driver.total_deliveries}</TableCell>
                       <TableCell className="text-center font-medium">
                         {driver.completed_deliveries}
