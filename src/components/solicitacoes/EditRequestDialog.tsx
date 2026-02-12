@@ -20,8 +20,6 @@ import { useTransportTypes } from '@/hooks/useDeliveryRequests';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
-import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
-import { AttachmentItem } from '@/components/shared/AttachmentItem';
 
 const editSchema = z.object({
   originAddress: z.string().min(1, 'Endereço de coleta é obrigatório'),
@@ -46,8 +44,6 @@ interface EditRequestDialogProps {
 
 export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDialogProps) => {
   const [isSaving, setIsSaving] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState<UploadedFile[]>([]);
-  const [existingAttachments, setExistingAttachments] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { data: materialTypes = [] } = useMaterialTypes();
   const { data: transportTypes = [] } = useTransportTypes();
@@ -82,10 +78,6 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
         requester: request.requester || '',
         requesterPhone: request.requester_phone || '',
       });
-      setExistingAttachments(
-        Array.isArray(request.attachments) ? (request.attachments as string[]) : []
-      );
-      setPendingFiles([]);
     }
   }, [request, open, form]);
 
@@ -93,19 +85,6 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
     if (!request?.id) return;
     setIsSaving(true);
     try {
-      // Upload new files
-      const newPaths: string[] = [];
-      for (const entry of pendingFiles) {
-        const filePath = `${request.id}/status-attachments/${Date.now()}-${entry.file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('request-attachments')
-          .upload(filePath, entry.file);
-        if (uploadError) throw uploadError;
-        newPaths.push(filePath);
-      }
-
-      const allAttachments = [...existingAttachments, ...newPaths];
-
       const { error } = await supabase
         .from('delivery_requests')
         .update({
@@ -119,7 +98,6 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
           notes: data.notes || null,
           requester: data.requester || null,
           requester_phone: data.requesterPhone || null,
-          attachments: allAttachments,
         })
         .eq('id', request.id);
 
@@ -290,37 +268,6 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
                 <FormMessage />
               </FormItem>
             )} />
-            {/* Anexos existentes */}
-            {existingAttachments.length > 0 && (
-              <div className="space-y-2">
-                <FormLabel>Anexos existentes</FormLabel>
-                <div className="grid gap-2">
-                  {existingAttachments.map((path, index) => (
-                    <div key={path} className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <AttachmentItem path={path} index={index} />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive h-7 px-2"
-                        onClick={() => setExistingAttachments(prev => prev.filter((_, i) => i !== index))}
-                      >
-                        Remover
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Novos anexos */}
-            <div className="space-y-2">
-              <FormLabel>Adicionar anexos</FormLabel>
-              <FileUploadArea files={pendingFiles} onFilesChange={setPendingFiles} />
-            </div>
-
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
