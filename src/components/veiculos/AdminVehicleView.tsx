@@ -8,7 +8,7 @@ import { Fuel, Gauge, Droplets, Car, AlertTriangle, TrendingUp, DollarSign } fro
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const COLORS = ['#d32127', '#e8783a', '#f5a623', '#4a9eda', '#6bc5a0'];
 
 const AdminVehicleView = () => {
   const { data: logs = [], isLoading } = useVehicleLogs();
@@ -136,7 +136,7 @@ const AdminVehicleView = () => {
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis className="text-xs" />
                   <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                  <Area type="monotone" dataKey="cost" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
+                  <Area type="monotone" dataKey="cost" stroke="#d32127" fill="#d32127" fillOpacity={0.2} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -155,7 +155,7 @@ const AdminVehicleView = () => {
                   <XAxis type="number" className="text-xs" />
                   <YAxis dataKey="name" type="category" className="text-xs" width={80} />
                   <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                  <Bar dataKey="cost" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="cost" fill="#e8783a" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -177,7 +177,7 @@ const AdminVehicleView = () => {
                   <XAxis dataKey="name" className="text-xs" />
                   <YAxis className="text-xs" />
                   <Tooltip />
-                  <Bar dataKey="km" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="km" fill="#d32127" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>}
@@ -205,8 +205,8 @@ const AdminVehicleView = () => {
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
-                    <Cell fill="hsl(var(--chart-2))" />
-                    <Cell fill="hsl(var(--muted))" />
+                    <Cell fill="#6bc5a0" />
+                    <Cell fill="#ccc" />
                   </Pie>
                   <Legend /><Tooltip />
                 </PieChart>
