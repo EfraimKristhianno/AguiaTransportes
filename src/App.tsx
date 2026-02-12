@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Solicitacoes from "./pages/Solicitacoes";
 import Usuarios from "./pages/Usuarios";
 import Motoristas from "./pages/Motoristas";
+import Veiculos from "./pages/Veiculos";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
@@ -62,6 +63,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Motoristas />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/veiculos" 
+              element={
+                <ProtectedRoute>
+                  <Veiculos />
                 </ProtectedRoute>
               } 
             />
