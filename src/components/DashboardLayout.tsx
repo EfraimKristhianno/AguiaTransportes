@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Truck as TruckIcon, LogOut, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Truck as TruckIcon, Car, LogOut, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
@@ -26,6 +26,11 @@ const allMenuItems = [{
   icon: TruckIcon,
   label: 'Motoristas',
   path: '/motoristas',
+  roles: ['admin', 'gestor', 'motorista'] as UserRole[]
+}, {
+  icon: Car,
+  label: 'Veículos',
+  path: '/veiculos',
   roles: ['admin', 'gestor', 'motorista'] as UserRole[]
 }, {
   icon: Users,

@@ -13,6 +13,7 @@ const routePermissions: Record<string, UserRole[]> = {
   '/solicitacoes': ['admin', 'gestor', 'motorista', 'cliente'],
   '/usuarios': ['admin'],
   '/motoristas': ['admin', 'gestor', 'motorista'],
+  '/veiculos': ['admin', 'gestor', 'motorista'],
   '/clientes': ['admin', 'gestor'],
 };
 
