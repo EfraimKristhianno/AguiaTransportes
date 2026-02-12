@@ -213,7 +213,6 @@ const Motoristas = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Motorista</TableHead>
-                  <TableHead>Tipo</TableHead>
                   <TableHead className="text-center">Total</TableHead>
                   <TableHead className="text-center">Concluídas</TableHead>
                   <TableHead className="text-center">Ativas</TableHead>
@@ -230,7 +229,6 @@ const Motoristas = () => {
                           <Skeleton className="h-4 w-32" />
                         </div>
                       </TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
@@ -239,7 +237,7 @@ const Motoristas = () => {
                   ))
                 ) : filteredDrivers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       <p className="text-muted-foreground">
                         {searchTerm ? 'Nenhum motorista encontrado' : 'Nenhum motorista cadastrado'}
                       </p>
@@ -258,7 +256,6 @@ const Motoristas = () => {
                           <span className="font-medium">{driver.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{driver.is_fixed ? 'Fixo' : 'Agregado'}</TableCell>
                       <TableCell className="text-center">{driver.total_deliveries}</TableCell>
                       <TableCell className="text-center font-medium">
                         {driver.completed_deliveries}
