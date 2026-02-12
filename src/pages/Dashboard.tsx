@@ -26,6 +26,7 @@ type DeliveryRequest = {
   created_at: string | null;
   origin_address: string;
   destination_address: string;
+  transport_type: string | null;
   client: {
     name: string;
     phone: string | null;
@@ -95,6 +96,7 @@ const Dashboard = () => {
           driver_id,
           invoice_number,
           op_number,
+          transport_type,
           client:clients(name, phone, email),
           material_type:material_types(name),
           vehicle:vehicles(type)
@@ -353,7 +355,7 @@ const Dashboard = () => {
                       </div>
                     </TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
-                    <TableCell>{item.vehicle?.type || '-'}</TableCell>
+                    <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
                     <TableCell className="text-right">
@@ -418,7 +420,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Transporte</p>
-                    <p className="font-medium">{item.vehicle?.type || '-'}</p>
+                    <p className="font-medium">{item.vehicle?.type || item.transport_type || '-'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Data</p>
