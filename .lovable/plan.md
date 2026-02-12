@@ -1,39 +1,47 @@
 
 
-# Corrigir Politica RLS da Tabela `clients`
-
 ## Problema
-A tabela `clients` contém dados pessoais sensíveis (email, telefone, endereço, CPF/CNPJ) e atualmente possui uma política de SELECT que permite que **qualquer usuário autenticado** veja **todos** os registros de clientes. Isso significa que motoristas e outros clientes podem acessar informações pessoais de todos os clientes.
 
-## Solução
+Quando o motorista faz login, os dados da pagina "Minhas Corridas" nao aparecem imediatamente porque:
 
-Executar uma migração SQL que:
+1. O hook `useCurrentDriver` usa `staleTime: 5 minutos` e `refetchOnWindowFocus: false`, o que impede a re-busca dos dados
+2. O hook pode executar antes da autenticacao estar pronta, retornar `null`, e nao tentar novamente
+3. O hook `useDriverRequests` tambem usa `refetchOnWindowFocus: false` e depende dos dados do driver para ser ativado
 
-1. **Remove** a política permissiva `"Authenticated users can view clients"` (que usa `USING (true)`)
-2. **Cria** uma nova política `"Admins and gestores can view all clients"` restrita a admins e gestores usando a função `is_admin_or_gestor()`
+## Solucao
 
-As políticas existentes já cobrem os outros cenários:
-- `"Clients can view own client record"` -- clientes veem apenas seu próprio registro
-- `"Deny unauthenticated access to clients"` -- bloqueia acesso anônimo
+Ajustar os hooks para que respondam corretamente ao estado de autenticacao:
 
-## Detalhes Técnicos
+### 1. Corrigir `useCurrentDriver` (src/hooks/useDriverRequests.ts)
 
-```sql
--- Remover política permissiva
-DROP POLICY IF EXISTS "Authenticated users can view clients" ON public.clients;
+- Adicionar o `user.id` como parte da `queryKey`, fazendo o React Query re-executar automaticamente quando o usuario mudar
+- Reduzir o `staleTime` para um valor menor (30 segundos) para permitir atualizacoes mais rapidas
+- Adicionar `enabled: !!user` para so executar quando houver usuario autenticado
+- Importar `useAuth` do contexto para obter o usuario atual
 
--- Criar política restrita para admins e gestores
-CREATE POLICY "Admins and gestores can view all clients"
-  ON public.clients
-  FOR SELECT
-  USING (is_admin_or_gestor());
-```
+### 2. Corrigir `useDriverRequests` (src/hooks/useDriverRequests.ts)
 
-Após a migração, o acesso SELECT à tabela `clients` ficará assim:
-- **Admin/Gestor**: vê todos os clientes
-- **Cliente**: vê apenas seu próprio registro (via email)
-- **Motorista**: sem acesso direto à tabela de clientes
-- **Anônimo**: bloqueado
+- Remover `refetchOnWindowFocus: false` para permitir atualizacao ao voltar para a aba
 
-Nenhuma alteração de código é necessária -- apenas a política do banco de dados.
+### 3. Invalidar `currentDriver` no realtime (src/hooks/useRealtimeDeliveryRequests.ts)
+
+- Adicionar `queryClient.invalidateQueries({ queryKey: ['currentDriver'] })` na funcao `invalidateAll` para que mudancas em tempo real tambem atualizem os dados do motorista
+
+---
+
+### Detalhes Tecnicos
+
+**src/hooks/useDriverRequests.ts** - `useCurrentDriver`:
+- Importar `useAuth` de `@/contexts/AuthContext`
+- Usar `const { user } = useAuth()` para obter o usuario
+- Mudar `queryKey` de `['currentDriver']` para `['currentDriver', user?.id]`
+- Mudar `staleTime` de 5 minutos para 30 segundos
+- Adicionar `enabled: !!user`
+- Remover a chamada interna `supabase.auth.getUser()` e usar `user.id` diretamente
+
+**src/hooks/useDriverRequests.ts** - `useDriverRequests`:
+- Remover `refetchOnWindowFocus: false`
+
+**src/hooks/useRealtimeDeliveryRequests.ts**:
+- Adicionar invalidacao da query `currentDriver` no `invalidateAll`
 
