@@ -32,7 +32,6 @@ export const useDrivers = () => {
 
       const driversWithStats: DriverWithStats[] = (data || []).map((driver: any) => {
         const active = statsMap[driver.id]?.active || 0;
-        // Status: indisponível se tem corrida ativa (aceita/coletada/em_rota), disponível caso contrário
         const computedStatus = active > 0 ? 'unavailable' : 'available';
         return {
           ...driver,
@@ -42,6 +41,9 @@ export const useDrivers = () => {
           active_deliveries: active,
         };
       });
+
+      // Ordenar por total de corridas (maior para menor)
+      driversWithStats.sort((a, b) => b.total_deliveries - a.total_deliveries);
 
       return driversWithStats;
     },
