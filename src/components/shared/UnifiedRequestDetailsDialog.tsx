@@ -543,7 +543,7 @@ export const UnifiedRequestDetailsDialog = ({
                       return (
                         <div key={step.value} className="flex items-start gap-3 relative">
                           {!isLast && (
-                            <div className={`absolute left-[13px] top-[28px] w-0.5 ${isExpanded ? 'h-full' : 'h-8'} ${isCompleted ? 'bg-primary' : 'bg-border'}`} />
+                            <div className={`absolute left-[13px] top-[28px] w-0.5 h-[calc(100%-28px)] ${isCompleted ? 'bg-primary' : 'bg-border'}`} />
                           )}
                           <div className={`relative z-10 flex items-center justify-center w-7 h-7 rounded-full border-2 shrink-0 ${
                             isCompleted ? 'bg-primary border-primary text-primary-foreground'
@@ -575,8 +575,8 @@ export const UnifiedRequestDetailsDialog = ({
                               )}
                             </div>
 
-                            {/* Expanded details */}
-                            {isExpanded && (historyEntry || step.value === 'solicitada') && (() => {
+                            {/* Step details - always visible when completed */}
+                            {(isCompleted || step.value === 'solicitada') && (() => {
                               const isSolicitada = step.value === 'solicitada';
                               const stepNotes = isSolicitada ? request.notes : historyEntry?.notes;
                               const stepAttachments = isSolicitada
@@ -585,10 +585,12 @@ export const UnifiedRequestDetailsDialog = ({
                               const stepDate = isSolicitada
                                 ? request.created_at
                                 : historyEntry?.changed_at;
+                              
+                              const hasContent = stepNotes || (stepAttachments && stepAttachments.length > 0);
 
                               return (
                                 <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 border border-border">
-                                  {stepDate && (
+                                  {isExpanded && stepDate && (
                                     <div>
                                       <p className="text-xs font-medium text-muted-foreground mb-1">Data e hora:</p>
                                       <p className="text-sm">
@@ -601,12 +603,12 @@ export const UnifiedRequestDetailsDialog = ({
                                       <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
                                       <p className="text-sm">{stepNotes}</p>
                                     </div>
-                                  ) : (
+                                  ) : isExpanded ? (
                                     <div>
                                       <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
                                       <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
                                     </div>
-                                  )}
+                                  ) : null}
                                   {stepAttachments && stepAttachments.length > 0 ? (
                                     <div>
                                       <p className="text-xs font-medium text-muted-foreground mb-1">
@@ -618,11 +620,14 @@ export const UnifiedRequestDetailsDialog = ({
                                         ))}
                                       </div>
                                     </div>
-                                  ) : (
+                                  ) : isExpanded ? (
                                     <div>
                                       <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
                                       <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
                                     </div>
+                                  ) : null}
+                                  {!hasContent && !isExpanded && (
+                                    <p className="text-sm text-muted-foreground italic">Nenhum anexo ou observação registrado</p>
                                   )}
                                 </div>
                               );
