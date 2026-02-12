@@ -80,7 +80,7 @@ const DashboardLayout = ({
   const userInitial = userName.charAt(0).toUpperCase();
   return <div className="flex min-h-screen bg-muted/30">
       {/* Mobile menu button */}
-      <button onClick={() => setSidebarOpen(true)} className="fixed left-4 top-8 z-30 rounded-lg bg-card p-2 shadow-md lg:hidden">
+      <button onClick={() => setSidebarOpen(true)} className="fixed left-4 top-12 z-30 rounded-lg bg-card p-2 shadow-md lg:hidden">
         <Menu className="h-6 w-6" />
       </button>
 
