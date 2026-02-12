@@ -1,0 +1,28 @@
+
+-- Drop and recreate the storage INSERT policy with case-insensitive email comparison
+DROP POLICY IF EXISTS "Users can upload to their request folder" ON storage.objects;
+
+CREATE POLICY "Users can upload to their request folder"
+ON storage.objects
+FOR INSERT
+WITH CHECK (
+  bucket_id = 'request-attachments'
+  AND (
+    is_admin_or_gestor()
+    OR (EXISTS (
+      SELECT 1
+      FROM delivery_requests dr
+      JOIN drivers d ON d.id = dr.driver_id
+      WHERE d.user_id = auth.uid()
+        AND storage.objects.name ~~ (dr.id::text || '/%')
+    ))
+    OR (EXISTS (
+      SELECT 1
+      FROM delivery_requests dr
+      JOIN clients c ON c.id = dr.client_id
+      JOIN users u ON lower(u.email) = lower(c.email)
+      WHERE u.auth_id = auth.uid()
+        AND storage.objects.name ~~ (dr.id::text || '/%')
+    ))
+  )
+);
