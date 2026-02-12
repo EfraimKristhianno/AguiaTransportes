@@ -25,6 +25,7 @@ const formatSize = (bytes: number) => {
 };
 
 const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const inputRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<UploadedFile[]>(files);
   filesRef.current = files;
@@ -125,7 +126,7 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         ref={inputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept={isMobile ? "image/*" : "*/*"}
         style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 1, height: 1, overflow: 'hidden' }}
         tabIndex={-1}
         onBlur={() => {
