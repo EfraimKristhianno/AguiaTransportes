@@ -16,6 +16,7 @@ export const useRealtimeDeliveryRequests = () => {
       queryClient.invalidateQueries({ queryKey: ['deliveryRequestDetail'] });
       queryClient.invalidateQueries({ queryKey: ['request_history'] });
       queryClient.invalidateQueries({ queryKey: ['nextRequestNumber'] });
+      queryClient.invalidateQueries({ queryKey: ['currentDriver'] });
     };
 
     const channel = supabase

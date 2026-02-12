@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export interface DriverRequest {
@@ -26,12 +27,13 @@ export interface DriverRequest {
 
 // Hook to get the current driver record linked to the authenticated user
 export const useCurrentDriver = () => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['currentDriver'],
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes - prevent refetch on camera return
+    queryKey: ['currentDriver', user?.id],
+    staleTime: 1000 * 30, // 30 seconds
+    enabled: !!user,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
       const { data, error } = await supabase
@@ -52,7 +54,7 @@ export const useCurrentDriver = () => {
 export const useDriverRequests = (driverVehicleTypes: string[] = [], driverId?: string) => {
   return useQuery({
     queryKey: ['driverRequests', driverVehicleTypes, driverId],
-    refetchOnWindowFocus: false,
+    
     queryFn: async (): Promise<DriverRequest[]> => {
       if (driverVehicleTypes.length === 0 && !driverId) return [];
 
