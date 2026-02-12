@@ -12,15 +12,15 @@
     --card-foreground: oklch(0.2795 0.0368 260.0310);
     --popover: oklch(0.9699 0.0013 106.4238);
     --popover-foreground: oklch(0.2795 0.0368 260.0310);
-    --primary: oklch(0.6458 0.2248 28.1627);
+    --primary: oklch(0.4700 0.2050 27.50);
     --primary-foreground: oklch(1.0000 0 0);
-    --secondary: oklch(0.6458 0.2248 28.1627);
+    --secondary: oklch(0.4700 0.2050 27.50);
     --secondary-foreground: oklch(0.9702 0 0);
     --muted: oklch(0.9232 0.0026 48.7171);
     --muted-foreground: oklch(0.5510 0.0234 264.3637);
     --accent: oklch(0.9699 0.0013 106.4238);
     --accent-foreground: oklch(0.3729 0.0306 259.7328);
-    --destructive: oklch(0.5284 0.1955 27.52);
+    --destructive: oklch(0.4700 0.2050 27.50);
     --destructive-foreground: oklch(1.0000 0 0);
     --border: oklch(0.9067 0 0);
     --input: oklch(0.7889 0 0);
@@ -70,7 +70,7 @@
     --muted-foreground: oklch(0.7137 0.0192 261.3246);
     --accent: oklch(0.3896 0.0074 59.4734);
     --accent-foreground: oklch(0.8717 0.0093 258.3382);
-    --destructive: oklch(0.5284 0.1955 27.52);
+    --destructive: oklch(0.4700 0.2050 27.50);
     --destructive-foreground: oklch(0.9700 0 0);
     --border: oklch(0.3359 0.0077 59.4197);
     --input: oklch(0.3359 0.0077 59.4197);
@@ -113,21 +113,21 @@
 
 @layer components {
   .hero-gradient {
-    background: linear-gradient(135deg, oklch(0.6458 0.2248 28.1627) 0%, oklch(0.6370 0.2370 25.3310) 100%);
+    background: linear-gradient(135deg, oklch(0.4700 0.2050 27.50) 0%, oklch(0.5200 0.2100 25.33) 100%);
   }
 
   .btn-gradient {
-    background: linear-gradient(135deg, oklch(0.6458 0.2248 28.1627) 0%, oklch(0.6370 0.2370 25.3310) 100%);
+    background: linear-gradient(135deg, oklch(0.4700 0.2050 27.50) 0%, oklch(0.5200 0.2100 25.33) 100%);
   }
 
   .feature-card {
     @apply rounded-lg p-4 transition-all duration-200;
-    background: oklch(0.6458 0.2248 28.1627 / 0.15);
+    background: oklch(0.4700 0.2050 27.50 / 0.15);
     backdrop-filter: blur(10px);
   }
 
   .feature-card:hover {
-    background: oklch(0.6458 0.2248 28.1627 / 0.25);
+    background: oklch(0.4700 0.2050 27.50 / 0.25);
   }
 
   .input-icon {
