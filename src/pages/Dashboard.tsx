@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin, Pencil, Trash2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,6 +48,8 @@ const Dashboard = () => {
   } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editRequest, setEditRequest] = useState<any>(null);
@@ -190,8 +194,39 @@ const Dashboard = () => {
 
   // Filter delivery requests
   const filteredRequests = useMemo(() => {
-    return filterRequestsBySearch(deliveryRequests, searchQuery, statusFilter);
-  }, [deliveryRequests, searchQuery, statusFilter]);
+    return filterRequestsBySearch(deliveryRequests, searchQuery, statusFilter, dateFrom, dateTo);
+  }, [deliveryRequests, searchQuery, statusFilter, dateFrom, dateTo]);
+
+  const handleDownloadPdf = useCallback(() => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Relatório de Solicitações', 14, 20);
+    doc.setFontSize(10);
+    const dateLabel = dateFrom || dateTo
+      ? `Período: ${dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: ptBR }) : '...'} até ${dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: ptBR }) : '...'}`
+      : 'Todas as datas';
+    doc.text(dateLabel, 14, 28);
+    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 14, 34);
+
+    const tableData = filteredRequests.map(item => [
+      `#${String(item.request_number || '').padStart(6, '0')}`,
+      item.client?.name || '-',
+      item.material_type?.name || '-',
+      item.vehicle?.type || item.transport_type || '-',
+      item.status || '-',
+      formatDate(item.scheduled_date || item.created_at),
+    ]);
+
+    autoTable(doc, {
+      head: [['ID', 'Cliente', 'Material', 'Transporte', 'Status', 'Data']],
+      body: tableData,
+      startY: 40,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [220, 38, 38] },
+    });
+
+    doc.save('solicitacoes.pdf');
+  }, [filteredRequests, dateFrom, dateTo]);
   const getStatusBadge = (status: string | null) => {
     const statusConfig: Record<string, {
       label: string;
@@ -313,6 +348,11 @@ const Dashboard = () => {
           onSearchChange={setSearchQuery}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onDownloadPdf={handleDownloadPdf}
         />
       </div>
 

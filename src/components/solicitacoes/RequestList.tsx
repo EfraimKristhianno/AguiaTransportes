@@ -65,9 +65,11 @@ const getStatusClassName = (status: string | null) => {
 interface RequestListProps {
   searchTerm?: string;
   statusFilter?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
-export const RequestList = ({ searchTerm = '', statusFilter = 'all' }: RequestListProps) => {
+export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, dateTo }: RequestListProps) => {
   const {
     role
   } = useAuth();
@@ -80,7 +82,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all' }: RequestLi
     data: requests = [],
     isLoading
   } = useDeliveryRequests();
-  const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter);
+  const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter, dateFrom, dateTo);
   return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
       {/* Request List */}
       <ScrollArea className="flex-1">
