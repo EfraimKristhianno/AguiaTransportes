@@ -1,18 +1,23 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useVehicleLogs, useOilChangeRecords } from '@/hooks/useVehicleLogs';
+import { Button } from '@/components/ui/button';
+import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Fuel, Gauge, Droplets, Car, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area } from 'recharts';
+import { Fuel, Gauge, Droplets, Car, AlertTriangle, TrendingUp, DollarSign, History } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
+import VehicleHistoryDialog from './VehicleHistoryDialog';
 
 const COLORS = ['#d32127', '#e8783a', '#f5a623', '#4a9eda', '#6bc5a0'];
 
 const AdminVehicleView = () => {
   const { data: logs = [], isLoading } = useVehicleLogs();
   const { data: oilRecords = [] } = useOilChangeRecords();
+  const { data: maintenanceRecords = [] } = useMaintenanceRecords();
+  const [selectedVehicle, setSelectedVehicle] = useState<{ id: string; plate: string } | null>(null);
 
   const { data: allVehicles = [] } = useQuery({
     queryKey: ['all_vehicles'],
@@ -38,7 +43,7 @@ const AdminVehicleView = () => {
   const activeVehicles = allVehicles.filter((v: any) => v.status === 'active').length;
   const inactiveVehicles = allVehicles.length - activeVehicles;
 
-  // Vehicles with oil warning
+  // Vehicle stats
   const vehicleStats = allVehicles.map((v: any) => {
     const vLogs = logs.filter(l => l.vehicle_id === v.id);
     const vOil = oilRecords.filter(o => o.vehicle_id === v.id);
@@ -48,7 +53,9 @@ const AdminVehicleView = () => {
     const latestOil = vOil[0];
     const lastKm = vLogs[0]?.km_final || 0;
     const oilWarning = latestOil ? lastKm >= latestOil.next_change_km : false;
-    return { ...v, totalKm, totalLiters, totalCost, latestOil, oilWarning, lastKm };
+    const maintCount = maintenanceRecords.filter(m => m.vehicle_id === v.id).length;
+    const maintCost = maintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
+    return { ...v, totalKm, totalLiters, totalCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
   });
 
   const vehiclesWithWarning = vehicleStats.filter(v => v.oilWarning).length;
@@ -73,14 +80,9 @@ const AdminVehicleView = () => {
     return { name: d.name?.split(' ')[0] || 'N/A', cost };
   }).filter(d => d.cost > 0).sort((a, b) => b.cost - a.cost);
 
-  // Km per vehicle chart
   const kmChartData = vehicleStats.filter(v => v.totalKm > 0).map(v => ({ name: v.plate, km: v.totalKm }));
-
-  // Fuel type pie
   const fuelCounts = logs.reduce((acc, l) => { acc[l.fuel_type] = (acc[l.fuel_type] || 0) + 1; return acc; }, {} as Record<string, number>);
   const fuelChartData = Object.entries(fuelCounts).map(([name, value]) => ({ name, value }));
-
-  // Vehicle status pie
   const statusData = [
     { name: 'Ativos', value: activeVehicles },
     { name: 'Inativos', value: inactiveVehicles },
@@ -144,7 +146,6 @@ const AdminVehicleView = () => {
             )}
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader><CardTitle className="text-base">Gasto por Motorista</CardTitle></CardHeader>
           <CardContent>
@@ -228,10 +229,11 @@ const AdminVehicleView = () => {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Km Total</TableHead>
-                  <TableHead>Litros</TableHead>
-                  <TableHead>Gasto</TableHead>
-                  <TableHead>Km/L</TableHead>
+                  <TableHead>Gasto Comb.</TableHead>
+                  <TableHead>Manutenções</TableHead>
+                  <TableHead>Gasto Manut.</TableHead>
                   <TableHead>Óleo</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -241,11 +243,16 @@ const AdminVehicleView = () => {
                     <TableCell>{v.type}</TableCell>
                     <TableCell><Badge variant={v.status === 'active' ? 'default' : 'secondary'}>{v.status === 'active' ? 'Ativo' : v.status === 'maintenance' ? 'Manutenção' : 'Inativo'}</Badge></TableCell>
                     <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
-                    <TableCell>{v.totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                    <TableCell>{v.totalLiters > 0 ? (v.totalKm / v.totalLiters).toFixed(1) : '-'}</TableCell>
+                    <TableCell>{v.maintCount}</TableCell>
+                    <TableCell>R$ {v.maintCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>
                       {v.oilWarning ? <Badge variant="destructive">Trocar</Badge> : v.latestOil ? <Badge variant="outline">OK</Badge> : <span className="text-muted-foreground text-xs">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle({ id: v.id, plate: v.plate })}>
+                        <History className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -254,6 +261,18 @@ const AdminVehicleView = () => {
           </div>
         </CardContent>
       </Card>
+
+      {selectedVehicle && (
+        <VehicleHistoryDialog
+          open={!!selectedVehicle}
+          onOpenChange={(open) => !open && setSelectedVehicle(null)}
+          vehicleId={selectedVehicle.id}
+          vehiclePlate={selectedVehicle.plate}
+          logs={logs}
+          oilRecords={oilRecords}
+          maintenanceRecords={maintenanceRecords}
+        />
+      )}
     </div>
   );
 };

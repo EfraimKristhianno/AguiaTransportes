@@ -9,10 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
-import { useVehicleLogs, useOilChangeRecords, useCreateVehicleLog, useCreateOilChange, VehicleLog } from '@/hooks/useVehicleLogs';
+import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVehicleLog, useCreateOilChange, useCreateMaintenanceRecord, VehicleLog } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar } from 'lucide-react';
+import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -20,11 +20,14 @@ const DriverVehicleView = () => {
   const { data: currentDriver, isLoading: driverLoading } = useCurrentDriver();
   const { data: logs = [], isLoading: logsLoading } = useVehicleLogs();
   const { data: oilRecords = [] } = useOilChangeRecords();
+  const { data: maintenanceRecords = [] } = useMaintenanceRecords();
   const createLog = useCreateVehicleLog();
   const createOilChange = useCreateOilChange();
+  const createMaintenance = useCreateMaintenanceRecord();
 
   const [logDialogOpen, setLogDialogOpen] = useState(false);
   const [oilDialogOpen, setOilDialogOpen] = useState(false);
+  const [maintDialogOpen, setMaintDialogOpen] = useState(false);
 
   // Get driver's vehicles
   const { data: driverVehicles = [] } = useQuery({
@@ -70,9 +73,20 @@ const DriverVehicleView = () => {
     notes: '',
   });
 
+  const [maintForm, setMaintForm] = useState({
+    vehicle_id: '',
+    maintenance_type: '',
+    current_km: '',
+    service_cost: '',
+    notes: '',
+    maintenance_date: new Date().toISOString().split('T')[0],
+  });
+
   const totalCost = logForm.liters && logForm.fuel_price
     ? (parseFloat(logForm.liters) * parseFloat(logForm.fuel_price)).toFixed(2)
     : '0.00';
+
+  const selectedMaintVehicle = driverVehicles.find((v: any) => v.id === maintForm.vehicle_id);
 
   const handleSubmitLog = () => {
     if (!currentDriver?.id || !logForm.vehicle_id) return;
@@ -109,6 +123,25 @@ const DriverVehicleView = () => {
       onSuccess: () => {
         setOilDialogOpen(false);
         setOilForm({ vehicle_id: '', change_date: new Date().toISOString().split('T')[0], km_at_change: '', next_change_km: '', oil_type: '', notes: '' });
+      },
+    });
+  };
+
+  const handleSubmitMaintenance = () => {
+    if (!currentDriver?.id || !maintForm.vehicle_id || !maintForm.maintenance_type) return;
+    createMaintenance.mutate({
+      vehicle_id: maintForm.vehicle_id,
+      driver_id: currentDriver.id,
+      maintenance_type: maintForm.maintenance_type,
+      vehicle_plate: selectedMaintVehicle?.plate || '',
+      current_km: parseFloat(maintForm.current_km) || 0,
+      service_cost: maintForm.service_cost ? parseFloat(maintForm.service_cost) : undefined,
+      notes: maintForm.notes || undefined,
+      maintenance_date: maintForm.maintenance_date,
+    }, {
+      onSuccess: () => {
+        setMaintDialogOpen(false);
+        setMaintForm({ vehicle_id: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: new Date().toISOString().split('T')[0] });
       },
     });
   };
@@ -266,6 +299,64 @@ const DriverVehicleView = () => {
               <div><Label>Observações</Label><Textarea value={oilForm.notes} onChange={e => setOilForm(p => ({ ...p, notes: e.target.value }))} /></div>
               <Button className="w-full" onClick={handleSubmitOilChange} disabled={createOilChange.isPending}>
                 {createOilChange.isPending ? 'Salvando...' : 'Registrar Troca'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={maintDialogOpen} onOpenChange={setMaintDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline"><Wrench className="mr-2 h-4 w-4" /> Registrar Manutenção</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Registro de Manutenção</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Tipo de Manutenção</Label>
+                <Select value={maintForm.maintenance_type} onValueChange={v => setMaintForm(p => ({ ...p, maintenance_type: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="preventiva">Preventiva</SelectItem>
+                    <SelectItem value="corretiva">Corretiva</SelectItem>
+                    <SelectItem value="preditiva">Preditiva</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Veículo</Label>
+                <Select value={maintForm.vehicle_id} onValueChange={v => setMaintForm(p => ({ ...p, vehicle_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
+                  <SelectContent>
+                    {driverVehicles.map((v: any) => (
+                      <SelectItem key={v.id} value={v.id}>{v.plate} - {v.type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedMaintVehicle && (
+                <div>
+                  <Label>Placa</Label>
+                  <Input value={selectedMaintVehicle.plate} disabled />
+                </div>
+              )}
+              <div>
+                <Label>Data</Label>
+                <Input type="date" value={maintForm.maintenance_date} onChange={e => setMaintForm(p => ({ ...p, maintenance_date: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Km Atual</Label>
+                <Input type="number" value={maintForm.current_km} onChange={e => setMaintForm(p => ({ ...p, current_km: e.target.value }))} placeholder="Quilometragem atual" />
+              </div>
+              <div>
+                <Label>Custo do Serviço (R$)</Label>
+                <Input type="number" step="0.01" value={maintForm.service_cost} onChange={e => setMaintForm(p => ({ ...p, service_cost: e.target.value }))} placeholder="0.00" />
+              </div>
+              <div>
+                <Label>Observações</Label>
+                <Textarea value={maintForm.notes} onChange={e => setMaintForm(p => ({ ...p, notes: e.target.value }))} placeholder="Descreva o serviço realizado..." />
+              </div>
+              <Button className="w-full" onClick={handleSubmitMaintenance} disabled={createMaintenance.isPending}>
+                {createMaintenance.isPending ? 'Salvando...' : 'Enviar'}
               </Button>
             </div>
           </DialogContent>
