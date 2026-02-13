@@ -1,6 +1,7 @@
 // Auth context with role management
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/database';
 
@@ -17,6 +18,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,9 +86,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setTimeout(() => {
             fetchUserRole(session.user.id);
           }, 0);
+
+          // Invalidate all queries so they refetch with new auth
+          if (event === 'SIGNED_IN') {
+            setTimeout(() => {
+              queryClient.invalidateQueries();
+            }, 100);
+          }
         } else {
           setRole(null);
           setRoleLoading(false);
+          // Clear all cached data on sign out
+          if (event === 'SIGNED_OUT') {
+            queryClient.clear();
+          }
         }
       }
     );
