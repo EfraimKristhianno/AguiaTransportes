@@ -274,6 +274,63 @@ export type Database = {
           },
         ]
       }
+      maintenance_records: {
+        Row: {
+          created_at: string | null
+          current_km: number
+          driver_id: string
+          id: string
+          maintenance_date: string
+          maintenance_type: string
+          notes: string | null
+          service_cost: number | null
+          updated_at: string | null
+          vehicle_id: string
+          vehicle_plate: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_km: number
+          driver_id: string
+          id?: string
+          maintenance_date?: string
+          maintenance_type: string
+          notes?: string | null
+          service_cost?: number | null
+          updated_at?: string | null
+          vehicle_id: string
+          vehicle_plate: string
+        }
+        Update: {
+          created_at?: string | null
+          current_km?: number
+          driver_id?: string
+          id?: string
+          maintenance_date?: string
+          maintenance_type?: string
+          notes?: string | null
+          service_cost?: number | null
+          updated_at?: string | null
+          vehicle_id?: string
+          vehicle_plate?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_types: {
         Row: {
           created_at: string | null

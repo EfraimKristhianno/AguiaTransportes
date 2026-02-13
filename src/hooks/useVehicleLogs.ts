@@ -142,3 +142,70 @@ export const useCreateOilChange = () => {
     },
   });
 };
+
+export interface MaintenanceRecord {
+  id: string;
+  vehicle_id: string;
+  driver_id: string;
+  maintenance_type: 'preventiva' | 'corretiva' | 'preditiva';
+  vehicle_plate: string;
+  current_km: number;
+  service_cost: number | null;
+  notes: string | null;
+  maintenance_date: string;
+  created_at: string;
+  vehicle?: { id: string; plate: string; type: string };
+  driver?: { id: string; name: string };
+}
+
+export const useMaintenanceRecords = () => {
+  const { role } = useAuth();
+  const { data: currentDriver } = useCurrentDriver();
+  const isDriverOnly = role === 'motorista';
+
+  return useQuery({
+    queryKey: ['maintenance_records', currentDriver?.id, role],
+    enabled: role === 'admin' || role === 'gestor' || !!currentDriver?.id,
+    queryFn: async () => {
+      let query = supabase
+        .from('maintenance_records')
+        .select('*, vehicle:vehicles(id, plate, type), driver:drivers(id, name)')
+        .order('maintenance_date', { ascending: false });
+
+      if (isDriverOnly && currentDriver?.id) {
+        query = query.eq('driver_id', currentDriver.id);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as unknown as MaintenanceRecord[];
+    },
+  });
+};
+
+export const useCreateMaintenanceRecord = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (record: {
+      vehicle_id: string;
+      driver_id: string;
+      maintenance_type: string;
+      vehicle_plate: string;
+      current_km: number;
+      service_cost?: number;
+      notes?: string;
+      maintenance_date: string;
+    }) => {
+      const { data, error } = await supabase.from('maintenance_records').insert(record).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance_records'] });
+      toast.success('Manutenção registrada com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao registrar manutenção: ' + error.message);
+    },
+  });
+};
