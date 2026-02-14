@@ -111,6 +111,7 @@ export type Database = {
           notes: string | null
           op_number: string | null
           origin_address: string
+          region: string | null
           request_number: number
           requester: string | null
           requester_phone: string | null
@@ -133,6 +134,7 @@ export type Database = {
           notes?: string | null
           op_number?: string | null
           origin_address: string
+          region?: string | null
           request_number?: number
           requester?: string | null
           requester_phone?: string | null
@@ -155,6 +157,7 @@ export type Database = {
           notes?: string | null
           op_number?: string | null
           origin_address?: string
+          region?: string | null
           request_number?: number
           requester?: string | null
           requester_phone?: string | null

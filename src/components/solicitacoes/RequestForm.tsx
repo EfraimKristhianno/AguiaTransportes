@@ -22,6 +22,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import VehicleDetailsPopover from '@/components/VehicleDetailsPopover';
 import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
+import { detectRegionForFreight } from '@/lib/regionDetection';
+import { Badge } from '@/components/ui/badge';
 
 const requestSchema = z.object({
   clientName: z.string().min(1, 'Nome do cliente é obrigatório'),
@@ -215,6 +217,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         throw new Error('Não foi possível identificar o cliente para a solicitação.');
       }
 
+      // Detect region from destination address
+      const detectedRegion = detectRegionForFreight(data.destinationAddress);
+
       // 1. Create the request first (without attachments)
       const createdRequest = await createRequest.mutateAsync({
         client_id: clientId,
@@ -230,7 +235,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         op_number: data.opNumber || null,
         attachments: [],
         status: 'solicitada',
-      });
+        region: detectedRegion,
+      } as any);
 
       // 2. Upload attachments using the requestId in the path (required by RLS)
       if (attachments.length > 0 && createdRequest?.id) {
@@ -566,19 +572,29 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           <FormField
             control={form.control}
             name="destinationAddress"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Endereço de entrega *</FormLabel>
-                <FormControl>
-                  <AddressAutocomplete
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Digite o endereço de entrega"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const region = detectRegionForFreight(field.value);
+              return (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormLabel>Endereço de entrega *</FormLabel>
+                    {region && (
+                      <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                        Região: {region}
+                      </Badge>
+                    )}
+                  </div>
+                  <FormControl>
+                    <AddressAutocomplete
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Digite o endereço de entrega"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           {/* NF and OP fields */}
