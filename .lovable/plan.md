@@ -1,53 +1,137 @@
+# Tabela de Precos de Frete por Cliente, Tipo de Transporte e Regiao
 
-# Prevenir Aceitacao Duplicada e Remover Solicitacao da Lista
+## Resumo
 
-## Problema
-Quando um motorista aceita uma solicitacao, ela continua visivel para outros motoristas. Isso permite que dois motoristas aceitem a mesma corrida. A solicitacao precisa sumir imediatamente da tela dos outros motoristas.
+Criar uma tabela no banco de dados para armazenar precos de frete personalizados por cliente, e exibir esses valores no popover de informacoes do transporte (durante a solicitacao) e na lista de solicitacoes do Dashboard.
 
-## Solucao em 2 Partes
+## Estrutura da Solucao
 
-### 1. Protecao Atomica no Banco (useDriverRequests.ts)
-Modificar o `useAcceptDeliveryRequest` para incluir uma condicao de status no UPDATE. Se outro motorista ja aceitou, o UPDATE retorna zero linhas e o sistema mostra uma mensagem de erro clara.
+### 1. Nova tabela no banco: `freight_prices`
 
-```text
-Antes:
-  .update({ status: 'aceita', driver_id })
-  .eq('id', requestId)
-  .select().single()
 
-Depois:
-  .update({ status: 'aceita', driver_id })
-  .eq('id', requestId)
-  .in('status', ['solicitada', 'enviada'])   // <-- so aceita se disponivel
-  .select()
-  // verificar se retornou 0 linhas = ja foi aceita
-```
+| Coluna         | Tipo                 | Descricao                          |
+| -------------- | -------------------- | ---------------------------------- |
+| id             | uuid (PK)            | Identificador                      |
+| client_id      | uuid (FK -> clients) | Cliente vinculado                  |
+| transport_type | text                 | Moto, Fiorino, etc.                |
+| region         | text                 | Curitiba, Metropolitana, Araucaria |
+| price          | numeric              | Valor do frete em R$               |
+| created_at     | timestamptz          | Data de criacao                    |
 
-Se `data` estiver vazio, lancar erro: "Esta solicitacao ja foi aceita por outro motorista."
 
-Alem disso, no `onError`, invalidar as queries para forcar a atualizacao da lista, removendo a solicitacao da tela.
+RLS: leitura para usuarios autenticados (admin, gestor e o proprio cliente).
 
-### 2. Atualizacao Imediata via Realtime (ja funciona parcialmente)
-O hook `useRealtimeDeliveryRequests` ja invalida a query `driverRequests` quando `delivery_requests` muda. Quando o motorista A aceita, o status muda para `aceita` e o UPDATE dispara o evento realtime. No re-fetch do motorista B, a query filtra por `status IN ('solicitada', 'enviada')`, entao a solicitacao aceita nao retorna mais -- desaparecendo da lista.
+### 2. Dados a inserir
 
-Porem, para garantir que nao haja atraso, vamos adicionar um `refetchInterval` curto (5 segundos) no `useDriverRequests` como fallback de seguranca.
+**Grupo padrao** (SVD Transportes, Associacao de Parkinson, Potenze Iluminacao, Buhler Group, Douprah):
 
-### 3. Feedback no Dialog (UnifiedRequestDetailsDialog.tsx)
-Tratar o erro especifico no `handleAccept`:
-- Mostrar toast de erro claro
-- Fechar o dialog automaticamente
-- Invalidar queries para atualizar a lista
+
+| Transporte       | Curitiba | Metropolitana |
+| ---------------- | -------- | ------------- |
+| Moto             | 29,00    | 45,00         |
+| Fiorino          | 85,00    | 95,00         |
+| Caminhao (3/4)   | 470,00   | 470,00        |
+| Caminhao (Truck) | 470,00   | 470,00        |
+
+
+**Voga Vedabras:**
+
+
+| Transporte       | Curitiba | Metropolitana |
+| ---------------- | -------- | ------------- |
+| Moto             | 29,00    | 45,00         |
+| Fiorino          | 125,00   | 145,00        |
+| Caminhao (3/4)   | 470,00   | 470,00        |
+| Caminhao (Truck) | 470,00   | 470,00        |
+
+
+**Plona Equipamentos:**
+
+
+| Transporte       | Curitiba | Metropolitana | Araucaria |
+| ---------------- | -------- | ------------- | --------- |
+| Moto             | 26,00    | 45,00         | 30,00     |
+| Fiorino          | 81,00    | 95,00         | 80,00     |
+| Caminhao (3/4)   | 320,00   | 320,00        | -         |
+| Caminhao (Truck) | 320,00   | 320,00        | -         |
+
+
+### 3. Alteracoes no Frontend
+
+**VehicleDetailsPopover.tsx:**
+
+- Aceitar nova prop `clientId` (opcional)
+- Buscar precos da tabela `freight_prices` filtrados por `client_id` e `transport_type`
+- Exibir seção "Valores do Frete" no popover, listando cada regiao e valor formatado em R$
+
+**RequestForm.tsx:**
+
+- Passar o `clientId` (do cliente selecionado ou do clientRecord) para o `VehicleDetailsPopover`
+- Quando o cliente mudar, o popover refaz a consulta de precos
+
+**Dashboard.tsx:**
+
+- Adicionar coluna/campo "Valor" na tabela e nos cards mobile
+- Buscar precos da `freight_prices` para cada solicitacao com base no `client_id` e `transport_type`
+- Exibir o valor formatado (ex: "Curitiba - R$ 85,00  / Metropolitana - R$ 95,00 ")
+- Hook auxiliar `useFreightPrices` para buscar todos os precos de uma vez e fazer lookup local
+
+### 4. Visibilidade por perfil
+
+- Admin e Gestor: veem todos os precos
+- Cliente: ve apenas seus proprios precos (RLS filtra por client_id)
+- Motorista: nao ve precos (nao e requisito)
 
 ---
 
-## Arquivos Modificados
+## Detalhes Tecnicos
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/hooks/useDriverRequests.ts` | Adicionar `.in('status', ...)` no UPDATE, verificar resultado vazio, invalidar queries no erro, adicionar `refetchInterval: 5000` |
-| `src/components/shared/UnifiedRequestDetailsDialog.tsx` | Tratar erro de "ja aceita" no `handleAccept`, fechar dialog e atualizar lista |
+### Migracao SQL
 
-## Resultado Esperado
-- Se motorista A aceita primeiro, motorista B recebe mensagem "Esta solicitacao ja foi aceita por outro motorista" caso tente aceitar
-- A solicitacao desaparece da lista do motorista B em ate 5 segundos (via realtime ou polling)
-- Apenas o motorista que aceitou continua vendo a solicitacao (com status "Aceita")
+```text
+CREATE TABLE freight_prices (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id uuid NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  transport_type text NOT NULL,
+  region text NOT NULL,
+  price numeric NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(client_id, transport_type, region)
+);
+
+ALTER TABLE freight_prices ENABLE ROW LEVEL SECURITY;
+
+-- Admins e gestores veem tudo
+CREATE POLICY "Admins and gestores can manage freight_prices"
+  ON freight_prices FOR ALL TO authenticated
+  USING (is_admin_or_gestor())
+  WITH CHECK (is_admin_or_gestor());
+
+-- Clientes veem seus proprios precos
+CREATE POLICY "Clients can view own freight_prices"
+  ON freight_prices FOR SELECT TO authenticated
+  USING (client_id IN (
+    SELECT c.id FROM clients c
+    JOIN users u ON lower(u.email) = lower(c.email)
+    WHERE u.auth_id = auth.uid()
+  ));
+
+-- INSERT de todos os precos (cerca de 30 linhas)
+```
+
+### Novo hook: `useFreightPrices.ts`
+
+- Recebe `clientId` opcional
+- Retorna array de `{ transport_type, region, price }`
+- Usado tanto no popover quanto no Dashboard
+
+### Arquivos modificados
+
+
+| Arquivo                                       | Mudanca                                           |
+| --------------------------------------------- | ------------------------------------------------- |
+| Migracao SQL                                  | Criar tabela + inserir dados + RLS                |
+| `src/hooks/useFreightPrices.ts`               | Novo hook para buscar precos                      |
+| `src/components/VehicleDetailsPopover.tsx`    | Adicionar prop `clientId`, buscar e exibir precos |
+| `src/components/solicitacoes/RequestForm.tsx` | Passar `clientId` ao popover                      |
+| `src/pages/Dashboard.tsx`                     | Exibir coluna de valor do frete na tabela e cards |
