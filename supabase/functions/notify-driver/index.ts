@@ -95,9 +95,10 @@ Deno.serve(async (req) => {
           request_number: record.request_number,
           type: "new_request",
         },
-        android_channel_id: undefined,
+        web_push_topic: `request-${record.id}`,
         priority: 10,
         ttl: 3600,
+        isAnyWeb: true,
       }),
     });
 
