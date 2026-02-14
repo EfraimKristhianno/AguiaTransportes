@@ -62,6 +62,8 @@ export const useOneSignal = () => {
           serviceWorkerPath: '/OneSignalSDKWorker.js',
           notifyButton: { enable: false },
           persistNotification: true,
+          notificationClickHandlerMatch: 'origin',
+          notificationClickHandlerAction: 'focus',
         });
         console.log('[OneSignal] SDK initialized');
       } else {
@@ -78,16 +80,33 @@ export const useOneSignal = () => {
         return;
       }
 
+      // Ensure push subscription is opted in
+      const pushSub = OneSignal.User?.PushSubscription;
+      if (pushSub && !pushSub.optedIn) {
+        await pushSub.optIn();
+        console.log('[OneSignal] Manually opted in to push');
+      }
+
       // Login with external user ID
       await OneSignal.login(user.id);
       console.log('[OneSignal] Logged in as:', user.id);
 
-      // Wait a moment for login to propagate
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for login to propagate
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Verify the subscription is active
+      // Verify subscription
+      const subscriptionId = OneSignal.User?.PushSubscription?.id;
       const isPushEnabled = OneSignal.User?.PushSubscription?.optedIn;
-      console.log('[OneSignal] Push opted in:', isPushEnabled);
+      console.log('[OneSignal] Push opted in:', isPushEnabled, 'Subscription ID:', subscriptionId);
+
+      if (!isPushEnabled) {
+        console.warn('[OneSignal] Push not enabled after login, attempting opt-in again');
+        try {
+          await OneSignal.User?.PushSubscription?.optIn();
+        } catch (e) {
+          console.warn('[OneSignal] Second opt-in attempt failed:', e);
+        }
+      }
 
       // Set tags for driver targeting
       const { data: driver } = await supabase
@@ -114,7 +133,6 @@ export const useOneSignal = () => {
       console.log('[OneSignal] Setup complete for user:', user.id);
     } catch (error) {
       console.error('[OneSignal] performInit error:', error);
-      // Don't mark as initialized so it can retry
       if (retryCount.current < MAX_RETRIES) {
         retryCount.current++;
         setTimeout(() => performInit(OneSignal), 2000 * retryCount.current);
