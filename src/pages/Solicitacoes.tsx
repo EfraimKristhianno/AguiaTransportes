@@ -7,10 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
+import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logoAguia from '@/assets/logo-aguia.png';
 
 const Solicitacoes = () => {
   const { role } = useAuth();
@@ -20,45 +22,70 @@ const Solicitacoes = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   useRealtimeDeliveryRequests();
   const { data: requests = [] } = useDeliveryRequests();
+  const { data: allPrices = [] } = useAllFreightPrices();
 
   const filteredRequests = useMemo(() => {
     return filterRequestsBySearch(requests, searchTerm, statusFilter, dateFrom, dateTo);
   }, [requests, searchTerm, statusFilter, dateFrom, dateTo]);
 
   const handleDownloadPdf = useCallback(() => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'landscape' });
+
+    // Add logo
+    const img = new Image();
+    img.src = logoAguia;
+    try {
+      doc.addImage(img, 'PNG', 14, 8, 30, 30);
+    } catch {}
+
     doc.setFontSize(16);
-    doc.text('Relatório de Solicitações', 14, 20);
+    doc.text('Relatório de Solicitações', 50, 20);
     doc.setFontSize(10);
     const dateLabel = dateFrom || dateTo
       ? `Período: ${dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: ptBR }) : '...'} até ${dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: ptBR }) : '...'}`
       : 'Todas as datas';
-    doc.text(dateLabel, 14, 28);
-    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 14, 34);
+    doc.text(dateLabel, 50, 28);
+    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 50, 34);
 
     const formatDate = (d: string | null) => {
       if (!d) return '-';
-      return format(new Date(d), 'dd/MM/yyyy', { locale: ptBR });
+      return format(new Date(d), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+    };
+
+    const getFreightValue = (item: any): string => {
+      const matched = getFreightPricesForRequest(
+        allPrices,
+        item.client_id,
+        item.transport_type,
+        item.region
+      );
+      return formatSingleFreightPrice(matched);
     };
 
     const tableData = filteredRequests.map((item: any) => [
-      `#${String(item.request_number || '').padStart(6, '0')}`,
-      item.clients?.name || '-',
-      item.material_types?.name || '-',
-      item.status || '-',
       formatDate(item.scheduled_date || item.created_at),
+      item.clients?.name || '-',
+      item.transport_type || '-',
+      item.origin_address || '-',
+      item.destination_address || '-',
+      item.requester || '-',
+      getFreightValue(item),
     ]);
 
     autoTable(doc, {
-      head: [['ID', 'Cliente', 'Material', 'Status', 'Data']],
+      head: [['Data/Hora', 'Cliente', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
       body: tableData,
-      startY: 40,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [220, 38, 38] },
+      startY: 42,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [220, 38, 38], fontSize: 8 },
+      columnStyles: {
+        3: { cellWidth: 50 },
+        4: { cellWidth: 50 },
+      },
     });
 
     doc.save('solicitacoes.pdf');
-  }, [filteredRequests, dateFrom, dateTo]);
+  }, [filteredRequests, dateFrom, dateTo, allPrices]);
 
   return (
     <DashboardLayout
