@@ -95,6 +95,7 @@ export const useDriverRequests = (driverVehicleTypes: string[] = [], driverId?: 
       return Array.from(uniqueMap.values()) as unknown as DriverRequest[];
     },
     enabled: driverVehicleTypes.length > 0 || !!driverId,
+    refetchInterval: 5000,
   });
 };
 
@@ -112,11 +113,14 @@ export const useAcceptDeliveryRequest = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', requestId)
-        .select()
-        .single();
+        .in('status', ['solicitada', 'enviada'])
+        .select();
 
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) {
+        throw new Error('Esta solicitação já foi aceita por outro motorista.');
+      }
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
@@ -126,7 +130,10 @@ export const useAcceptDeliveryRequest = () => {
       toast.success('Solicitação aceita com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao aceitar solicitação: ${error.message}`);
+      queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
+      toast.error(error.message);
     },
   });
 };

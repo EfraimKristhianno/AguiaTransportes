@@ -249,6 +249,12 @@ export const UnifiedRequestDetailsDialog = ({
       setPendingFiles([]);
       setStepNotesText('');
       handleClose();
+    } catch (error: any) {
+      if (error?.message?.includes('já foi aceita')) {
+        queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
+        queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+        handleClose();
+      }
     } finally { setIsAccepting(false); }
   };
 
