@@ -237,6 +237,12 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {logForm.vehicle_id && (
+                <div>
+                  <Label>Placa</Label>
+                  <Input value={driverVehicles.find((v: any) => v.id === logForm.vehicle_id)?.plate || ''} disabled />
+                </div>
+              )}
               <div>
                 <Label>Data</Label>
                 <Input type="date" value={logForm.log_date} onChange={e => setLogForm(p => ({ ...p, log_date: e.target.value }))} />
@@ -290,6 +296,12 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {oilForm.vehicle_id && (
+                <div>
+                  <Label>Placa</Label>
+                  <Input value={driverVehicles.find((v: any) => v.id === oilForm.vehicle_id)?.plate || ''} disabled />
+                </div>
+              )}
               <div><Label>Data da Troca</Label><Input type="date" value={oilForm.change_date} onChange={e => setOilForm(p => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Km na Troca</Label><Input type="number" value={oilForm.km_at_change} onChange={e => setOilForm(p => ({ ...p, km_at_change: e.target.value }))} /></div>
