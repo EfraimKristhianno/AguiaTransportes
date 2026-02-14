@@ -17,6 +17,7 @@ import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestD
 import { EditRequestDialog } from '@/components/solicitacoes/EditRequestDialog';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
+import { useAllFreightPrices, getFreightPricesForRequest, formatFreightPrices } from '@/hooks/useFreightPrices';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ type DeliveryRequest = {
   origin_address: string;
   destination_address: string;
   transport_type: string | null;
+  client_id: string | null;
   client: {
     name: string;
     phone: string | null;
@@ -58,7 +60,9 @@ const Dashboard = () => {
   const isClient = role === 'cliente';
   const isDriver = role === 'motorista';
   useRealtimeDeliveryRequests();
+  const { data: allFreightPrices = [] } = useAllFreightPrices();
   const canEditDelete = role === 'admin' || role === 'gestor' || role === 'cliente';
+  const showPrices = role === 'admin' || role === 'gestor' || role === 'cliente';
 
   // Get current driver record for driver users
   const {
@@ -101,6 +105,7 @@ const Dashboard = () => {
           invoice_number,
           op_number,
           transport_type,
+          client_id,
           client:clients(name, phone, email),
           material_type:material_types(name),
           vehicle:vehicles(type)
@@ -374,6 +379,7 @@ const Dashboard = () => {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Material</TableHead>
                   <TableHead>Transporte</TableHead>
+                  {showPrices && <TableHead>Valor</TableHead>}
                   <TableHead>Status</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -396,6 +402,13 @@ const Dashboard = () => {
                     </TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
+                    {showPrices && (
+                      <TableCell>
+                        <span className="text-sm">
+                          {formatFreightPrices(getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type))}
+                        </span>
+                      </TableCell>
+                    )}
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
                     <TableCell className="text-right">
@@ -462,6 +475,14 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">Transporte</p>
                     <p className="font-medium">{item.vehicle?.type || item.transport_type || '-'}</p>
                   </div>
+                  {showPrices && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Valor</p>
+                      <p className="font-medium text-sm">
+                        {formatFreightPrices(getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type))}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-muted-foreground">Data</p>
                     <p className="font-medium">{formatDate(item.scheduled_date || item.created_at)}</p>

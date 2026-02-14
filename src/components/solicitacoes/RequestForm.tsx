@@ -134,6 +134,25 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
     }
   }, [isClient, userProfile, form]);
 
+  // Track selected client ID for admin/gestor freight price lookup
+  const watchedClientName = form.watch('clientName');
+  const { data: selectedClientByName } = useQuery({
+    queryKey: ['clientByName', watchedClientName],
+    queryFn: async () => {
+      if (!watchedClientName) return null;
+      const { data } = await supabase
+        .from('clients')
+        .select('id')
+        .ilike('name', watchedClientName)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !isClient && !!watchedClientName,
+    refetchOnWindowFocus: false,
+  });
+
+  const selectedClientId = isClient ? clientRecord?.id : selectedClientByName?.id;
+
 
   const onSubmit = async (data: RequestFormData) => {
     setIsSubmitting(true);
@@ -389,7 +408,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                    <div className="flex items-center gap-2">
                      <FormLabel>Tipo de transporte *</FormLabel>
                      {field.value && (
-                       <VehicleDetailsPopover vehicleType={field.value} />
+                       <VehicleDetailsPopover vehicleType={field.value} clientId={clientRecord?.id || selectedClientId} />
                      )}
                    </div>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -403,7 +422,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                          <SelectItem key={type} value={type} className="flex items-center justify-between">
                            <div className="flex items-center gap-2">
                              <span>{type}</span>
-                             <VehicleDetailsPopover vehicleType={type} triggerClassName="ml-auto" />
+                             <VehicleDetailsPopover vehicleType={type} triggerClassName="ml-auto" clientId={clientRecord?.id || selectedClientId} />
                            </div>
                         </SelectItem>
                       ))}
