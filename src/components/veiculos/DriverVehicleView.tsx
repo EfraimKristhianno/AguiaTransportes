@@ -232,7 +232,7 @@ const DriverVehicleView = () => {
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => (
-                      <SelectItem key={v.id} value={v.id}>{v.plate} - {v.type}</SelectItem>
+                      <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -285,7 +285,7 @@ const DriverVehicleView = () => {
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => (
-                      <SelectItem key={v.id} value={v.id}>{v.plate} - {v.type}</SelectItem>
+                      <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -328,7 +328,7 @@ const DriverVehicleView = () => {
                   <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => (
-                      <SelectItem key={v.id} value={v.id}>{v.plate} - {v.type}</SelectItem>
+                      <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
