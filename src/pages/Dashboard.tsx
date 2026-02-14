@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin, Pencil, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin, Pencil, Trash2, DollarSign } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -206,6 +206,19 @@ const Dashboard = () => {
     return filterRequestsBySearch(deliveryRequests, searchQuery, statusFilter, dateFrom, dateTo);
   }, [deliveryRequests, searchQuery, statusFilter, dateFrom, dateTo]);
 
+  // Calculate total freight value for admin/gestor
+  const totalFreight = useMemo(() => {
+    if (role !== 'admin' && role !== 'gestor') return 0;
+    return filteredRequests.reduce((sum, item) => {
+      const region = (item as any).region || detectRegionForFreight(item.destination_address);
+      const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
+      if (prices.length > 0) {
+        return sum + prices[0].price;
+      }
+      return sum;
+    }, 0);
+  }, [filteredRequests, allFreightPrices, role]);
+
   const handleDownloadPdf = useCallback(() => {
     const doc = new jsPDF({ orientation: 'landscape' });
 
@@ -307,7 +320,7 @@ const Dashboard = () => {
   const dashboardSubtitle = isClient ? 'Acompanhe suas solicitações de coleta' : isDriver ? 'Acompanhe suas entregas aceitas' : 'Visão geral do sistema de logística';
   return <DashboardLayout title={dashboardTitle} subtitle={dashboardSubtitle} icon={<LayoutDashboard className="h-5 w-5" />}>
       {/* Stats Cards */}
-      <div className="mb-4 sm:mb-6 grid gap-3 grid-cols-2 lg:gap-4 lg:grid-cols-4">
+      <div className={`mb-4 sm:mb-6 grid gap-3 grid-cols-2 lg:gap-4 ${(role === 'admin' || role === 'gestor') ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         {/* Total Solicitações */}
         <Card className="border-border">
           <CardContent className="flex items-center justify-between p-4">
@@ -366,6 +379,23 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Total Fretes - apenas admin/gestor */}
+        {(role === 'admin' || role === 'gestor') && (
+          <Card className="border-border col-span-2 lg:col-span-1">
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Fretes</p>
+                <p className="text-2xl font-bold text-foreground mt-1">
+                  {totalFreight.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                <DollarSign className="h-6 w-6 text-emerald-600" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Search and Filter */}
