@@ -3,6 +3,7 @@ import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import DashboardLayout from '@/components/DashboardLayout';
+import logoAguia from '@/assets/logo-aguia.png';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -108,6 +109,7 @@ const Dashboard = () => {
           transport_type,
           client_id,
           region,
+          requester,
           client:clients(name, phone, email),
           material_type:material_types(name),
           vehicle:vehicles(type)
@@ -205,35 +207,53 @@ const Dashboard = () => {
   }, [deliveryRequests, searchQuery, statusFilter, dateFrom, dateTo]);
 
   const handleDownloadPdf = useCallback(() => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'landscape' });
+
+    const img = new Image();
+    img.src = logoAguia;
+    try {
+      doc.addImage(img, 'PNG', 14, 8, 30, 30);
+    } catch {}
+
     doc.setFontSize(16);
-    doc.text('Relatório de Solicitações', 14, 20);
+    doc.text('Relatório de Solicitações', 50, 20);
     doc.setFontSize(10);
     const dateLabel = dateFrom || dateTo
       ? `Período: ${dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: ptBR }) : '...'} até ${dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: ptBR }) : '...'}`
       : 'Todas as datas';
-    doc.text(dateLabel, 14, 28);
-    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 14, 34);
+    doc.text(dateLabel, 50, 28);
+    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 50, 34);
+
+    const getFreightValue = (item: any): string => {
+      const region = (item as any).region || detectRegionForFreight(item.destination_address);
+      const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
+      return formatSingleFreightPrice(prices);
+    };
 
     const tableData = filteredRequests.map(item => [
-      `#${String(item.request_number || '').padStart(6, '0')}`,
-      item.client?.name || '-',
-      item.material_type?.name || '-',
-      item.vehicle?.type || item.transport_type || '-',
-      item.status || '-',
       formatDate(item.scheduled_date || item.created_at),
+      item.client?.name || '-',
+      item.vehicle?.type || item.transport_type || '-',
+      item.origin_address || '-',
+      item.destination_address || '-',
+      (item as any).requester || '-',
+      getFreightValue(item),
     ]);
 
     autoTable(doc, {
-      head: [['ID', 'Cliente', 'Material', 'Transporte', 'Status', 'Data']],
+      head: [['Data/Hora', 'Cliente', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
       body: tableData,
-      startY: 40,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [220, 38, 38] },
+      startY: 42,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [220, 38, 38], fontSize: 8 },
+      columnStyles: {
+        3: { cellWidth: 50 },
+        4: { cellWidth: 50 },
+      },
     });
 
     doc.save('solicitacoes.pdf');
-  }, [filteredRequests, dateFrom, dateTo]);
+  }, [filteredRequests, dateFrom, dateTo, allFreightPrices]);
   const getStatusBadge = (status: string | null) => {
     const statusConfig: Record<string, {
       label: string;
