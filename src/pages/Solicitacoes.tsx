@@ -35,7 +35,7 @@ const Solicitacoes = () => {
     const img = new Image();
     img.src = logoAguia;
     try {
-      doc.addImage(img, 'PNG', 14, 8, 30, 30);
+      doc.addImage(img, 'PNG', 252, 8, 30, 30);
     } catch {}
 
     doc.setFontSize(16);
