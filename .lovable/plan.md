@@ -1,47 +1,53 @@
 
+# Prevenir Aceitacao Duplicada e Remover Solicitacao da Lista
 
 ## Problema
+Quando um motorista aceita uma solicitacao, ela continua visivel para outros motoristas. Isso permite que dois motoristas aceitem a mesma corrida. A solicitacao precisa sumir imediatamente da tela dos outros motoristas.
 
-Quando o motorista faz login, os dados da pagina "Minhas Corridas" nao aparecem imediatamente porque:
+## Solucao em 2 Partes
 
-1. O hook `useCurrentDriver` usa `staleTime: 5 minutos` e `refetchOnWindowFocus: false`, o que impede a re-busca dos dados
-2. O hook pode executar antes da autenticacao estar pronta, retornar `null`, e nao tentar novamente
-3. O hook `useDriverRequests` tambem usa `refetchOnWindowFocus: false` e depende dos dados do driver para ser ativado
+### 1. Protecao Atomica no Banco (useDriverRequests.ts)
+Modificar o `useAcceptDeliveryRequest` para incluir uma condicao de status no UPDATE. Se outro motorista ja aceitou, o UPDATE retorna zero linhas e o sistema mostra uma mensagem de erro clara.
 
-## Solucao
+```text
+Antes:
+  .update({ status: 'aceita', driver_id })
+  .eq('id', requestId)
+  .select().single()
 
-Ajustar os hooks para que respondam corretamente ao estado de autenticacao:
+Depois:
+  .update({ status: 'aceita', driver_id })
+  .eq('id', requestId)
+  .in('status', ['solicitada', 'enviada'])   // <-- so aceita se disponivel
+  .select()
+  // verificar se retornou 0 linhas = ja foi aceita
+```
 
-### 1. Corrigir `useCurrentDriver` (src/hooks/useDriverRequests.ts)
+Se `data` estiver vazio, lancar erro: "Esta solicitacao ja foi aceita por outro motorista."
 
-- Adicionar o `user.id` como parte da `queryKey`, fazendo o React Query re-executar automaticamente quando o usuario mudar
-- Reduzir o `staleTime` para um valor menor (30 segundos) para permitir atualizacoes mais rapidas
-- Adicionar `enabled: !!user` para so executar quando houver usuario autenticado
-- Importar `useAuth` do contexto para obter o usuario atual
+Alem disso, no `onError`, invalidar as queries para forcar a atualizacao da lista, removendo a solicitacao da tela.
 
-### 2. Corrigir `useDriverRequests` (src/hooks/useDriverRequests.ts)
+### 2. Atualizacao Imediata via Realtime (ja funciona parcialmente)
+O hook `useRealtimeDeliveryRequests` ja invalida a query `driverRequests` quando `delivery_requests` muda. Quando o motorista A aceita, o status muda para `aceita` e o UPDATE dispara o evento realtime. No re-fetch do motorista B, a query filtra por `status IN ('solicitada', 'enviada')`, entao a solicitacao aceita nao retorna mais -- desaparecendo da lista.
 
-- Remover `refetchOnWindowFocus: false` para permitir atualizacao ao voltar para a aba
+Porem, para garantir que nao haja atraso, vamos adicionar um `refetchInterval` curto (5 segundos) no `useDriverRequests` como fallback de seguranca.
 
-### 3. Invalidar `currentDriver` no realtime (src/hooks/useRealtimeDeliveryRequests.ts)
-
-- Adicionar `queryClient.invalidateQueries({ queryKey: ['currentDriver'] })` na funcao `invalidateAll` para que mudancas em tempo real tambem atualizem os dados do motorista
+### 3. Feedback no Dialog (UnifiedRequestDetailsDialog.tsx)
+Tratar o erro especifico no `handleAccept`:
+- Mostrar toast de erro claro
+- Fechar o dialog automaticamente
+- Invalidar queries para atualizar a lista
 
 ---
 
-### Detalhes Tecnicos
+## Arquivos Modificados
 
-**src/hooks/useDriverRequests.ts** - `useCurrentDriver`:
-- Importar `useAuth` de `@/contexts/AuthContext`
-- Usar `const { user } = useAuth()` para obter o usuario
-- Mudar `queryKey` de `['currentDriver']` para `['currentDriver', user?.id]`
-- Mudar `staleTime` de 5 minutos para 30 segundos
-- Adicionar `enabled: !!user`
-- Remover a chamada interna `supabase.auth.getUser()` e usar `user.id` diretamente
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/hooks/useDriverRequests.ts` | Adicionar `.in('status', ...)` no UPDATE, verificar resultado vazio, invalidar queries no erro, adicionar `refetchInterval: 5000` |
+| `src/components/shared/UnifiedRequestDetailsDialog.tsx` | Tratar erro de "ja aceita" no `handleAccept`, fechar dialog e atualizar lista |
 
-**src/hooks/useDriverRequests.ts** - `useDriverRequests`:
-- Remover `refetchOnWindowFocus: false`
-
-**src/hooks/useRealtimeDeliveryRequests.ts**:
-- Adicionar invalidacao da query `currentDriver` no `invalidateAll`
-
+## Resultado Esperado
+- Se motorista A aceita primeiro, motorista B recebe mensagem "Esta solicitacao ja foi aceita por outro motorista" caso tente aceitar
+- A solicitacao desaparece da lista do motorista B em ate 5 segundos (via realtime ou polling)
+- Apenas o motorista que aceitou continua vendo a solicitacao (com status "Aceita")
