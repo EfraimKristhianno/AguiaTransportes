@@ -274,6 +274,41 @@ export type Database = {
           },
         ]
       }
+      freight_prices: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          id: string
+          price: number
+          region: string
+          transport_type: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          id?: string
+          price: number
+          region: string
+          transport_type: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          price?: number
+          region?: string
+          transport_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freight_prices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_records: {
         Row: {
           created_at: string | null
