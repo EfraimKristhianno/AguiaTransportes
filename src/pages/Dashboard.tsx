@@ -17,7 +17,8 @@ import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestD
 import { EditRequestDialog } from '@/components/solicitacoes/EditRequestDialog';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
-import { useAllFreightPrices, getFreightPricesForRequest, formatFreightPrices } from '@/hooks/useFreightPrices';
+import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
+import { detectRegionForFreight } from '@/lib/regionDetection';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -106,6 +107,7 @@ const Dashboard = () => {
           op_number,
           transport_type,
           client_id,
+          region,
           client:clients(name, phone, email),
           material_type:material_types(name),
           vehicle:vehicles(type)
@@ -405,7 +407,11 @@ const Dashboard = () => {
                     {showPrices && (
                       <TableCell>
                         <span className="text-sm">
-                          {formatFreightPrices(getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type))}
+                          {(() => {
+                            const region = (item as any).region || detectRegionForFreight(item.destination_address);
+                            const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
+                            return formatSingleFreightPrice(prices);
+                          })()}
                         </span>
                       </TableCell>
                     )}
@@ -479,7 +485,11 @@ const Dashboard = () => {
                     <div className="col-span-2">
                       <p className="text-muted-foreground">Valor</p>
                       <p className="font-medium text-sm">
-                        {formatFreightPrices(getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type))}
+                        {(() => {
+                          const region = (item as any).region || detectRegionForFreight(item.destination_address);
+                          const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
+                          return formatSingleFreightPrice(prices);
+                        })()}
                       </p>
                     </div>
                   )}

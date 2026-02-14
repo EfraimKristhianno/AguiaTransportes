@@ -47,17 +47,32 @@ export const useAllFreightPrices = () => {
 export const getFreightPricesForRequest = (
   prices: FreightPrice[],
   clientId: string | null | undefined,
-  transportType: string | null | undefined
+  transportType: string | null | undefined,
+  region?: string | null
 ): FreightPrice[] => {
   if (!clientId || !transportType) return [];
-  return prices.filter(
+  let filtered = prices.filter(
     p => p.client_id === clientId && p.transport_type === transportType
   );
+  if (region) {
+    filtered = filtered.filter(p => p.region === region);
+  }
+  return filtered;
 };
 
 export const formatFreightPrices = (prices: FreightPrice[]): string => {
   if (prices.length === 0) return '-';
   return prices
     .map(p => `${p.region} - R$ ${Number(p.price).toFixed(2).replace('.', ',')}`)
+    .join(' / ');
+};
+
+export const formatSingleFreightPrice = (prices: FreightPrice[]): string => {
+  if (prices.length === 0) return '-';
+  if (prices.length === 1) {
+    return `R$ ${Number(prices[0].price).toFixed(2).replace('.', ',')}`;
+  }
+  return prices
+    .map(p => `${p.region}: R$ ${Number(p.price).toFixed(2).replace('.', ',')}`)
     .join(' / ');
 };
