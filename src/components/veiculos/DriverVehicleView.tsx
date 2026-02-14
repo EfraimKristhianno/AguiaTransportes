@@ -55,6 +55,7 @@ const DriverVehicleView = () => {
   // Form states
   const [logForm, setLogForm] = useState({
     vehicle_id: '',
+    plate: '',
     log_date: new Date().toISOString().split('T')[0],
     km_initial: '',
     km_final: '',
@@ -66,6 +67,7 @@ const DriverVehicleView = () => {
 
   const [oilForm, setOilForm] = useState({
     vehicle_id: '',
+    plate: '',
     change_date: new Date().toISOString().split('T')[0],
     km_at_change: '',
     next_change_km: '',
@@ -75,6 +77,7 @@ const DriverVehicleView = () => {
 
   const [maintForm, setMaintForm] = useState({
     vehicle_id: '',
+    plate: '',
     maintenance_type: '',
     current_km: '',
     service_cost: '',
@@ -104,7 +107,7 @@ const DriverVehicleView = () => {
     }, {
       onSuccess: () => {
         setLogDialogOpen(false);
-        setLogForm({ vehicle_id: '', log_date: new Date().toISOString().split('T')[0], km_initial: '', km_final: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
+        setLogForm({ vehicle_id: '', plate: '', log_date: new Date().toISOString().split('T')[0], km_initial: '', km_final: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
       },
     });
   };
@@ -122,7 +125,7 @@ const DriverVehicleView = () => {
     }, {
       onSuccess: () => {
         setOilDialogOpen(false);
-        setOilForm({ vehicle_id: '', change_date: new Date().toISOString().split('T')[0], km_at_change: '', next_change_km: '', oil_type: '', notes: '' });
+        setOilForm({ vehicle_id: '', plate: '', change_date: new Date().toISOString().split('T')[0], km_at_change: '', next_change_km: '', oil_type: '', notes: '' });
       },
     });
   };
@@ -133,7 +136,7 @@ const DriverVehicleView = () => {
       vehicle_id: maintForm.vehicle_id,
       driver_id: currentDriver.id,
       maintenance_type: maintForm.maintenance_type,
-      vehicle_plate: selectedMaintVehicle?.plate || '',
+      vehicle_plate: maintForm.plate || '',
       current_km: parseFloat(maintForm.current_km) || 0,
       service_cost: maintForm.service_cost ? parseFloat(maintForm.service_cost) : undefined,
       notes: maintForm.notes || undefined,
@@ -141,7 +144,7 @@ const DriverVehicleView = () => {
     }, {
       onSuccess: () => {
         setMaintDialogOpen(false);
-        setMaintForm({ vehicle_id: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: new Date().toISOString().split('T')[0] });
+        setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: new Date().toISOString().split('T')[0] });
       },
     });
   };
@@ -228,7 +231,7 @@ const DriverVehicleView = () => {
             <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={logForm.vehicle_id} onValueChange={v => setLogForm(p => ({ ...p, vehicle_id: v }))}>
+                <Select value={logForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setLogForm(p => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => (
@@ -237,12 +240,10 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {logForm.vehicle_id && (
-                <div>
-                  <Label>Placa</Label>
-                  <Input value={driverVehicles.find((v: any) => v.id === logForm.vehicle_id)?.plate || ''} disabled />
-                </div>
-              )}
+              <div>
+                <Label>Placa</Label>
+                <Input value={logForm.plate} onChange={e => setLogForm(p => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
+              </div>
               <div>
                 <Label>Data</Label>
                 <Input type="date" value={logForm.log_date} onChange={e => setLogForm(p => ({ ...p, log_date: e.target.value }))} />
@@ -287,7 +288,7 @@ const DriverVehicleView = () => {
             <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={oilForm.vehicle_id} onValueChange={v => setOilForm(p => ({ ...p, vehicle_id: v }))}>
+                <Select value={oilForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setOilForm(p => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => (
@@ -296,12 +297,10 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {oilForm.vehicle_id && (
-                <div>
-                  <Label>Placa</Label>
-                  <Input value={driverVehicles.find((v: any) => v.id === oilForm.vehicle_id)?.plate || ''} disabled />
-                </div>
-              )}
+              <div>
+                <Label>Placa</Label>
+                <Input value={oilForm.plate} onChange={e => setOilForm(p => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
+              </div>
               <div><Label>Data da Troca</Label><Input type="date" value={oilForm.change_date} onChange={e => setOilForm(p => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Km na Troca</Label><Input type="number" value={oilForm.km_at_change} onChange={e => setOilForm(p => ({ ...p, km_at_change: e.target.value }))} /></div>
@@ -336,7 +335,7 @@ const DriverVehicleView = () => {
               </div>
               <div>
                 <Label>Veículo</Label>
-                <Select value={maintForm.vehicle_id} onValueChange={v => setMaintForm(p => ({ ...p, vehicle_id: v }))}>
+                <Select value={maintForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setMaintForm(p => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => (
@@ -345,12 +344,10 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {selectedMaintVehicle && (
-                <div>
-                  <Label>Placa</Label>
-                  <Input value={selectedMaintVehicle.plate} disabled />
-                </div>
-              )}
+              <div>
+                <Label>Placa</Label>
+                <Input value={maintForm.plate} onChange={e => setMaintForm(p => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
+              </div>
               <div>
                 <Label>Data</Label>
                 <Input type="date" value={maintForm.maintenance_date} onChange={e => setMaintForm(p => ({ ...p, maintenance_date: e.target.value }))} />
