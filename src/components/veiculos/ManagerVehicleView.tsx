@@ -132,7 +132,6 @@ const ManagerVehicleView = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Placa</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Km Total</TableHead>
                   <TableHead>Litros</TableHead>
@@ -146,8 +145,7 @@ const ManagerVehicleView = () => {
               <TableBody>
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
-                    <TableCell className="font-medium">{v.plate}</TableCell>
-                    <TableCell>{v.type}</TableCell>
+                    <TableCell className="font-medium">{v.type}</TableCell>
                     <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>{v.totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>

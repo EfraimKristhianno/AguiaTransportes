@@ -229,7 +229,6 @@ const AdminVehicleView = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Placa</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Km Total</TableHead>
@@ -243,8 +242,7 @@ const AdminVehicleView = () => {
               <TableBody>
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
-                    <TableCell className="font-medium">{v.plate}</TableCell>
-                    <TableCell>{v.type}</TableCell>
+                    <TableCell className="font-medium">{v.type}</TableCell>
                     <TableCell><Badge variant={v.status === 'active' ? 'default' : 'secondary'}>{v.status === 'active' ? 'Ativo' : v.status === 'maintenance' ? 'Manutenção' : 'Inativo'}</Badge></TableCell>
                     <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
