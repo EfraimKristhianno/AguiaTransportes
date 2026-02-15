@@ -10,6 +10,7 @@ import { Fuel, Gauge, Droplets, Car, AlertTriangle, TrendingUp, DollarSign, Hist
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
+import VehicleExportPDF from './VehicleExportPDF';
 
 const COLORS = ['#d32127', '#e8783a', '#f5a623', '#4a9eda', '#6bc5a0'];
 
@@ -219,7 +220,10 @@ const AdminVehicleView = () => {
 
       {/* Full Vehicle Table */}
       <Card>
-        <CardHeader><CardTitle className="text-base">Painel Completo de Veículos</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Painel Completo de Veículos</CardTitle>
+          <VehicleExportPDF vehicles={allVehicles} logs={logs} oilRecords={oilRecords} maintenanceRecords={maintenanceRecords} />
+        </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
