@@ -225,7 +225,7 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
         <SelectContent>
           <SelectItem value="all">Todos os veículos</SelectItem>
           {vehicles.map(v => (
-            <SelectItem key={v.id} value={v.id}>{v.plate} - {v.type}</SelectItem>
+            <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
           ))}
         </SelectContent>
       </Select>
