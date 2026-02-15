@@ -1,55 +1,40 @@
 
-# Tornar os campos de Placa editaveis nos dialogs de Veiculos
+# Melhorar Autocomplete de Enderecos com API Open Source (Photon)
 
-## Resumo
-Remover o atributo `disabled` dos campos de Placa nos tres dialogs (Novo Registro, Troca de Oleo, Manutencao) e adicionar `plate` ao estado de cada formulario, permitindo que o motorista digite/edite a placa livremente.
+## Problema
+A API Nominatim (OpenStreetMap) atual nao retorna todos os enderecos esperados, especialmente para locais no Brasil. Ela foi projetada para geocodificacao, nao para autocomplete.
+
+## Solucao
+Substituir o Nominatim pelo **Photon** (https://photon.komoot.io), uma API open source gratuita mantida pela Komoot, baseada nos dados do OpenStreetMap mas otimizada especificamente para autocomplete. Vantagens:
+- Busca fuzzy (tolera erros de digitacao)
+- Mais rapida que Nominatim
+- Sem limites rigorosos de uso
+- Sem necessidade de chave de API
+- Melhor cobertura para buscas parciais
 
 ## Alteracoes
 
-Arquivo unico: `src/components/veiculos/DriverVehicleView.tsx`
+### Arquivo: `src/components/solicitacoes/AddressAutocomplete.tsx`
 
-### 1. Adicionar campo `plate` aos estados dos formularios
+1. Trocar a URL de `nominatim.openstreetmap.org/search` para `photon.komoot.io/api`
+2. Adicionar parametro `lang=pt` e filtro por Brasil (`&osm_tag=place` com bias para coordenadas do Brasil)
+3. Adaptar a interface de resultado do Photon (formato GeoJSON) para extrair rua, numero, bairro, cidade e estado
+4. Manter toda a logica de UI existente (debounce, navegacao por teclado, dropdown)
 
-- `logForm`: adicionar `plate: ''`
-- `oilForm`: adicionar `plate: ''`
-- `maintForm`: adicionar `plate: ''`
+## Secao Tecnica
 
-### 2. Pre-preencher a placa ao selecionar veiculo
+### Formato da API Photon
+Endpoint: `https://photon.komoot.io/api?q=QUERY&lang=pt&limit=5&lat=-25.4&lon=-49.3`
+- `lat/lon` faz bias para regiao de Curitiba/PR (nao filtra, apenas prioriza)
+- Retorna GeoJSON com `properties.name`, `properties.street`, `properties.housenumber`, `properties.district`, `properties.city`, `properties.state`
 
-Nos `onValueChange` dos Selects de veiculo, alem de atualizar `vehicle_id`, tambem preencher `plate` com a placa do veiculo selecionado:
+### Mapeamento de campos
+- `properties.street` -> Rua
+- `properties.housenumber` -> Numero
+- `properties.district` ou `properties.locality` -> Bairro
+- `properties.city` -> Cidade
+- `properties.state` -> Estado
+- Formato final: `Rua, Numero - Bairro - Cidade - Estado`
 
-```text
-onValueChange={v => {
-  const veh = driverVehicles.find((x: any) => x.id === v);
-  setLogForm(p => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));
-}}
-```
-
-Mesma logica para `oilForm` e `maintForm`.
-
-### 3. Tornar os Inputs de Placa editaveis
-
-Substituir os inputs `disabled` por inputs com `onChange`:
-
-```text
-<Input
-  value={logForm.plate}
-  onChange={e => setLogForm(p => ({ ...p, plate: e.target.value }))}
-  placeholder="Digite a placa"
-/>
-```
-
-### 4. Usar a placa editavel no submit de Manutencao
-
-No `handleSubmitMaintenance`, trocar `selectedMaintVehicle?.plate` por `maintForm.plate`:
-
-```text
-vehicle_plate: maintForm.plate || '',
-```
-
-### 5. Resetar plate ao fechar dialogs
-
-Incluir `plate: ''` nos resets de cada formulario apos sucesso.
-
-## Visibilidade por perfil
-Sem alteracao -- apenas motoristas usam esses dialogs.
+### Nenhuma Edge Function necessaria
+A API Photon e publica e gratuita, sem necessidade de chave. A chamada sera feita diretamente do componente, igual ao Nominatim atual.
