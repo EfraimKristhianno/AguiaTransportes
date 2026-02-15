@@ -11,40 +11,39 @@ interface AddressAutocompleteProps {
   disabled?: boolean;
 }
 
-interface NominatimResult {
-  display_name: string;
-  address: {
-    road?: string;
-    house_number?: string;
-    suburb?: string;
-    neighbourhood?: string;
+interface PhotonFeature {
+  properties: {
+    name?: string;
+    street?: string;
+    housenumber?: string;
+    district?: string;
+    locality?: string;
     city?: string;
-    town?: string;
-    village?: string;
     state?: string;
     country?: string;
+    type?: string;
   };
 }
 
-function formatAddress(result: NominatimResult): string {
-  const { address } = result;
+function formatAddress(feature: PhotonFeature): string {
+  const p = feature.properties;
   const parts: string[] = [];
 
   // Street + number
-  if (address.road) {
-    parts.push(address.house_number ? `${address.road}, ${address.house_number}` : address.road);
+  const street = p.street || p.name;
+  if (street) {
+    parts.push(p.housenumber ? `${street}, ${p.housenumber}` : street);
   }
 
   // Neighborhood
-  const bairro = address.suburb || address.neighbourhood;
+  const bairro = p.district || p.locality;
   if (bairro) parts.push(bairro);
 
   // City
-  const cidade = address.city || address.town || address.village;
-  if (cidade) parts.push(cidade);
+  if (p.city) parts.push(p.city);
 
   // State
-  if (address.state) parts.push(address.state);
+  if (p.state) parts.push(p.state);
 
   return parts.join(' - ');
 }
@@ -56,7 +55,7 @@ export const AddressAutocomplete = ({
   className,
   disabled,
 }: AddressAutocompleteProps) => {
-  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
+  const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -70,12 +69,12 @@ export const AddressAutocomplete = ({
 
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=br&limit=5&q=${encodeURIComponent(query)}`,
-        { headers: { 'Accept-Language': 'pt-BR' } }
+        `https://photon.komoot.io/api?q=${encodeURIComponent(query)}&lang=pt&limit=5&lat=-25.4&lon=-49.3`
       );
-      const data: NominatimResult[] = await res.json();
-      setSuggestions(data);
-      setIsOpen(data.length > 0);
+      const data = await res.json();
+      const features: PhotonFeature[] = data.features || [];
+      setSuggestions(features);
+      setIsOpen(features.length > 0);
       setHighlightedIndex(-1);
     } catch {
       setSuggestions([]);
@@ -90,8 +89,8 @@ export const AddressAutocomplete = ({
     debounceRef.current = setTimeout(() => fetchSuggestions(val), 400);
   };
 
-  const selectSuggestion = (result: NominatimResult) => {
-    const formatted = formatAddress(result);
+  const selectSuggestion = (feature: PhotonFeature) => {
+    const formatted = formatAddress(feature);
     onChange(formatted);
     setIsOpen(false);
     setSuggestions([]);
