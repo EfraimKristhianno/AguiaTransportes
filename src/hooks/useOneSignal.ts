@@ -87,17 +87,44 @@ export const useOneSignal = () => {
         console.log('[OneSignal] Manually opted in to push');
       }
 
-      // Login with external user ID
-      await OneSignal.login(user.id);
-      console.log('[OneSignal] Logged in as:', user.id);
+      // Login with external user ID - retry up to 3 times
+      let loginSuccess = false;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await OneSignal.login(user.id);
+          console.log(`[OneSignal] Logged in as: ${user.id} (attempt ${attempt})`);
+          loginSuccess = true;
+          break;
+        } catch (loginErr) {
+          console.warn(`[OneSignal] Login attempt ${attempt} failed:`, loginErr);
+          await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
+        }
+      }
 
-      // Wait for login to propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!loginSuccess) {
+        console.error('[OneSignal] All login attempts failed for user:', user.id);
+      }
+
+      // Wait longer for login to propagate
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Ensure push subscription is opted in AFTER login
+      const pushSubAfterLogin = OneSignal.User?.PushSubscription;
+      if (pushSubAfterLogin && !pushSubAfterLogin.optedIn) {
+        try {
+          await pushSubAfterLogin.optIn();
+          console.log('[OneSignal] Opted in after login');
+        } catch (e) {
+          console.warn('[OneSignal] Opt-in after login failed:', e);
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
 
       // Verify subscription
       const subscriptionId = OneSignal.User?.PushSubscription?.id;
       const isPushEnabled = OneSignal.User?.PushSubscription?.optedIn;
-      console.log('[OneSignal] Push opted in:', isPushEnabled, 'Subscription ID:', subscriptionId);
+      const externalId = OneSignal.User?.externalId;
+      console.log('[OneSignal] Push opted in:', isPushEnabled, 'Subscription ID:', subscriptionId, 'External ID:', externalId);
 
       if (!isPushEnabled) {
         console.warn('[OneSignal] Push not enabled after login, attempting opt-in again');

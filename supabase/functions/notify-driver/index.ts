@@ -76,18 +76,50 @@ Deno.serve(async (req) => {
     const message = `De: ${record.origin_address}\nPara: ${record.destination_address}`;
 
     // Send OneSignal notification targeting specific external user IDs
+    const onesignalPayload: any = {
+      app_id: ONESIGNAL_APP_ID,
+      include_aliases: {
+        external_id: targetUserIds,
+      },
+      target_channel: "push",
+      headings: { en: title },
+      contents: { en: message },
+      data: {
+        request_id: record.id,
+        request_number: record.request_number,
+        type: "new_request",
+      },
+      web_push_topic: `request-${record.id}`,
+      priority: 10,
+      ttl: 3600,
+      isAnyWeb: true,
+      chrome_web_sound: "https://aguiatransportes.lovable.app/notification-sound.mp3",
+    };
+
     const onesignalResponse = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,
       },
-      body: JSON.stringify({
+      body: JSON.stringify(onesignalPayload),
+    });
+
+    const onesignalResult = await onesignalResponse.json();
+    console.log("[notify-driver] OneSignal response:", JSON.stringify(onesignalResult));
+
+    // If external_id targeting failed, fallback to tag-based targeting
+    let fallbackResult = null;
+    if (onesignalResult.errors?.invalid_aliases) {
+      console.log("[notify-driver] External ID failed, trying tag-based fallback for transport_type:", transportType);
+      
+      const fallbackPayload = {
         app_id: ONESIGNAL_APP_ID,
-        include_aliases: {
-          external_id: targetUserIds,
-        },
-        target_channel: "push",
+        filters: [
+          { field: "tag", key: "role", relation: "=", value: "motorista" },
+          { operator: "AND" },
+          { field: "tag", key: "vehicle_types", relation: "=", value: transportType },
+        ],
         headings: { en: title },
         contents: { en: message },
         data: {
@@ -95,22 +127,32 @@ Deno.serve(async (req) => {
           request_number: record.request_number,
           type: "new_request",
         },
-        web_push_topic: `request-${record.id}`,
+        web_push_topic: `request-fallback-${record.id}`,
         priority: 10,
         ttl: 3600,
         isAnyWeb: true,
         chrome_web_sound: "https://aguiatransportes.lovable.app/notification-sound.mp3",
-      }),
-    });
+      };
 
-    const onesignalResult = await onesignalResponse.json();
-    console.log("[notify-driver] OneSignal response:", JSON.stringify(onesignalResult));
+      const fallbackResponse = await fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,
+        },
+        body: JSON.stringify(fallbackPayload),
+      });
+
+      fallbackResult = await fallbackResponse.json();
+      console.log("[notify-driver] Fallback (tag) response:", JSON.stringify(fallbackResult));
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         drivers_notified: targetUserIds.length,
         onesignal: onesignalResult,
+        fallback: fallbackResult,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
