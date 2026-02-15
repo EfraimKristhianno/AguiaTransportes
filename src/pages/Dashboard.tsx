@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin, Pencil, Trash2, DollarSign } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -23,6 +23,8 @@ import { detectRegionForFreight } from '@/lib/regionDetection';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 type DeliveryRequest = {
   id: string;
   request_number: number | null;
@@ -164,16 +166,38 @@ const Dashboard = () => {
     setEditOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelRequestId, setCancelRequestId] = useState<string | null>(null);
+  const [cancelRequestNumber, setCancelRequestNumber] = useState<string>('');
+  const [cancelReason, setCancelReason] = useState('');
+
+  const handleCancelRequest = async () => {
+    if (!cancelRequestId || !cancelReason.trim()) {
+      toast.error('Informe o motivo do cancelamento');
+      return;
+    }
     try {
-      const { error } = await supabase.from('delivery_requests').delete().eq('id', id);
+      const { error } = await supabase
+        .from('delivery_requests')
+        .update({ status: 'cancelada', notes: cancelReason.trim(), updated_at: new Date().toISOString() })
+        .eq('id', cancelRequestId);
       if (error) throw error;
-      toast.success('Solicitação excluída com sucesso!');
+      toast.success('Solicitação cancelada com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
       queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      setCancelDialogOpen(false);
+      setCancelReason('');
+      setCancelRequestId(null);
     } catch (error: any) {
-      toast.error(`Erro ao excluir: ${error.message}`);
+      toast.error(`Erro ao cancelar: ${error.message}`);
     }
+  };
+
+  const openCancelDialog = (id: string, requestNumber: number | null) => {
+    setCancelRequestId(id);
+    setCancelRequestNumber(String(requestNumber || '').padStart(6, '0'));
+    setCancelReason('');
+    setCancelDialogOpen(true);
   };
 
   // Calculate stats
@@ -302,6 +326,11 @@ const Dashboard = () => {
         label: 'Entregue',
         className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         icon: <CheckCircle2 className="h-3 w-3 mr-1" />
+      },
+      cancelada: {
+        label: 'Cancelada',
+        className: 'bg-red-50 text-red-700 border-red-200',
+        icon: <Trash2 className="h-3 w-3 mr-1" />
       }
     };
     const config = statusConfig[status || 'solicitada'] || statusConfig.solicitada;
@@ -477,27 +506,15 @@ const Dashboard = () => {
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} title="Editar">
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" title="Excluir">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja excluir a solicitação #{String(item.request_number || '').padStart(6, '0')}? Esta ação não pode ser desfeita.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title={item.status === 'entregue' || item.status === 'cancelada' ? 'Não é possível cancelar' : 'Cancelar'}
+                              disabled={item.status === 'entregue' || item.status === 'cancelada'}
+                              onClick={() => openCancelDialog(item.id, item.request_number)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
                           </>
                         )}
                       </div>
@@ -556,27 +573,15 @@ const Dashboard = () => {
                         <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => handleEdit(item)}>
                           <Pencil className="h-5 w-5" />
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-10 w-10">
-                                  <Trash2 className="h-5 w-5 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir a solicitação #{String(item.request_number || '').padStart(6, '0')}? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10"
+                          disabled={item.status === 'entregue' || item.status === 'cancelada'}
+                          onClick={() => openCancelDialog(item.id, item.request_number)}
+                        >
+                          <Trash2 className="h-5 w-5 text-destructive" />
+                        </Button>
                       </>
                     )}
                   </div>
@@ -603,6 +608,37 @@ const Dashboard = () => {
           if (!open) setEditRequest(null);
         }}
       />
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={(open) => { setCancelDialogOpen(open); if (!open) setCancelReason(''); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar solicitação #{cancelRequestNumber}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta solicitação será marcada como cancelada. Informe o motivo abaixo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="cancel-reason">Motivo do cancelamento *</Label>
+            <Textarea
+              id="cancel-reason"
+              placeholder="Descreva o motivo do cancelamento..."
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelRequest}
+              disabled={!cancelReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar Cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>;
 };
 export default Dashboard;
