@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Fuel, Gauge, Droplets, Car, AlertTriangle, History } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
+import VehicleExportPDF from './VehicleExportPDF';
 
 const COLORS = ['#d32127', '#e8783a', '#f5a623', '#4a9eda', '#6bc5a0'];
 
@@ -122,7 +123,10 @@ const ManagerVehicleView = () => {
 
       {/* Vehicle Table with history button */}
       <Card>
-        <CardHeader><CardTitle className="text-base">Indicadores por Veículo</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Indicadores por Veículo</CardTitle>
+          <VehicleExportPDF vehicles={allVehicles} logs={logs} oilRecords={oilRecords} maintenanceRecords={maintenanceRecords} />
+        </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
