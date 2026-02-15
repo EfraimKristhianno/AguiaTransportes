@@ -57,8 +57,7 @@ const DriverVehicleView = () => {
     vehicle_id: '',
     plate: '',
     log_date: new Date().toISOString().split('T')[0],
-    km_initial: '',
-    km_final: '',
+    km_atual: '',
     liters: '',
     fuel_price: '',
     fuel_type: 'diesel',
@@ -97,8 +96,8 @@ const DriverVehicleView = () => {
       vehicle_id: logForm.vehicle_id,
       driver_id: currentDriver.id,
       log_date: logForm.log_date,
-      km_initial: parseFloat(logForm.km_initial) || 0,
-      km_final: parseFloat(logForm.km_final) || 0,
+      km_initial: 0,
+      km_final: parseFloat(logForm.km_atual) || 0,
       liters: logForm.liters ? parseFloat(logForm.liters) : undefined,
       fuel_price: logForm.fuel_price ? parseFloat(logForm.fuel_price) : undefined,
       total_cost: parseFloat(totalCost) || undefined,
@@ -107,7 +106,7 @@ const DriverVehicleView = () => {
     }, {
       onSuccess: () => {
         setLogDialogOpen(false);
-        setLogForm({ vehicle_id: '', plate: '', log_date: new Date().toISOString().split('T')[0], km_initial: '', km_final: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
+        setLogForm({ vehicle_id: '', plate: '', log_date: new Date().toISOString().split('T')[0], km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
       },
     });
   };
@@ -248,9 +247,9 @@ const DriverVehicleView = () => {
                 <Label>Data</Label>
                 <Input type="date" value={logForm.log_date} onChange={e => setLogForm(p => ({ ...p, log_date: e.target.value }))} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Km Inicial</Label><Input type="number" value={logForm.km_initial} onChange={e => setLogForm(p => ({ ...p, km_initial: e.target.value }))} /></div>
-                <div><Label>Km Final</Label><Input type="number" value={logForm.km_final} onChange={e => setLogForm(p => ({ ...p, km_final: e.target.value }))} /></div>
+              <div>
+                <Label>Km Atual</Label>
+                <Input type="number" value={logForm.km_atual} onChange={e => setLogForm(p => ({ ...p, km_atual: e.target.value }))} placeholder="Quilometragem atual" />
               </div>
               <div>
                 <Label>Tipo de Combustível</Label>
@@ -259,7 +258,7 @@ const DriverVehicleView = () => {
                   <SelectContent>
                     <SelectItem value="diesel">Diesel</SelectItem>
                     <SelectItem value="gasolina">Gasolina</SelectItem>
-                    <SelectItem value="alcool">Álcool</SelectItem>
+                    <SelectItem value="gnv">Gás (GNV)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
