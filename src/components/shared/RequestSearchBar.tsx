@@ -15,6 +15,7 @@ const STATUS_OPTIONS = [
   { value: 'coletada', label: 'Coletada' },
   { value: 'em_rota', label: 'Em Trânsito' },
   { value: 'entregue', label: 'Entregue' },
+  { value: 'cancelada', label: 'Cancelada' },
 ];
 
 interface RequestSearchBarProps {
