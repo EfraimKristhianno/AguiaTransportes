@@ -99,6 +99,7 @@ Deno.serve(async (req) => {
         priority: 10,
         ttl: 3600,
         isAnyWeb: true,
+        chrome_web_sound: "https://aguiatransportes.lovable.app/notification-sound.mp3",
       }),
     });
 

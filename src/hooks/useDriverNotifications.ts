@@ -4,6 +4,28 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useCurrentDriver } from './useDriverRequests';
 
+function playNotificationSound() {
+  try {
+    const audio = new Audio('/notification-sound.mp3');
+    audio.volume = 0.7;
+    audio.play().catch(() => {
+      // Fallback: generate a beep using Web Audio API
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.frequency.value = 880;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+        oscillator.start();
+        oscillator.stop(ctx.currentTime + 0.5);
+      } catch {}
+    });
+  } catch {}
+}
+
 export const useDriverNotifications = () => {
   const queryClient = useQueryClient();
   const { data: driver } = useCurrentDriver();
@@ -50,6 +72,9 @@ export const useDriverNotifications = () => {
               duration: 8000,
             });
 
+            // Play notification sound
+            playNotificationSound();
+
             // Native notification
             showNativeNotification(title, body);
 
@@ -79,6 +104,9 @@ export const useDriverNotifications = () => {
               description: `#${updated.request_number} está disponível`,
               duration: 6000,
             });
+
+            // Play notification sound
+            playNotificationSound();
 
             showNativeNotification(
               'Solicitação atualizada',
@@ -110,12 +138,16 @@ function showNativeNotification(title: string, body: string) {
         icon: '/logo-192.png',
         badge: '/logo-192.png',
         tag: 'driver-notification',
+        silent: false,
+        requireInteraction: true,
       });
     });
   } else {
     new Notification(title, {
       body,
       icon: '/logo-192.png',
+      silent: false,
+      requireInteraction: true,
     });
   }
 }
