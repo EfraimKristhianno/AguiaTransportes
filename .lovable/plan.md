@@ -1,40 +1,49 @@
 
-# Melhorar Autocomplete de Enderecos com API Open Source (Photon)
+# Alerta Sonoro nas Notificações de Solicitação
 
-## Problema
-A API Nominatim (OpenStreetMap) atual nao retorna todos os enderecos esperados, especialmente para locais no Brasil. Ela foi projetada para geocodificacao, nao para autocomplete.
+## Objetivo
+Adicionar um som de alerta quando uma notificação de nova solicitação de coleta chega para o motorista, tanto via notificação nativa/push (OneSignal) quanto via realtime (toast in-app).
 
-## Solucao
-Substituir o Nominatim pelo **Photon** (https://photon.komoot.io), uma API open source gratuita mantida pela Komoot, baseada nos dados do OpenStreetMap mas otimizada especificamente para autocomplete. Vantagens:
-- Busca fuzzy (tolera erros de digitacao)
-- Mais rapida que Nominatim
-- Sem limites rigorosos de uso
-- Sem necessidade de chave de API
-- Melhor cobertura para buscas parciais
+## O que será feito
 
-## Alteracoes
+### 1. Adicionar arquivo de som ao projeto
+- Criar/adicionar um arquivo de áudio curto (ex: `public/notification-sound.mp3`) que será tocado quando a notificação chegar.
 
-### Arquivo: `src/components/solicitacoes/AddressAutocomplete.tsx`
+### 2. Som no alerta in-app (Realtime)
+- No hook `useDriverNotifications.ts`, ao detectar uma nova solicitação via Supabase Realtime, tocar o som usando a Web Audio API (`new Audio('/notification-sound.mp3').play()`).
+- Criar uma função utilitária `playNotificationSound()` que será chamada junto com o toast e a notificação nativa.
 
-1. Trocar a URL de `nominatim.openstreetmap.org/search` para `photon.komoot.io/api`
-2. Adicionar parametro `lang=pt` e filtro por Brasil (`&osm_tag=place` com bias para coordenadas do Brasil)
-3. Adaptar a interface de resultado do Photon (formato GeoJSON) para extrair rua, numero, bairro, cidade e estado
-4. Manter toda a logica de UI existente (debounce, navegacao por teclado, dropdown)
+### 3. Som na notificação push (OneSignal)
+- Atualizar a Edge Function `notify-driver` para incluir o campo `chrome_web_sound` e/ou `web_sound` no payload do OneSignal, apontando para a URL do arquivo de som hospedado.
+- Alternativamente, usar o campo `sound` no payload da notificação nativa do Service Worker (na função `showNativeNotification`), adicionando a propriedade `silent: false`.
 
-## Secao Tecnica
+---
 
-### Formato da API Photon
-Endpoint: `https://photon.komoot.io/api?q=QUERY&lang=pt&limit=5&lat=-25.4&lon=-49.3`
-- `lat/lon` faz bias para regiao de Curitiba/PR (nao filtra, apenas prioriza)
-- Retorna GeoJSON com `properties.name`, `properties.street`, `properties.housenumber`, `properties.district`, `properties.city`, `properties.state`
+## Detalhes Técnicos
 
-### Mapeamento de campos
-- `properties.street` -> Rua
-- `properties.housenumber` -> Numero
-- `properties.district` ou `properties.locality` -> Bairro
-- `properties.city` -> Cidade
-- `properties.state` -> Estado
-- Formato final: `Rua, Numero - Bairro - Cidade - Estado`
+### Arquivo de som
+- Formato MP3 leve (1-2 segundos), salvo em `public/notification-sound.mp3`.
+- Será gerado um tom de alerta simples via Web Audio API como fallback caso o arquivo nao carregue.
 
-### Nenhuma Edge Function necessaria
-A API Photon e publica e gratuita, sem necessidade de chave. A chamada sera feita diretamente do componente, igual ao Nominatim atual.
+### useDriverNotifications.ts
+```typescript
+function playNotificationSound() {
+  try {
+    const audio = new Audio('/notification-sound.mp3');
+    audio.volume = 0.7;
+    audio.play().catch(() => {});
+  } catch {}
+}
+```
+- Chamar `playNotificationSound()` nos dois pontos de notificacao: INSERT e UPDATE de delivery_requests.
+
+### notify-driver Edge Function
+- Adicionar `chrome_web_sound` no payload OneSignal para que o push nativo toque som automaticamente.
+
+### showNativeNotification
+- Adicionar `silent: false` e `requireInteraction: true` nas opcoes da notificacao para garantir que o som padrao do sistema toque.
+
+## Resumo das alteracoes
+1. Adicionar `public/notification-sound.mp3` (arquivo de audio)
+2. Editar `src/hooks/useDriverNotifications.ts` (adicionar funcao de som e chama-la)
+3. Editar `supabase/functions/notify-driver/index.ts` (adicionar campo de som no payload OneSignal)
