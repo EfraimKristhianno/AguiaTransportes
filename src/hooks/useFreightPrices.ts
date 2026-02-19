@@ -14,7 +14,7 @@ export const useFreightPrices = (clientId?: string | null) => {
     queryKey: ['freightPrices', clientId],
     queryFn: async () => {
       let query = supabase
-        .from('freight_prices' as any)
+        .from('freight_prices')
         .select('*');
 
       if (clientId) {
@@ -35,7 +35,7 @@ export const useAllFreightPrices = () => {
     queryKey: ['allFreightPrices'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('freight_prices' as any)
+        .from('freight_prices')
         .select('*');
       if (error) throw error;
       return (data || []) as unknown as FreightPrice[];
