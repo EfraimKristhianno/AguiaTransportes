@@ -9,7 +9,7 @@ import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords } from '@/ho
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Fuel, Gauge, Droplets, Car, AlertTriangle, TrendingUp, DollarSign, History, Search } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
 import VehicleExportPDF from './VehicleExportPDF';
@@ -123,12 +123,38 @@ const AdminVehicleView = () => {
     .filter(v => v.totalKm > 0)
     .map(v => ({ name: getVehiclePrefix(v.type), km: v.totalKm }));
 
-  const fuelCounts = filteredLogs.reduce((acc, l) => { acc[l.fuel_type] = (acc[l.fuel_type] || 0) + 1; return acc; }, {} as Record<string, number>);
-  const fuelChartData = Object.entries(fuelCounts).map(([name, value]) => ({ name, value }));
-  const statusData = [
-    { name: 'Ativos', value: activeVehicles },
-    { name: 'Inativos', value: inactiveVehicles },
-  ].filter(d => d.value > 0);
+  // Fuel type over time (vertical bars)
+  const fuelDailyData: Record<string, Record<string, number>> = {};
+  const fuelDatesSet = new Set<string>();
+  const fuelTypesSet = new Set<string>();
+  filteredLogs.forEach(l => {
+    const d = l.log_date;
+    if (new Date(d) >= last30) {
+      fuelDatesSet.add(d);
+      fuelTypesSet.add(l.fuel_type);
+      if (!fuelDailyData[d]) fuelDailyData[d] = {};
+      fuelDailyData[d][l.fuel_type] = (fuelDailyData[d][l.fuel_type] || 0) + 1;
+    }
+  });
+  const fuelDates = Array.from(fuelDatesSet).sort();
+  const fuelTypes = Array.from(fuelTypesSet);
+  const fuelTimeData = fuelDates.map(date => {
+    const entry: any = { date: format(parseISO(date), 'dd/MM') };
+    fuelTypes.forEach(ft => { entry[ft] = fuelDailyData[date]?.[ft] || 0; });
+    return entry;
+  });
+
+  // Maintenance cost by type
+  const filteredVehicleIds = new Set(filteredVehicles.map((v: any) => v.id));
+  const maintTypeCosts: Record<string, number> = {};
+  maintenanceRecords
+    .filter(m => filteredVehicleIds.has(m.vehicle_id))
+    .forEach(m => {
+      maintTypeCosts[m.maintenance_type] = (maintTypeCosts[m.maintenance_type] || 0) + (m.service_cost || 0);
+    });
+  const maintTypeData = Object.entries(maintTypeCosts)
+    .map(([name, cost]) => ({ name, cost }))
+    .sort((a, b) => b.cost - a.cost);
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
@@ -242,32 +268,38 @@ const AdminVehicleView = () => {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-base">Tipo de Combustível</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Combustível ao Longo do Tempo</CardTitle></CardHeader>
           <CardContent>
-            {fuelChartData.length > 0 ? (
+            {fuelTimeData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie data={fuelChartData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
-                    {fuelChartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Legend /><Tooltip />
-                </PieChart>
+                <BarChart data={fuelTimeData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="date" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip />
+                  <Legend />
+                  {fuelTypes.map((ft, i) => (
+                    <Bar key={ft} dataKey={ft} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} />
+                  ))}
+                </BarChart>
               </ResponsiveContainer>
             ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>}
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-base">Status da Frota</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Gastos por Tipo de Manutenção</CardTitle></CardHeader>
           <CardContent>
-            {statusData.length > 0 ? (
+            {maintTypeData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
-                    <Cell fill="#6bc5a0" />
-                    <Cell fill="#ccc" />
-                  </Pie>
-                  <Legend /><Tooltip />
-                </PieChart>
+                <BarChart data={maintTypeData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis type="number" className="text-xs" tickFormatter={(v: number) => `R$ ${v}`} />
+                  <YAxis dataKey="name" type="category" className="text-xs" width={120} />
+                  <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+                  <Bar dataKey="cost" radius={[0, 4, 4, 0]}>
+                    {maintTypeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>}
           </CardContent>
