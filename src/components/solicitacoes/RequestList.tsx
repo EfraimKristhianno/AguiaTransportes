@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Package, Hash, MapPin, User, Phone } from 'lucide-react';
+import { Clock, Package, Hash, MapPin, User, Phone, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 import { cn } from '@/lib/utils';
+import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
+import { detectRegionForFreight } from '@/lib/regionDetection';
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
     case 'solicitada':
@@ -82,6 +84,8 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
     data: requests = [],
     isLoading
   } = useDeliveryRequests();
+  const { data: allFreightPrices = [] } = useAllFreightPrices();
+  const showFreightValue = role === 'admin' || role === 'gestor' || role === 'cliente';
   const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter, dateFrom, dateTo);
   return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
       {/* Request List */}
@@ -135,6 +139,18 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                     <p className="break-words">→ {request.destination_address}</p>
                   </div>
                 </div>
+
+                {showFreightValue && (() => {
+                  const region = detectRegionForFreight(request.destination_address);
+                  const prices = getFreightPricesForRequest(allFreightPrices, request.client_id, request.transport_type, region);
+                  const priceText = formatSingleFreightPrice(prices);
+                  return priceText !== '-' ? (
+                    <div className="mt-2 flex items-center gap-1 text-sm font-semibold text-emerald-700">
+                      <DollarSign className="h-3 w-3 shrink-0" />
+                      <span>Frete: {priceText}</span>
+                    </div>
+                  ) : null;
+                })()}
 
                 <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3 shrink-0" />

@@ -28,6 +28,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
+import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
+import { detectRegionForFreight } from '@/lib/regionDetection';
+import { DollarSign } from 'lucide-react';
 
 interface RequestData {
   id: string;
@@ -126,6 +129,8 @@ export const UnifiedRequestDetailsDialog = ({
   const isDriver = role === 'motorista';
   const isAdmin = role === 'admin';
   const isAdminOrGestor = role === 'admin' || role === 'gestor';
+  const showFreightValue = !isDriver;
+  const { data: allFreightPrices = [] } = useAllFreightPrices();
   const [adminSelectedStatus, setAdminSelectedStatus] = useState<string>('');
   const acceptMutation = useAcceptDeliveryRequest();
   const updateStatusMutation = useUpdateRequestStatus();
@@ -397,6 +402,22 @@ export const UnifiedRequestDetailsDialog = ({
                   </div>
                 </div>
               </div>
+
+              {/* Freight Value */}
+              {showFreightValue && (() => {
+                const region = detectRegionForFreight(request.destination_address);
+                const prices = getFreightPricesForRequest(allFreightPrices, request.client_id, request.transport_type, region);
+                const priceText = formatSingleFreightPrice(prices);
+                return priceText !== '-' ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-emerald-600" />
+                      <span className="text-sm font-medium text-emerald-800">Valor do Frete</span>
+                    </div>
+                    <span className="text-lg font-bold text-emerald-700">{priceText}</span>
+                  </div>
+                ) : null;
+              })()}
 
               {/* Requester and Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
