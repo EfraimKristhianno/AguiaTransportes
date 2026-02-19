@@ -17,8 +17,7 @@ const Veiculos = () => {
   return (
     <DashboardLayout title="Veículos" subtitle={getSubtitle()} icon={<Car className="h-6 w-6" />}>
       {role === 'motorista' && <DriverVehicleView />}
-      {role === 'gestor' && <ManagerVehicleView />}
-      {role === 'admin' && <AdminVehicleView />}
+      {(role === 'gestor' || role === 'admin') && <AdminVehicleView />}
     </DashboardLayout>
   );
 };
