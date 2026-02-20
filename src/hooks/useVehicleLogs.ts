@@ -33,6 +33,7 @@ export interface OilChangeRecord {
   km_at_change: number;
   next_change_km: number;
   oil_type: string | null;
+  service_cost: number | null;
   vehicle_plate: string | null;
   notes: string | null;
   created_at: string;

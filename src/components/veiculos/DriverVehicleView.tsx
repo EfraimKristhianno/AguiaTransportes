@@ -155,7 +155,10 @@ const DriverVehicleView = () => {
   // Stats
   const totalKm = logs.reduce((acc, l) => acc + (l.km_total || 0), 0);
   const totalLiters = logs.reduce((acc, l) => acc + (l.liters || 0), 0);
-  const totalSpent = logs.reduce((acc, l) => acc + (l.total_cost || 0), 0);
+  const fuelCost = logs.reduce((acc, l) => acc + (l.total_cost || 0), 0);
+  const oilCost = oilRecords.reduce((acc, o) => acc + (o.service_cost || 0), 0);
+  const maintCost = maintenanceRecords.reduce((acc, m) => acc + (m.service_cost || 0), 0);
+  const totalSpent = fuelCost + oilCost + maintCost;
   const latestOil = oilRecords[0];
   const lastLogKm = logs[0]?.km_final || 0;
   const oilChangeWarning = latestOil && lastLogKm >= latestOil.next_change_km;
@@ -376,7 +379,7 @@ const DriverVehicleView = () => {
         </Dialog>
       </div>
 
-      {/* History Table */}
+      {/* History Table - Registros */}
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de Registros</CardTitle></CardHeader>
         <CardContent>
@@ -410,6 +413,90 @@ const DriverVehicleView = () => {
                       <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
                       <TableCell>{log.fuel_price ? `R$ ${log.fuel_price.toFixed(2)}` : '-'}</TableCell>
                       <TableCell className="font-medium">{log.total_cost ? `R$ ${log.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* History Table - Troca de Óleo */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Histórico de Troca de Óleo</CardTitle></CardHeader>
+        <CardContent>
+          {oilRecords.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">Nenhum registro de troca de óleo encontrado.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Veículo</TableHead>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>Km na Troca</TableHead>
+                    <TableHead>Próx. Troca</TableHead>
+                    <TableHead>Tipo Óleo</TableHead>
+                    <TableHead>Custo</TableHead>
+                    <TableHead>Obs.</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {oilRecords.map((oil) => (
+                    <TableRow key={oil.id}>
+                      <TableCell>{format(new Date(oil.change_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{oil.vehicle?.type || '-'}</TableCell>
+                      <TableCell>{oil.vehicle_plate || oil.vehicle?.plate || '-'}</TableCell>
+                      <TableCell className="font-medium">{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell>{oil.oil_type || '-'}</TableCell>
+                      <TableCell className="font-medium">{oil.service_cost ? `R$ ${oil.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{oil.notes || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* History Table - Manutenção */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Histórico de Manutenção</CardTitle></CardHeader>
+        <CardContent>
+          {maintenanceRecords.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">Nenhum registro de manutenção encontrado.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Veículo</TableHead>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Km Atual</TableHead>
+                    <TableHead>Custo</TableHead>
+                    <TableHead>Obs.</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {maintenanceRecords.map((m) => (
+                    <TableRow key={m.id}>
+                      <TableCell>{format(new Date(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{m.vehicle?.type || '-'}</TableCell>
+                      <TableCell>{m.vehicle_plate || m.vehicle?.plate || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={m.maintenance_type === 'corretiva' ? 'destructive' : m.maintenance_type === 'preventiva' ? 'default' : 'secondary'}>
+                          {m.maintenance_type === 'preventiva' ? 'Preventiva' : m.maintenance_type === 'corretiva' ? 'Corretiva' : m.maintenance_type === 'preditiva' ? 'Preditiva' : m.maintenance_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{m.current_km.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{m.notes || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

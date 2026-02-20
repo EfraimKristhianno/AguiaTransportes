@@ -76,7 +76,11 @@ const AdminVehicleView = () => {
   // Global stats (filtered)
   const totalKm = filteredLogs.reduce((a, l) => a + (l.km_total || 0), 0);
   const totalLiters = filteredLogs.reduce((a, l) => a + (l.liters || 0), 0);
-  const totalCost = filteredLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
+  const filteredVehicleIdsSet = new Set(filteredVehicles.map((v: any) => v.id));
+  const fuelCost = filteredLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
+  const oilCostTotal = oilRecords.filter(o => filteredVehicleIdsSet.has(o.vehicle_id)).reduce((a, o) => a + (o.service_cost || 0), 0);
+  const maintCostTotal = maintenanceRecords.filter(m => filteredVehicleIdsSet.has(m.vehicle_id)).reduce((a, m) => a + (m.service_cost || 0), 0);
+  const totalCost = fuelCost + oilCostTotal + maintCostTotal;
   const avgKmPerLiter = totalLiters > 0 ? totalKm / totalLiters : 0;
   const activeVehicles = filteredVehicles.filter((v: any) => v.status === 'active').length;
   const inactiveVehicles = filteredVehicles.length - activeVehicles;
