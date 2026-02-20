@@ -1,59 +1,45 @@
 
-# Corrigir Exibicao dos Valores de Frete
 
-## Situacao Atual
+# Plano: Salvar Placa nos Registros de Veiculos
 
-Verifiquei o banco de dados e **todos os precos de frete estao corretamente cadastrados** para todos os clientes mencionados (SVD Transportes, Associacao de Parkinson, Potenze Iluminacao, Buhler Group, Douprah, Voga Vedabras e Plona Equipamentos).
+## Problema
+A placa do veiculo esta sendo capturada no formulario (campo `plate` no state), mas NAO esta sendo salva no banco de dados para os registros de abastecimento (`vehicle_logs`) e troca de oleo (`oil_change_records`). Apenas a tabela `maintenance_records` possui a coluna `vehicle_plate`.
 
-## Problemas Identificados no Codigo
+## Solucao
 
-### 1. Popup de Veiculos (VehicleDetailsPopover) - Funcional
-O componente ja recebe o `clientId` e busca os precos corretamente. Porem, usa `as any` desnecessariamente na query do Supabase. Isso nao deveria quebrar, mas sera limpo.
+### 1. Migracoes de Banco de Dados
+Adicionar a coluna `vehicle_plate` nas tabelas que ainda nao possuem:
 
-### 2. RequestList (Pagina Solicitacoes) - SEM valor de frete
-O componente `RequestList.tsx` **nao exibe nenhum valor de frete**. Nao importa nenhum hook de precos e nao tem campo de valor nos cards de solicitacao.
+- **vehicle_logs**: `ALTER TABLE vehicle_logs ADD COLUMN vehicle_plate text;`
+- **oil_change_records**: `ALTER TABLE oil_change_records ADD COLUMN vehicle_plate text;`
 
-### 3. UnifiedRequestDetailsDialog - SEM valor de frete
-O dialog de detalhes da solicitacao **nao possui nenhuma secao de valor de frete**. Nao importa hooks de precos.
+Alem disso, preencher retroativamente os registros existentes com a placa do veiculo vinculado:
+```text
+UPDATE vehicle_logs vl SET vehicle_plate = v.plate FROM vehicles v WHERE v.id = vl.vehicle_id;
+UPDATE oil_change_records oc SET vehicle_plate = v.plate FROM vehicles v WHERE v.id = oc.vehicle_id;
+```
 
-### 4. Dashboard - Funcional
-A logica de calculo esta correta. O card "Total Fretes" e a coluna "Valor" na tabela ja funcionam quando ha solicitacoes cadastradas. Como todos os dados foram apagados, o dashboard mostra vazio corretamente.
+### 2. Atualizar Hooks (`src/hooks/useVehicleLogs.ts`)
+- **useCreateVehicleLog**: adicionar `vehicle_plate` como parametro aceito na mutacao e envia-lo no `insert`.
+- **useCreateOilChange**: adicionar `vehicle_plate` como parametro aceito na mutacao e envia-lo no `insert`.
 
-## Plano de Correcao
+### 3. Atualizar Formularios (`src/components/veiculos/DriverVehicleView.tsx`)
+- **handleSubmitLog**: incluir `vehicle_plate: logForm.plate` nos dados enviados ao hook.
+- **handleSubmitOilChange**: incluir `vehicle_plate: oilForm.plate` nos dados enviados ao hook.
+- (handleSubmitMaintenance ja envia `vehicle_plate` corretamente)
 
-### Passo 1: Limpar casts desnecessarios no useFreightPrices
-Remover `as any` das queries de `freight_prices` pois a tabela ja esta nos tipos gerados do Supabase.
+### 4. Dashboard Admin - Filtro por Placa
+O filtro de busca por placa no `AdminVehicleView` ja existe e filtra pela tabela `vehicles`. Com a placa salva diretamente nos registros, o filtro continuara funcionando normalmente via join com a tabela vehicles. Nenhuma alteracao adicional necessaria no dashboard.
 
-### Passo 2: Adicionar valor de frete no RequestList
-- Importar `useAllFreightPrices`, `getFreightPricesForRequest`, `formatSingleFreightPrice`
-- Importar `detectRegionForFreight`
-- Importar `useAuth` (ja importado) para verificar perfil
-- Adicionar um campo "Valor" em cada card de solicitacao, visivel para admin, gestor e cliente
-- Usar icone DollarSign para destacar
+## Detalhes Tecnicos
 
-### Passo 3: Adicionar valor de frete no UnifiedRequestDetailsDialog
-- Importar hooks de frete e funcao de deteccao de regiao
-- Adicionar secao "Valor do Frete" na area de detalhes do transporte
-- Calcular automaticamente com base no `client_id`, `transport_type` e regiao detectada do `destination_address`
-- Visivel para admin, gestor e cliente (oculto para motorista)
+### Arquivos Modificados
+1. **Nova migracao SQL** - adicionar colunas + backfill
+2. **src/hooks/useVehicleLogs.ts** - adicionar `vehicle_plate` nos tipos e mutacoes de `useCreateVehicleLog` e `useCreateOilChange`
+3. **src/components/veiculos/DriverVehicleView.tsx** - passar `vehicle_plate` nas chamadas de `handleSubmitLog` e `handleSubmitOilChange`
 
-### Passo 4: Verificar VehicleDetailsPopover
-- Confirmar que o popover funciona corretamente ao selecionar transporte no formulario de solicitacao
-- O `clientId` ja e passado corretamente no RequestForm
+### Impacto
+- Registros existentes serao atualizados retroativamente com a placa correta
+- Todos os novos registros (abastecimento, troca de oleo, manutencao) passarao a salvar a placa
+- O dashboard de admin/gestor podera usar o campo `vehicle_plate` diretamente para filtragem
 
-## Arquivos a Modificar
-1. `src/hooks/useFreightPrices.ts` - Remover casts `as any`
-2. `src/components/solicitacoes/RequestList.tsx` - Adicionar campo de valor do frete
-3. `src/components/shared/UnifiedRequestDetailsDialog.tsx` - Adicionar secao de valor do frete
-
-## Dados ja Cadastrados (Verificados)
-
-| Cliente | Fiorino CWB | Fiorino Metro | Moto CWB | Moto Metro | Cam 3/4 | Cam Truck |
-|---------|-------------|---------------|----------|------------|---------|-----------|
-| SVD Transportes | R$ 85 | R$ 95 | R$ 29 | R$ 45 | R$ 470 | R$ 470 |
-| Assoc. Parkinson | R$ 85 | R$ 95 | R$ 29 | R$ 45 | R$ 470 | R$ 470 |
-| Potenze Iluminacao | R$ 85 | R$ 95 | R$ 29 | R$ 45 | R$ 470 | R$ 470 |
-| Buhler Group | R$ 85 | R$ 95 | R$ 29 | R$ 45 | R$ 470 | R$ 470 |
-| Douprah | R$ 85 | R$ 95 | R$ 29 | R$ 45 | R$ 470 | R$ 470 |
-| Voga Vedabras | R$ 125 | R$ 145 | R$ 29 | R$ 45 | R$ 470 | R$ 470 |
-| Plona Equip. | R$ 81/CWB, R$ 95/Metro, R$ 80/Araucaria | | R$ 26/CWB, R$ 45/Metro, R$ 30/Araucaria | | R$ 320 | R$ 320 |
