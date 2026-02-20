@@ -503,7 +503,13 @@ const Dashboard = () => {
                         </Button>
                         {canEditDelete && (
                           <>
-                            <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} title="Editar">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(item)}
+                              title={isClient && (item.status === 'entregue' || item.status === 'cancelada') ? 'Não é possível editar' : 'Editar'}
+                              disabled={isClient && (item.status === 'entregue' || item.status === 'cancelada')}
+                            >
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button
