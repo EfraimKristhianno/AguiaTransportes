@@ -119,20 +119,11 @@ export interface CreateDeliveryRequestInput {
    });
  };
  
- export const useTransportTypes = () => {
-   return useQuery({
-     queryKey: ['transport_types'],
-     queryFn: async (): Promise<string[]> => {
-       const { data, error } = await supabase
-         .from('vehicles')
-         .select('type')
-         .order('type');
- 
-       if (error) throw error;
-       
-       // Get unique types
-       const types = [...new Set(data?.map(v => v.type) || [])];
-       return types;
-     },
-   });
- };
+export const useTransportTypes = () => {
+    return useQuery({
+      queryKey: ['transport_types'],
+      queryFn: async (): Promise<string[]> => {
+        return ['Moto', 'Fiorino', 'Caminhão (3/4)', 'Caminhão'];
+      },
+    });
+  };
