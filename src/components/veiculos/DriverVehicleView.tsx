@@ -103,6 +103,7 @@ const DriverVehicleView = () => {
       fuel_price: logForm.fuel_price ? parseFloat(logForm.fuel_price) : undefined,
       total_cost: parseFloat(totalCost) || undefined,
       fuel_type: logForm.fuel_type,
+      vehicle_plate: logForm.plate || undefined,
       notes: logForm.notes || undefined,
     }, {
       onSuccess: () => {
@@ -122,6 +123,7 @@ const DriverVehicleView = () => {
       next_change_km: parseFloat(oilForm.next_change_km) || 0,
       oil_type: oilForm.oil_type || undefined,
       service_cost: oilForm.service_cost ? parseFloat(oilForm.service_cost) : undefined,
+      vehicle_plate: oilForm.plate || undefined,
       notes: oilForm.notes || undefined,
     }, {
       onSuccess: () => {
