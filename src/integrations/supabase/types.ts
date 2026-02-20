@@ -405,6 +405,7 @@ export type Database = {
           oil_type: string | null
           service_cost: number | null
           vehicle_id: string
+          vehicle_plate: string | null
         }
         Insert: {
           change_date?: string
@@ -417,6 +418,7 @@ export type Database = {
           oil_type?: string | null
           service_cost?: number | null
           vehicle_id: string
+          vehicle_plate?: string | null
         }
         Update: {
           change_date?: string
@@ -429,6 +431,7 @@ export type Database = {
           oil_type?: string | null
           service_cost?: number | null
           vehicle_id?: string
+          vehicle_plate?: string | null
         }
         Relationships: [
           {
@@ -517,6 +520,7 @@ export type Database = {
           total_cost: number | null
           updated_at: string | null
           vehicle_id: string
+          vehicle_plate: string | null
         }
         Insert: {
           created_at?: string | null
@@ -533,6 +537,7 @@ export type Database = {
           total_cost?: number | null
           updated_at?: string | null
           vehicle_id: string
+          vehicle_plate?: string | null
         }
         Update: {
           created_at?: string | null
@@ -549,6 +554,7 @@ export type Database = {
           total_cost?: number | null
           updated_at?: string | null
           vehicle_id?: string
+          vehicle_plate?: string | null
         }
         Relationships: [
           {

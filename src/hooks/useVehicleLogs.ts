@@ -101,6 +101,7 @@ export const useCreateVehicleLog = () => {
       fuel_price?: number;
       total_cost?: number;
       fuel_type: string;
+      vehicle_plate?: string;
       notes?: string;
     }) => {
       const { data, error } = await supabase.from('vehicle_logs').insert(log).select().single();
@@ -128,6 +129,7 @@ export const useCreateOilChange = () => {
       next_change_km: number;
       oil_type?: string;
       service_cost?: number;
+      vehicle_plate?: string;
       notes?: string;
     }) => {
       const { data, error } = await supabase.from('oil_change_records').insert(record).select().single();
