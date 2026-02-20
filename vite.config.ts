@@ -55,8 +55,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/OneSignalSDKWorker\.js/],
-        globIgnores: ["**/OneSignalSDKWorker.js"],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/sw-push\.js/],
+        globIgnores: ["**/sw-push.js"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
