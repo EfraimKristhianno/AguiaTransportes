@@ -56,10 +56,16 @@ const AdminVehicleView = () => {
   const filteredVehicles = useMemo(() => {
     return allVehicles.filter((v: any) => {
       const matchType = vehicleTypeFilter === 'all' || v.type === vehicleTypeFilter;
-      const matchPlate = !plateSearch || v.plate?.toLowerCase().includes(plateSearch.toLowerCase());
-      return matchType && matchPlate;
+      if (!plateSearch) return matchType;
+      const search = plateSearch.toLowerCase();
+      // Search in vehicle plate AND in record plates (vehicle_plate from logs, oil, maintenance)
+      const matchVehiclePlate = v.plate?.toLowerCase().includes(search);
+      const matchLogPlate = logs.some(l => l.vehicle_id === v.id && l.vehicle_plate?.toLowerCase().includes(search));
+      const matchOilPlate = oilRecords.some(o => o.vehicle_id === v.id && o.vehicle_plate?.toLowerCase().includes(search));
+      const matchMaintPlate = maintenanceRecords.some(m => m.vehicle_id === v.id && m.vehicle_plate?.toLowerCase().includes(search));
+      return matchType && (matchVehiclePlate || matchLogPlate || matchOilPlate || matchMaintPlate);
     });
-  }, [allVehicles, vehicleTypeFilter, plateSearch]);
+  }, [allVehicles, vehicleTypeFilter, plateSearch, logs, oilRecords, maintenanceRecords]);
 
   // Filtered logs based on filtered vehicles
   const filteredLogs = useMemo(() => {
