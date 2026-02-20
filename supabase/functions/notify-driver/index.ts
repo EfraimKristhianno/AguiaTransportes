@@ -113,17 +113,20 @@ Deno.serve(async (req) => {
     const onesignalResult = await onesignalResponse.json();
     console.log("[notify-driver] OneSignal response:", JSON.stringify(onesignalResult));
 
-    // If external_id targeting failed, fallback to tag-based targeting
+    // If external_id targeting failed or returned 0 recipients, fallback to tag-based targeting
     let fallbackResult = null;
-    if (onesignalResult.errors?.invalid_aliases) {
-      console.log("[notify-driver] External ID failed, trying tag-based fallback for transport_type:", transportType);
+    const hasAliasErrors = onesignalResult.errors?.invalid_aliases;
+    const zeroRecipients = onesignalResult.recipients === 0;
+    
+    if (hasAliasErrors || zeroRecipients) {
+      console.log("[notify-driver] Primary targeting failed (aliases:", hasAliasErrors, "recipients:", onesignalResult.recipients, "). Trying tag-based fallback.");
       
+      // Use only role=motorista filter to ensure delivery
+      // vehicle_types tag is comma-separated so exact match won't work
       const fallbackPayload = {
         app_id: ONESIGNAL_APP_ID,
         filters: [
           { field: "tag", key: "role", relation: "=", value: "motorista" },
-          { operator: "AND" },
-          { field: "tag", key: "vehicle_types", relation: "=", value: transportType },
         ],
         headings: { en: title },
         contents: { en: message },
@@ -131,6 +134,7 @@ Deno.serve(async (req) => {
           request_id: record.id,
           request_number: record.request_number,
           type: "new_request",
+          transport_type: transportType,
         },
         web_push_topic: `request-fallback-${record.id}`,
         priority: 10,
@@ -151,7 +155,7 @@ Deno.serve(async (req) => {
       });
 
       fallbackResult = await fallbackResponse.json();
-      console.log("[notify-driver] Fallback (tag) response:", JSON.stringify(fallbackResult));
+      console.log("[notify-driver] Fallback response:", JSON.stringify(fallbackResult), "Recipients:", fallbackResult.recipients);
     }
 
     return new Response(
