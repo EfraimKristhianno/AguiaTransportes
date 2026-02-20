@@ -1,45 +1,110 @@
 
 
-# Plano: Salvar Placa nos Registros de Veiculos
+# Plano: Migrar de OneSignal para VAPID Web Push Nativo
 
-## Problema
-A placa do veiculo esta sendo capturada no formulario (campo `plate` no state), mas NAO esta sendo salva no banco de dados para os registros de abastecimento (`vehicle_logs`) e troca de oleo (`oil_change_records`). Apenas a tabela `maintenance_records` possui a coluna `vehicle_plate`.
+## Problema Atual
+O OneSignal nao esta funcionando -- 100% das tentativas de envio falham com erros "invalid_aliases" e "All included players are not subscribed". Nenhum push notification chega em nenhum dispositivo.
 
 ## Solucao
+Remover completamente o OneSignal e implementar Web Push nativo usando VAPID (Voluntary Application Server Identification), que funciona diretamente com a Push API do navegador, sem depender de servicos terceiros.
 
-### 1. Migracoes de Banco de Dados
-Adicionar a coluna `vehicle_plate` nas tabelas que ainda nao possuem:
+## Como Funciona
 
-- **vehicle_logs**: `ALTER TABLE vehicle_logs ADD COLUMN vehicle_plate text;`
-- **oil_change_records**: `ALTER TABLE oil_change_records ADD COLUMN vehicle_plate text;`
+1. O motorista abre o app (PWA) e aceita notificacoes
+2. O navegador gera uma "push subscription" (endpoint + chaves)
+3. Essa subscription e salva no banco de dados (nova tabela `push_subscriptions`)
+4. Quando uma nova solicitacao e criada, a edge function `notify-driver` busca as subscriptions dos motoristas e envia o push diretamente via Web Push Protocol
 
-Alem disso, preencher retroativamente os registros existentes com a placa do veiculo vinculado:
-```text
-UPDATE vehicle_logs vl SET vehicle_plate = v.plate FROM vehicles v WHERE v.id = vl.vehicle_id;
-UPDATE oil_change_records oc SET vehicle_plate = v.plate FROM vehicles v WHERE v.id = oc.vehicle_id;
+## Etapas de Implementacao
+
+### 1. Adicionar Secrets VAPID
+- Sera necessario adicionar duas secrets: `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`
+- O usuario ja informou que tem as chaves prontas
+
+### 2. Criar Tabela `push_subscriptions`
+Nova tabela no banco para armazenar as subscriptions dos motoristas:
+- `id` (uuid, PK)
+- `user_id` (uuid, referencia auth.users)
+- `endpoint` (text, URL do push service)
+- `p256dh` (text, chave publica do cliente)
+- `auth` (text, chave de autenticacao)
+- `created_at` (timestamp)
+- RLS: motoristas podem inserir/deletar suas proprias subscriptions; service role pode ler todas
+
+### 3. Reescrever `src/hooks/useOneSignal.ts` -> `src/hooks/useWebPush.ts`
+- Remover toda dependencia do OneSignal SDK
+- Registrar o service worker do PWA (ja existe via vite-plugin-pwa)
+- Solicitar permissao de notificacao
+- Chamar `pushManager.subscribe()` com a VAPID public key
+- Salvar a subscription no Supabase (tabela `push_subscriptions`)
+- Tratar re-subscription quando a subscription expira
+
+### 4. Criar Service Worker para Push (`public/sw-push.js`)
+- Listener `push` para exibir a notificacao quando chega em background
+- Listener `notificationclick` para abrir o app quando clicado
+
+### 5. Reescrever Edge Function `notify-driver`
+- Remover todo codigo OneSignal
+- Buscar push_subscriptions dos motoristas alvo no banco
+- Enviar notificacoes via Web Push Protocol usando VAPID com a biblioteca `web-push`
+- Limpar subscriptions invalidas (HTTP 410 Gone)
+
+### 6. Atualizar `DriverNotificationListener.tsx`
+- Substituir `useOneSignal` por `useWebPush`
+
+### 7. Limpar OneSignal
+- Remover script do OneSignal do `index.html`
+- Remover arquivo `public/OneSignalSDKWorker.js`
+- Remover referencias no `vite.config.ts`
+- Remover hook `useOneSignal.ts`
+
+## Secao Tecnica
+
+### Arquitetura do Web Push VAPID
+
+```
+[Motorista abre PWA]
+    |
+    v
+[Browser gera PushSubscription]
+    |
+    v
+[Salva no Supabase: push_subscriptions]
+    |
+    ...
+[Admin cria solicitacao]
+    |
+    v
+[DB Trigger -> Edge Function notify-driver]
+    |
+    v
+[Edge Function busca subscriptions dos motoristas]
+    |
+    v
+[Envia via Web Push Protocol (RFC 8030 + VAPID)]
+    |
+    v
+[Push Service (Google FCM / Apple APNs)]
+    |
+    v
+[Service Worker recebe evento 'push']
+    |
+    v
+[Exibe notificacao nativa - funciona em background]
 ```
 
-### 2. Atualizar Hooks (`src/hooks/useVehicleLogs.ts`)
-- **useCreateVehicleLog**: adicionar `vehicle_plate` como parametro aceito na mutacao e envia-lo no `insert`.
-- **useCreateOilChange**: adicionar `vehicle_plate` como parametro aceito na mutacao e envia-lo no `insert`.
+### Compatibilidade
+- Android Chrome: Funciona em foreground e background
+- iOS Safari 16.4+: Funciona quando instalado como PWA (Add to Home Screen) -- ja e o caso do iPhone 15 do usuario
 
-### 3. Atualizar Formularios (`src/components/veiculos/DriverVehicleView.tsx`)
-- **handleSubmitLog**: incluir `vehicle_plate: logForm.plate` nos dados enviados ao hook.
-- **handleSubmitOilChange**: incluir `vehicle_plate: oilForm.plate` nos dados enviados ao hook.
-- (handleSubmitMaintenance ja envia `vehicle_plate` corretamente)
-
-### 4. Dashboard Admin - Filtro por Placa
-O filtro de busca por placa no `AdminVehicleView` ja existe e filtra pela tabela `vehicles`. Com a placa salva diretamente nos registros, o filtro continuara funcionando normalmente via join com a tabela vehicles. Nenhuma alteracao adicional necessaria no dashboard.
-
-## Detalhes Tecnicos
-
-### Arquivos Modificados
-1. **Nova migracao SQL** - adicionar colunas + backfill
-2. **src/hooks/useVehicleLogs.ts** - adicionar `vehicle_plate` nos tipos e mutacoes de `useCreateVehicleLog` e `useCreateOilChange`
-3. **src/components/veiculos/DriverVehicleView.tsx** - passar `vehicle_plate` nas chamadas de `handleSubmitLog` e `handleSubmitOilChange`
-
-### Impacto
-- Registros existentes serao atualizados retroativamente com a placa correta
-- Todos os novos registros (abastecimento, troca de oleo, manutencao) passarao a salvar a placa
-- O dashboard de admin/gestor podera usar o campo `vehicle_plate` diretamente para filtragem
+### Arquivos Modificados/Criados
+- **Novo**: `src/hooks/useWebPush.ts` (substitui useOneSignal)
+- **Novo**: `public/sw-push.js` (service worker para push em background)
+- **Novo**: Migracao SQL para tabela `push_subscriptions`
+- **Editado**: `supabase/functions/notify-driver/index.ts` (reescrita completa)
+- **Editado**: `src/components/DriverNotificationListener.tsx` (usar useWebPush)
+- **Editado**: `index.html` (remover script OneSignal)
+- **Editado**: `vite.config.ts` (remover referencias OneSignal)
+- **Removido**: `src/hooks/useOneSignal.ts`
+- **Removido**: `public/OneSignalSDKWorker.js`
 
