@@ -387,9 +387,8 @@ const DriverVehicleView = () => {
                   <TableRow>
                     <TableHead>Data</TableHead>
                     <TableHead>Veículo</TableHead>
-                    <TableHead>Km Inicial</TableHead>
-                    <TableHead>Km Final</TableHead>
-                    <TableHead>Km Total</TableHead>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>Km Atual</TableHead>
                     <TableHead>Combustível</TableHead>
                     <TableHead>Litros</TableHead>
                     <TableHead>R$/L</TableHead>
@@ -400,10 +399,9 @@ const DriverVehicleView = () => {
                   {logs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{log.vehicle?.type || '-'}</TableCell>
                       <TableCell>{log.vehicle?.plate || '-'}</TableCell>
-                      <TableCell>{log.km_initial?.toLocaleString('pt-BR')}</TableCell>
-                      <TableCell>{log.km_final?.toLocaleString('pt-BR')}</TableCell>
-                      <TableCell className="font-medium">{log.km_total?.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{log.fuel_type}</Badge>
                       </TableCell>

@@ -50,9 +50,8 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Motorista</TableHead>
-                      <TableHead>Km Inicial</TableHead>
-                      <TableHead>Km Final</TableHead>
-                      <TableHead>Km Total</TableHead>
+                      <TableHead>Placa</TableHead>
+                      <TableHead>Km Atual</TableHead>
                       <TableHead>Combustível</TableHead>
                       <TableHead>Litros</TableHead>
                       <TableHead>Total</TableHead>
@@ -63,9 +62,8 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                       <TableRow key={log.id}>
                         <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
                         <TableCell>{log.driver?.name || '-'}</TableCell>
-                        <TableCell>{log.km_initial?.toLocaleString('pt-BR')}</TableCell>
-                        <TableCell>{log.km_final?.toLocaleString('pt-BR')}</TableCell>
-                        <TableCell className="font-medium">{log.km_total?.toLocaleString('pt-BR')}</TableCell>
+                        <TableCell>{vehiclePlate}</TableCell>
+                        <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
                         <TableCell><Badge variant="outline" className="capitalize">{log.fuel_type}</Badge></TableCell>
                         <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
                         <TableCell className="font-medium">{log.total_cost ? `R$ ${log.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
