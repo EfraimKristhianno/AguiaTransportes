@@ -1,10 +1,10 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useDriverNotifications } from '@/hooks/useDriverNotifications';
-import { useOneSignal } from '@/hooks/useOneSignal';
+import { useWebPush } from '@/hooks/useWebPush';
 
 const DriverNotificationListenerInner = () => {
   useDriverNotifications();
-  useOneSignal();
+  useWebPush();
   return null;
 };
 
