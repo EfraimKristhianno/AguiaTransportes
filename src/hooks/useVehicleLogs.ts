@@ -16,6 +16,7 @@ export interface VehicleLog {
   fuel_price: number | null;
   total_cost: number | null;
   fuel_type: 'gasolina' | 'alcool' | 'diesel';
+  vehicle_plate: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -32,6 +33,7 @@ export interface OilChangeRecord {
   km_at_change: number;
   next_change_km: number;
   oil_type: string | null;
+  vehicle_plate: string | null;
   notes: string | null;
   created_at: string;
   vehicle?: { id: string; plate: string; type: string };
