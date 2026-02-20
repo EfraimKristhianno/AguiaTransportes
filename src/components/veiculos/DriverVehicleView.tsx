@@ -71,6 +71,7 @@ const DriverVehicleView = () => {
     km_at_change: '',
     next_change_km: '',
     oil_type: '',
+    service_cost: '',
     notes: '',
   });
 
@@ -120,11 +121,12 @@ const DriverVehicleView = () => {
       km_at_change: parseFloat(oilForm.km_at_change) || 0,
       next_change_km: parseFloat(oilForm.next_change_km) || 0,
       oil_type: oilForm.oil_type || undefined,
+      service_cost: oilForm.service_cost ? parseFloat(oilForm.service_cost) : undefined,
       notes: oilForm.notes || undefined,
     }, {
       onSuccess: () => {
         setOilDialogOpen(false);
-        setOilForm({ vehicle_id: '', plate: '', change_date: new Date().toISOString().split('T')[0], km_at_change: '', next_change_km: '', oil_type: '', notes: '' });
+        setOilForm({ vehicle_id: '', plate: '', change_date: new Date().toISOString().split('T')[0], km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
       },
     });
   };
@@ -306,6 +308,7 @@ const DriverVehicleView = () => {
                 <div><Label>Próx. Troca (Km)</Label><Input type="number" value={oilForm.next_change_km} onChange={e => setOilForm(p => ({ ...p, next_change_km: e.target.value }))} /></div>
               </div>
               <div><Label>Tipo de Óleo</Label><Input value={oilForm.oil_type} onChange={e => setOilForm(p => ({ ...p, oil_type: e.target.value }))} /></div>
+              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" min="0" placeholder="0.00" value={oilForm.service_cost} onChange={e => setOilForm(p => ({ ...p, service_cost: e.target.value }))} /></div>
               <div><Label>Observações</Label><Textarea value={oilForm.notes} onChange={e => setOilForm(p => ({ ...p, notes: e.target.value }))} /></div>
               <Button className="w-full" onClick={handleSubmitOilChange} disabled={createOilChange.isPending}>
                 {createOilChange.isPending ? 'Salvando...' : 'Registrar Troca'}

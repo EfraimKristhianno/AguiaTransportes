@@ -1,0 +1,1 @@
+ALTER TABLE public.oil_change_records ADD COLUMN service_cost numeric DEFAULT NULL;
