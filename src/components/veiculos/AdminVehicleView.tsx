@@ -193,14 +193,10 @@ const AdminVehicleView = () => {
       </div>
 
       {/* Top Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card><CardContent className="flex items-center gap-3 pt-6">
           <div className="rounded-lg bg-blue-500/10 p-2"><Car className="h-5 w-5 text-blue-500" /></div>
           <div><p className="text-xs text-muted-foreground">Veículos</p><p className="text-xl font-bold">{filteredVehicles.length}</p></div>
-        </CardContent></Card>
-        <Card><CardContent className="flex items-center gap-3 pt-6">
-          <div className="rounded-lg bg-green-500/10 p-2"><Gauge className="h-5 w-5 text-green-500" /></div>
-          <div><p className="text-xs text-muted-foreground">Km Total</p><p className="text-xl font-bold">{totalKm.toLocaleString('pt-BR')}</p></div>
         </CardContent></Card>
         <Card><CardContent className="flex items-center gap-3 pt-6">
           <div className="rounded-lg bg-amber-500/10 p-2"><Fuel className="h-5 w-5 text-amber-500" /></div>
@@ -224,34 +220,39 @@ const AdminVehicleView = () => {
         </Card>
       </div>
 
-      {/* Gasto por Motorista - Full width parallel lines */}
+      {/* Gasto por Veículo - Vertical bars */}
       <Card>
-        <CardHeader><CardTitle className="text-base">Gasto por Motorista (30 dias)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Gasto por Veículo (30 dias)</CardTitle></CardHeader>
         <CardContent>
-          {driverLineData.length > 0 && driverNames.length > 0 ? (
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={driverLineData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                <Legend />
-                {driverNames.map((name, i) => (
-                  <Line
-                    key={name}
-                    type="monotone"
-                    dataKey={name}
-                    stroke={COLORS[i % COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="py-12 text-center text-muted-foreground">Sem dados nos últimos 30 dias</p>
-          )}
+          {(() => {
+            const vehicleCosts: Record<string, number> = {};
+            filteredLogs.forEach(l => {
+              if (new Date(l.log_date) >= last30) {
+                const vehicle = allVehicles.find((v: any) => v.id === l.vehicle_id);
+                const vehicleName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
+                vehicleCosts[vehicleName] = (vehicleCosts[vehicleName] || 0) + (l.total_cost || 0);
+              }
+            });
+            const vehicleCostData = Object.entries(vehicleCosts)
+              .map(([name, cost]) => ({ name, cost }))
+              .sort((a, b) => b.cost - a.cost);
+            
+            return vehicleCostData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={vehicleCostData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-xs" />
+                  <YAxis className="text-xs" tickFormatter={(v: number) => `R$ ${v}`} />
+                  <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+                  <Bar dataKey="cost" radius={[4, 4, 0, 0]}>
+                    {vehicleCostData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="py-12 text-center text-muted-foreground">Sem dados nos últimos 30 dias</p>
+            );
+          })()}
         </CardContent>
       </Card>
 
