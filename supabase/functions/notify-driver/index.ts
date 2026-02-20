@@ -93,7 +93,12 @@ Deno.serve(async (req) => {
       priority: 10,
       ttl: 3600,
       isAnyWeb: true,
-      chrome_web_sound: "https://aguiatransportes.lovable.app/notification-sound.mp3",
+      // Force sound and visibility for background notifications
+      android_sound: "notification",
+      ios_sound: "notification.mp3",
+      chrome_web_badge: "https://aguiatransportes.lovable.app/logo-192.png",
+      chrome_web_icon: "https://aguiatransportes.lovable.app/logo-192.png",
+      chrome_web_image: "https://aguiatransportes.lovable.app/logo-192.png",
     };
 
     const onesignalResponse = await fetch("https://onesignal.com/api/v1/notifications", {
@@ -131,7 +136,9 @@ Deno.serve(async (req) => {
         priority: 10,
         ttl: 3600,
         isAnyWeb: true,
-        chrome_web_sound: "https://aguiatransportes.lovable.app/notification-sound.mp3",
+        chrome_web_badge: "https://aguiatransportes.lovable.app/logo-192.png",
+        chrome_web_icon: "https://aguiatransportes.lovable.app/logo-192.png",
+        chrome_web_image: "https://aguiatransportes.lovable.app/logo-192.png",
       };
 
       const fallbackResponse = await fetch("https://onesignal.com/api/v1/notifications", {
