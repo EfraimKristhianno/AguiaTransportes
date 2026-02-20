@@ -62,7 +62,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                       <TableRow key={log.id}>
                         <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
                         <TableCell>{log.driver?.name || '-'}</TableCell>
-                        <TableCell>{vehiclePlate}</TableCell>
+                        <TableCell>{log.vehicle_plate || vehiclePlate}</TableCell>
                         <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
                         <TableCell><Badge variant="outline" className="capitalize">{log.fuel_type}</Badge></TableCell>
                         <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
@@ -85,6 +85,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Motorista</TableHead>
+                      <TableHead>Placa</TableHead>
                       <TableHead>Km na Troca</TableHead>
                       <TableHead>Próx. Troca</TableHead>
                       <TableHead>Tipo Óleo</TableHead>
@@ -96,6 +97,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                       <TableRow key={oil.id}>
                         <TableCell>{format(new Date(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                         <TableCell>{oil.driver?.name || '-'}</TableCell>
+                        <TableCell>{oil.vehicle_plate || vehiclePlate}</TableCell>
                         <TableCell>{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
                         <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
                         <TableCell>{oil.oil_type || '-'}</TableCell>
