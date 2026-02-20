@@ -402,7 +402,7 @@ const DriverVehicleView = () => {
                     <TableRow key={log.id}>
                       <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{log.vehicle?.type || '-'}</TableCell>
-                      <TableCell>{log.vehicle?.plate || '-'}</TableCell>
+                      <TableCell>{log.vehicle_plate || log.vehicle?.plate || '-'}</TableCell>
                       <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{log.fuel_type}</Badge>
