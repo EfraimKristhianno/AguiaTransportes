@@ -403,6 +403,7 @@ export type Database = {
           next_change_km: number
           notes: string | null
           oil_type: string | null
+          service_cost: number | null
           vehicle_id: string
         }
         Insert: {
@@ -414,6 +415,7 @@ export type Database = {
           next_change_km: number
           notes?: string | null
           oil_type?: string | null
+          service_cost?: number | null
           vehicle_id: string
         }
         Update: {
@@ -425,6 +427,7 @@ export type Database = {
           next_change_km?: number
           notes?: string | null
           oil_type?: string | null
+          service_cost?: number | null
           vehicle_id?: string
         }
         Relationships: [

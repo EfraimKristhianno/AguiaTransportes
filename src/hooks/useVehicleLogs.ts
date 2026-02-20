@@ -127,6 +127,7 @@ export const useCreateOilChange = () => {
       km_at_change: number;
       next_change_km: number;
       oil_type?: string;
+      service_cost?: number;
       notes?: string;
     }) => {
       const { data, error } = await supabase.from('oil_change_records').insert(record).select().single();
