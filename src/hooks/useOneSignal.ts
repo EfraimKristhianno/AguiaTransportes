@@ -7,178 +7,135 @@ const ONESIGNAL_APP_ID = 'd34d96dd-731e-49c6-bee8-5c79b4291d81';
 export const useOneSignal = () => {
   const { user, role } = useAuth();
   const initialized = useRef(false);
-  const retryCount = useRef(0);
-  const MAX_RETRIES = 3;
 
-  const initOneSignal = useCallback(async () => {
+  const setupOneSignal = useCallback(async () => {
     if (!user || role !== 'motorista') return;
     if (initialized.current) return;
 
     try {
-      const OneSignalSDK = (window as any).OneSignal;
+      // Use the v16 deferred pattern - this is the ONLY correct way
+      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
+      (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
+        if (initialized.current) return;
 
-      // SDK v16 uses a deferred queue pattern — if it's not ready yet, enqueue
-      if (!OneSignalSDK) {
-        console.warn('[OneSignal] SDK not loaded yet, retrying...');
-        if (retryCount.current < MAX_RETRIES) {
-          retryCount.current++;
-          setTimeout(initOneSignal, 2000 * retryCount.current);
+        try {
+          // Initialize SDK - v16 handles duplicate init gracefully
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            allowLocalhostAsSecureOrigin: true,
+            serviceWorkerParam: { scope: '/' },
+            serviceWorkerPath: '/OneSignalSDKWorker.js',
+            notifyButton: { enable: false },
+            persistNotification: true,
+            notificationClickHandlerMatch: 'origin',
+            notificationClickHandlerAction: 'focus',
+          });
+          console.log('[OneSignal] SDK initialized via deferred pattern');
+
+          // Login with external user ID FIRST (before permission request)
+          // This ensures the device is linked to the user
+          let loginSuccess = false;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              await OneSignal.login(user.id);
+              console.log(`[OneSignal] Logged in as: ${user.id} (attempt ${attempt})`);
+              loginSuccess = true;
+              break;
+            } catch (loginErr) {
+              console.warn(`[OneSignal] Login attempt ${attempt} failed:`, loginErr);
+              await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
+            }
+          }
+
+          if (!loginSuccess) {
+            console.error('[OneSignal] All login attempts failed for user:', user.id);
+          }
+
+          // Check current permission state
+          const currentPermission = OneSignal.Notifications?.permission;
+          console.log('[OneSignal] Current permission:', currentPermission);
+
+          // On iOS, requestPermission must be called from a user gesture
+          // But we can still try - if denied, the user will need to use the bell or a button
+          if (!currentPermission) {
+            try {
+              const permission = await OneSignal.Notifications.requestPermission();
+              console.log('[OneSignal] Permission result:', permission);
+            } catch (permErr) {
+              console.warn('[OneSignal] Permission request failed (may need user gesture on iOS):', permErr);
+            }
+          }
+
+          // Ensure push subscription is opted in
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const pushSub = OneSignal.User?.PushSubscription;
+          console.log('[OneSignal] PushSubscription state:', {
+            id: pushSub?.id,
+            token: pushSub?.token ? 'present' : 'missing',
+            optedIn: pushSub?.optedIn,
+          });
+
+          if (pushSub && !pushSub.optedIn) {
+            try {
+              await pushSub.optIn();
+              console.log('[OneSignal] Manually opted in to push');
+            } catch (e) {
+              console.warn('[OneSignal] Opt-in failed:', e);
+            }
+          }
+
+          // Set tags for driver targeting
+          const { data: driver } = await supabase
+            .from('drivers')
+            .select('id, driver_vehicle_types(vehicle_type)')
+            .eq('user_id', user.id)
+            .single();
+
+          if (driver) {
+            const vehicleTypes = driver.driver_vehicle_types?.map(
+              (dvt: { vehicle_type: string }) => dvt.vehicle_type
+            ) || [];
+
+            await OneSignal.User.addTags({
+              role: 'motorista',
+              driver_id: driver.id,
+              vehicle_types: vehicleTypes.join(','),
+              user_id: user.id,
+            });
+            console.log('[OneSignal] Tags set for driver:', driver.id, 'vehicles:', vehicleTypes);
+          }
+
+          // Final verification
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          const finalSub = OneSignal.User?.PushSubscription;
+          console.log('[OneSignal] Final state:', {
+            subscriptionId: finalSub?.id,
+            optedIn: finalSub?.optedIn,
+            externalId: OneSignal.User?.externalId,
+            permission: OneSignal.Notifications?.permission,
+          });
+
+          initialized.current = true;
+          console.log('[OneSignal] Setup complete for user:', user.id);
+        } catch (error) {
+          console.error('[OneSignal] Setup error inside deferred:', error);
         }
-        return;
-      }
-
-      // If OneSignal is still an array (deferred queue), push our init into it
-      if (Array.isArray(OneSignalSDK)) {
-        (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
-        (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
-          await performInit(OneSignal);
-        });
-        return;
-      }
-
-      // SDK already loaded as object — use it directly
-      await performInit(OneSignalSDK);
+      });
     } catch (error) {
-      console.error('[OneSignal] Init error:', error);
-      if (retryCount.current < MAX_RETRIES) {
-        retryCount.current++;
-        setTimeout(initOneSignal, 2000 * retryCount.current);
-      }
+      console.error('[OneSignal] Error setting up deferred:', error);
     }
   }, [user, role]);
-
-  const performInit = async (OneSignal: any) => {
-    if (initialized.current || !user) return;
-
-    try {
-      // Check if already initialized by testing if Notifications exists
-      const isAlreadyInitialized = OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function';
-
-      if (!isAlreadyInitialized) {
-        await OneSignal.init({
-          appId: ONESIGNAL_APP_ID,
-          allowLocalhostAsSecureOrigin: true,
-          serviceWorkerParam: { scope: '/' },
-          serviceWorkerPath: '/OneSignalSDKWorker.js',
-          notifyButton: { enable: false },
-          persistNotification: true,
-          notificationClickHandlerMatch: 'origin',
-          notificationClickHandlerAction: 'focus',
-        });
-        console.log('[OneSignal] SDK initialized');
-      } else {
-        console.log('[OneSignal] SDK was already initialized');
-      }
-
-      // Request permission
-      const permission = await OneSignal.Notifications.requestPermission();
-      console.log('[OneSignal] Permission:', permission);
-
-      if (!permission) {
-        console.warn('[OneSignal] Notification permission denied');
-        initialized.current = true;
-        return;
-      }
-
-      // Ensure push subscription is opted in
-      const pushSub = OneSignal.User?.PushSubscription;
-      if (pushSub && !pushSub.optedIn) {
-        await pushSub.optIn();
-        console.log('[OneSignal] Manually opted in to push');
-      }
-
-      // Login with external user ID - retry up to 3 times
-      let loginSuccess = false;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          await OneSignal.login(user.id);
-          console.log(`[OneSignal] Logged in as: ${user.id} (attempt ${attempt})`);
-          loginSuccess = true;
-          break;
-        } catch (loginErr) {
-          console.warn(`[OneSignal] Login attempt ${attempt} failed:`, loginErr);
-          await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
-        }
-      }
-
-      if (!loginSuccess) {
-        console.error('[OneSignal] All login attempts failed for user:', user.id);
-      }
-
-      // Wait longer for login to propagate
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Ensure push subscription is opted in AFTER login
-      const pushSubAfterLogin = OneSignal.User?.PushSubscription;
-      if (pushSubAfterLogin && !pushSubAfterLogin.optedIn) {
-        try {
-          await pushSubAfterLogin.optIn();
-          console.log('[OneSignal] Opted in after login');
-        } catch (e) {
-          console.warn('[OneSignal] Opt-in after login failed:', e);
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      // Verify subscription
-      const subscriptionId = OneSignal.User?.PushSubscription?.id;
-      const isPushEnabled = OneSignal.User?.PushSubscription?.optedIn;
-      const externalId = OneSignal.User?.externalId;
-      console.log('[OneSignal] Push opted in:', isPushEnabled, 'Subscription ID:', subscriptionId, 'External ID:', externalId);
-
-      if (!isPushEnabled) {
-        console.warn('[OneSignal] Push not enabled after login, attempting opt-in again');
-        try {
-          await OneSignal.User?.PushSubscription?.optIn();
-        } catch (e) {
-          console.warn('[OneSignal] Second opt-in attempt failed:', e);
-        }
-      }
-
-      // Set tags for driver targeting
-      const { data: driver } = await supabase
-        .from('drivers')
-        .select('id, driver_vehicle_types(vehicle_type)')
-        .eq('user_id', user.id)
-        .single();
-
-      if (driver) {
-        const vehicleTypes = driver.driver_vehicle_types?.map(
-          (dvt: { vehicle_type: string }) => dvt.vehicle_type
-        ) || [];
-
-        await OneSignal.User.addTags({
-          role: 'motorista',
-          driver_id: driver.id,
-          vehicle_types: vehicleTypes.join(','),
-        });
-        console.log('[OneSignal] Tags set for driver:', driver.id, 'vehicles:', vehicleTypes);
-      }
-
-      initialized.current = true;
-      retryCount.current = 0;
-      console.log('[OneSignal] Setup complete for user:', user.id);
-    } catch (error) {
-      console.error('[OneSignal] performInit error:', error);
-      if (retryCount.current < MAX_RETRIES) {
-        retryCount.current++;
-        setTimeout(() => performInit(OneSignal), 2000 * retryCount.current);
-      }
-    }
-  };
 
   useEffect(() => {
     if (!user || role !== 'motorista' || initialized.current) return;
 
-    // Reset retry count on new mount
-    retryCount.current = 0;
-
-    // Give the SDK script time to load
-    const timer = setTimeout(initOneSignal, 1500);
+    // Give the page time to load before initializing
+    const timer = setTimeout(setupOneSignal, 1000);
     return () => clearTimeout(timer);
-  }, [user, role, initOneSignal]);
+  }, [user, role, setupOneSignal]);
 
-  // Re-login when user changes (e.g., re-auth)
+  // Reset on user change
   useEffect(() => {
     if (!user || role !== 'motorista') {
       initialized.current = false;

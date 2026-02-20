@@ -113,21 +113,18 @@ Deno.serve(async (req) => {
     const onesignalResult = await onesignalResponse.json();
     console.log("[notify-driver] OneSignal response:", JSON.stringify(onesignalResult));
 
-    // If external_id targeting failed or returned 0 recipients, fallback to tag-based targeting
+    // If external_id targeting failed or returned 0 recipients, fallback
     let fallbackResult = null;
     const hasAliasErrors = onesignalResult.errors?.invalid_aliases;
-    const zeroRecipients = onesignalResult.recipients === 0;
+    const zeroRecipients = onesignalResult.recipients === 0 || onesignalResult.recipients === undefined;
     
     if (hasAliasErrors || zeroRecipients) {
-      console.log("[notify-driver] Primary targeting failed (aliases:", hasAliasErrors, "recipients:", onesignalResult.recipients, "). Trying tag-based fallback.");
+      console.log("[notify-driver] Primary targeting failed (aliases:", hasAliasErrors, "recipients:", onesignalResult.recipients, "). Trying included_segments fallback.");
       
-      // Use only role=motorista filter to ensure delivery
-      // vehicle_types tag is comma-separated so exact match won't work
+      // Use "Subscribed Users" segment as ultimate fallback - this targets ALL subscribed devices
       const fallbackPayload = {
         app_id: ONESIGNAL_APP_ID,
-        filters: [
-          { field: "tag", key: "role", relation: "=", value: "motorista" },
-        ],
+        included_segments: ["Subscribed Users"],
         headings: { en: title },
         contents: { en: message },
         data: {
@@ -140,6 +137,8 @@ Deno.serve(async (req) => {
         priority: 10,
         ttl: 3600,
         isAnyWeb: true,
+        android_sound: "notification",
+        ios_sound: "notification.mp3",
         chrome_web_badge: "https://aguiatransportes.lovable.app/logo-192.png",
         chrome_web_icon: "https://aguiatransportes.lovable.app/logo-192.png",
         chrome_web_image: "https://aguiatransportes.lovable.app/logo-192.png",
@@ -155,7 +154,7 @@ Deno.serve(async (req) => {
       });
 
       fallbackResult = await fallbackResponse.json();
-      console.log("[notify-driver] Fallback response:", JSON.stringify(fallbackResult), "Recipients:", fallbackResult.recipients);
+      console.log("[notify-driver] Fallback (segments) response:", JSON.stringify(fallbackResult), "Recipients:", fallbackResult.recipients);
     }
 
     return new Response(
