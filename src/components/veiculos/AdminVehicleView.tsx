@@ -8,9 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Fuel, Gauge, Droplets, Car, AlertTriangle, TrendingUp, DollarSign, History, Search } from 'lucide-react';
+import { Fuel, Car, AlertTriangle, TrendingUp, DollarSign, History, Search, CalendarIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line } from 'recharts';
-import { format, subDays, parseISO } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
 import VehicleExportPDF from './VehicleExportPDF';
 
@@ -29,6 +33,8 @@ const AdminVehicleView = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<{ id: string; plate: string } | null>(null);
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>('all');
   const [plateSearch, setPlateSearch] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const { data: allVehicles = [] } = useQuery({
     queryKey: ['all_vehicles'],
@@ -67,55 +73,71 @@ const AdminVehicleView = () => {
     });
   }, [allVehicles, vehicleTypeFilter, plateSearch, logs, oilRecords, maintenanceRecords]);
 
-  // Filtered logs based on filtered vehicles
-  const filteredLogs = useMemo(() => {
-    const vehicleIds = new Set(filteredVehicles.map((v: any) => v.id));
-    return logs.filter(l => vehicleIds.has(l.vehicle_id));
-  }, [logs, filteredVehicles]);
+  // Helper to check if a date string is within the selected range
+  const isInDateRange = (dateStr: string) => {
+    if (!startDate && !endDate) return true;
+    const d = new Date(dateStr);
+    if (startDate && d < startOfDay(startDate)) return false;
+    if (endDate && d > endOfDay(endDate)) return false;
+    return true;
+  };
 
-  // Global stats (filtered)
+  const filteredVehicleIdsSetAll = useMemo(() => new Set(filteredVehicles.map((v: any) => v.id)), [filteredVehicles]);
+
+  // Filtered logs based on filtered vehicles AND date range
+  const filteredLogs = useMemo(() => {
+    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date));
+  }, [logs, filteredVehicleIdsSetAll, startDate, endDate]);
+
+  // Filtered oil records based on filtered vehicles AND date range
+  const filteredOilRecords = useMemo(() => {
+    return oilRecords.filter(o => filteredVehicleIdsSetAll.has(o.vehicle_id) && isInDateRange(o.change_date));
+  }, [oilRecords, filteredVehicleIdsSetAll, startDate, endDate]);
+
+  // Filtered maintenance records based on filtered vehicles AND date range  
+  const filteredMaintenanceRecords = useMemo(() => {
+    return maintenanceRecords.filter(m => filteredVehicleIdsSetAll.has(m.vehicle_id) && isInDateRange(m.maintenance_date));
+  }, [maintenanceRecords, filteredVehicleIdsSetAll, startDate, endDate]);
+
+  // Global stats (filtered by vehicle + date)
   const totalKm = filteredLogs.reduce((a, l) => a + (l.km_total || 0), 0);
   const totalLiters = filteredLogs.reduce((a, l) => a + (l.liters || 0), 0);
-  const filteredVehicleIdsSet = new Set(filteredVehicles.map((v: any) => v.id));
   const fuelCost = filteredLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
-  const oilCostTotal = oilRecords.filter(o => filteredVehicleIdsSet.has(o.vehicle_id)).reduce((a, o) => a + (o.service_cost || 0), 0);
-  const maintCostTotal = maintenanceRecords.filter(m => filteredVehicleIdsSet.has(m.vehicle_id)).reduce((a, m) => a + (m.service_cost || 0), 0);
+  const oilCostTotal = filteredOilRecords.reduce((a, o) => a + (o.service_cost || 0), 0);
+  const maintCostTotal = filteredMaintenanceRecords.reduce((a, m) => a + (m.service_cost || 0), 0);
   const totalCost = fuelCost + oilCostTotal + maintCostTotal;
   const avgKmPerLiter = totalLiters > 0 ? totalKm / totalLiters : 0;
   const activeVehicles = filteredVehicles.filter((v: any) => v.status === 'active').length;
   const inactiveVehicles = filteredVehicles.length - activeVehicles;
 
-  // Vehicle stats (filtered)
+  // Vehicle stats (filtered by date)
   const vehicleStats = filteredVehicles.map((v: any) => {
-    const vLogs = logs.filter(l => l.vehicle_id === v.id);
-    const vOil = oilRecords.filter(o => o.vehicle_id === v.id);
+    const vLogs = filteredLogs.filter(l => l.vehicle_id === v.id);
+    const vOil = filteredOilRecords.filter(o => o.vehicle_id === v.id);
     const totalKm = vLogs.reduce((a, l) => a + (l.km_total || 0), 0);
     const totalLiters = vLogs.reduce((a, l) => a + (l.liters || 0), 0);
     const totalCost = vLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
     const latestOil = vOil[0];
     const lastKm = vLogs[0]?.km_final || 0;
     const oilWarning = latestOil ? lastKm >= latestOil.next_change_km : false;
-    const maintCount = maintenanceRecords.filter(m => m.vehicle_id === v.id).length;
-    const maintCost = maintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
+    const maintCount = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).length;
+    const maintCost = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
     return { ...v, totalKm, totalLiters, totalCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
   });
 
   const vehiclesWithWarning = vehicleStats.filter(v => v.oilWarning).length;
 
-  // Cost per driver over time (parallel lines chart)
-  const last30 = subDays(new Date(), 30);
+  // Cost per driver over time (uses already date-filtered logs)
   const driverDailyCosts: Record<string, Record<string, number>> = {};
   const allDatesSet = new Set<string>();
   
   filteredLogs.forEach(l => {
     const d = l.log_date;
-    if (new Date(d) >= last30) {
-      const driver = allDrivers.find((dr: any) => dr.id === l.driver_id);
-      const driverName = driver?.name?.split(' ')[0] || 'N/A';
-      if (!driverDailyCosts[driverName]) driverDailyCosts[driverName] = {};
-      driverDailyCosts[driverName][d] = (driverDailyCosts[driverName][d] || 0) + (l.total_cost || 0);
-      allDatesSet.add(d);
-    }
+    const driver = allDrivers.find((dr: any) => dr.id === l.driver_id);
+    const driverName = driver?.name?.split(' ')[0] || 'N/A';
+    if (!driverDailyCosts[driverName]) driverDailyCosts[driverName] = {};
+    driverDailyCosts[driverName][d] = (driverDailyCosts[driverName][d] || 0) + (l.total_cost || 0);
+    allDatesSet.add(d);
   });
 
   const allDates = Array.from(allDatesSet).sort();
@@ -133,18 +155,16 @@ const AdminVehicleView = () => {
     .filter(v => v.totalKm > 0)
     .map(v => ({ name: getVehiclePrefix(v.type), km: v.totalKm }));
 
-  // Fuel type over time (vertical bars)
+  // Fuel type over time (uses already date-filtered logs)
   const fuelDailyData: Record<string, Record<string, number>> = {};
   const fuelDatesSet = new Set<string>();
   const fuelTypesSet = new Set<string>();
   filteredLogs.forEach(l => {
     const d = l.log_date;
-    if (new Date(d) >= last30) {
-      fuelDatesSet.add(d);
-      fuelTypesSet.add(l.fuel_type);
-      if (!fuelDailyData[d]) fuelDailyData[d] = {};
-      fuelDailyData[d][l.fuel_type] = (fuelDailyData[d][l.fuel_type] || 0) + 1;
-    }
+    fuelDatesSet.add(d);
+    fuelTypesSet.add(l.fuel_type);
+    if (!fuelDailyData[d]) fuelDailyData[d] = {};
+    fuelDailyData[d][l.fuel_type] = (fuelDailyData[d][l.fuel_type] || 0) + 1;
   });
   const fuelDates = Array.from(fuelDatesSet).sort();
   const fuelTypes = Array.from(fuelTypesSet);
@@ -154,14 +174,11 @@ const AdminVehicleView = () => {
     return entry;
   });
 
-  // Maintenance cost by type
-  const filteredVehicleIds = new Set(filteredVehicles.map((v: any) => v.id));
+  // Maintenance cost by type (uses already date-filtered records)
   const maintTypeCosts: Record<string, number> = {};
-  maintenanceRecords
-    .filter(m => filteredVehicleIds.has(m.vehicle_id))
-    .forEach(m => {
-      maintTypeCosts[m.maintenance_type] = (maintTypeCosts[m.maintenance_type] || 0) + (m.service_cost || 0);
-    });
+  filteredMaintenanceRecords.forEach(m => {
+    maintTypeCosts[m.maintenance_type] = (maintTypeCosts[m.maintenance_type] || 0) + (m.service_cost || 0);
+  });
   const maintTypeData = Object.entries(maintTypeCosts)
     .map(([name, cost]) => ({ name, cost }))
     .sort((a, b) => b.cost - a.cost);
@@ -194,6 +211,33 @@ const AdminVehicleView = () => {
             className="pl-9"
           />
         </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("w-full sm:w-[170px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {startDate ? format(startDate, 'dd/MM/yyyy') : 'Data inicial'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={startDate} onSelect={setStartDate} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("w-full sm:w-[170px] justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {endDate ? format(endDate, 'dd/MM/yyyy') : 'Data final'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={endDate} onSelect={setEndDate} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
+          </PopoverContent>
+        </Popover>
+        {(startDate || endDate) && (
+          <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); }}>
+            Limpar datas
+          </Button>
+        )}
       </div>
 
       {/* Top Stats */}
@@ -226,16 +270,14 @@ const AdminVehicleView = () => {
 
       {/* Gasto por Veículo - Vertical bars */}
       <Card>
-        <CardHeader><CardTitle className="text-base">Gasto por Veículo (30 dias)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Gasto por Veículo</CardTitle></CardHeader>
         <CardContent>
           {(() => {
             const vehicleCosts: Record<string, number> = {};
             filteredLogs.forEach(l => {
-              if (new Date(l.log_date) >= last30) {
-                const vehicle = allVehicles.find((v: any) => v.id === l.vehicle_id);
-                const vehicleName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
-                vehicleCosts[vehicleName] = (vehicleCosts[vehicleName] || 0) + (l.total_cost || 0);
-              }
+              const vehicle = allVehicles.find((v: any) => v.id === l.vehicle_id);
+              const vehicleName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
+              vehicleCosts[vehicleName] = (vehicleCosts[vehicleName] || 0) + (l.total_cost || 0);
             });
             const vehicleCostData = Object.entries(vehicleCosts)
               .map(([name, cost]) => ({ name, cost }))
@@ -254,7 +296,7 @@ const AdminVehicleView = () => {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="py-12 text-center text-muted-foreground">Sem dados nos últimos 30 dias</p>
+              <p className="py-12 text-center text-muted-foreground">Sem dados no período</p>
             );
           })()}
         </CardContent>
