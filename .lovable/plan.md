@@ -1,110 +1,46 @@
 
 
-# Plano: Migrar de OneSignal para VAPID Web Push Nativo
+## Plano: Notificação Push para Motoristas com Som (VAPID)
 
-## Problema Atual
-O OneSignal nao esta funcionando -- 100% das tentativas de envio falham com erros "invalid_aliases" e "All included players are not subscribed". Nenhum push notification chega em nenhum dispositivo.
+### Diagnóstico
 
-## Solucao
-Remover completamente o OneSignal e implementar Web Push nativo usando VAPID (Voluntary Application Server Identification), que funciona diretamente com a Push API do navegador, sem depender de servicos terceiros.
+A infraestrutura de notificação push ja existe no projeto (edge function `notify-driver`, hook `useWebPush`, service worker `sw-push.js`), porem ha um problema critico: **o trigger no banco de dados que dispara a notificacao nao existe**. A funcao `notify_driver_on_new_request()` esta criada, mas nunca e chamada porque o trigger nao foi aplicado na tabela `delivery_requests`.
 
-## Como Funciona
+### O que sera feito
 
-1. O motorista abre o app (PWA) e aceita notificacoes
-2. O navegador gera uma "push subscription" (endpoint + chaves)
-3. Essa subscription e salva no banco de dados (nova tabela `push_subscriptions`)
-4. Quando uma nova solicitacao e criada, a edge function `notify-driver` busca as subscriptions dos motoristas e envia o push diretamente via Web Push Protocol
+**1. Criar o trigger no banco de dados**
+- Criar o trigger `on_new_delivery_request_notify` na tabela `delivery_requests` para os eventos INSERT e UPDATE, chamando a funcao `notify_driver_on_new_request()` que ja existe e usa `pg_net` para invocar a edge function `notify-driver`.
 
-## Etapas de Implementacao
+**2. Adicionar som a notificacao push em segundo plano**
+- Atualizar o service worker (`sw-push.js`) para incluir a propriedade `silent: false` nas opcoes da notificacao. Isso instrui o sistema operacional a tocar o som padrao de notificacao do dispositivo.
+- Nota tecnica: Web Push nao permite enviar arquivos de audio customizados na notificacao em segundo plano. O som sera o padrao do dispositivo (tanto Android quanto iOS), que e o comportamento esperado e compativel com ambas plataformas.
 
-### 1. Adicionar Secrets VAPID
-- Sera necessario adicionar duas secrets: `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`
-- O usuario ja informou que tem as chaves prontas
-
-### 2. Criar Tabela `push_subscriptions`
-Nova tabela no banco para armazenar as subscriptions dos motoristas:
-- `id` (uuid, PK)
-- `user_id` (uuid, referencia auth.users)
-- `endpoint` (text, URL do push service)
-- `p256dh` (text, chave publica do cliente)
-- `auth` (text, chave de autenticacao)
-- `created_at` (timestamp)
-- RLS: motoristas podem inserir/deletar suas proprias subscriptions; service role pode ler todas
-
-### 3. Reescrever `src/hooks/useOneSignal.ts` -> `src/hooks/useWebPush.ts`
-- Remover toda dependencia do OneSignal SDK
-- Registrar o service worker do PWA (ja existe via vite-plugin-pwa)
-- Solicitar permissao de notificacao
-- Chamar `pushManager.subscribe()` com a VAPID public key
-- Salvar a subscription no Supabase (tabela `push_subscriptions`)
-- Tratar re-subscription quando a subscription expira
-
-### 4. Criar Service Worker para Push (`public/sw-push.js`)
-- Listener `push` para exibir a notificacao quando chega em background
-- Listener `notificationclick` para abrir o app quando clicado
-
-### 5. Reescrever Edge Function `notify-driver`
-- Remover todo codigo OneSignal
-- Buscar push_subscriptions dos motoristas alvo no banco
-- Enviar notificacoes via Web Push Protocol usando VAPID com a biblioteca `web-push`
-- Limpar subscriptions invalidas (HTTP 410 Gone)
-
-### 6. Atualizar `DriverNotificationListener.tsx`
-- Substituir `useOneSignal` por `useWebPush`
-
-### 7. Limpar OneSignal
-- Remover script do OneSignal do `index.html`
-- Remover arquivo `public/OneSignalSDKWorker.js`
-- Remover referencias no `vite.config.ts`
-- Remover hook `useOneSignal.ts`
-
-## Secao Tecnica
-
-### Arquitetura do Web Push VAPID
-
-```
-[Motorista abre PWA]
-    |
-    v
-[Browser gera PushSubscription]
-    |
-    v
-[Salva no Supabase: push_subscriptions]
-    |
-    ...
-[Admin cria solicitacao]
-    |
-    v
-[DB Trigger -> Edge Function notify-driver]
-    |
-    v
-[Edge Function busca subscriptions dos motoristas]
-    |
-    v
-[Envia via Web Push Protocol (RFC 8030 + VAPID)]
-    |
-    v
-[Push Service (Google FCM / Apple APNs)]
-    |
-    v
-[Service Worker recebe evento 'push']
-    |
-    v
-[Exibe notificacao nativa - funciona em background]
-```
+**3. Reimplantar a edge function `notify-driver`**
+- Reimplantar para garantir que esta atualizada e funcional.
 
 ### Compatibilidade
-- Android Chrome: Funciona em foreground e background
-- iOS Safari 16.4+: Funciona quando instalado como PWA (Add to Home Screen) -- ja e o caso do iPhone 15 do usuario
 
-### Arquivos Modificados/Criados
-- **Novo**: `src/hooks/useWebPush.ts` (substitui useOneSignal)
-- **Novo**: `public/sw-push.js` (service worker para push em background)
-- **Novo**: Migracao SQL para tabela `push_subscriptions`
-- **Editado**: `supabase/functions/notify-driver/index.ts` (reescrita completa)
-- **Editado**: `src/components/DriverNotificationListener.tsx` (usar useWebPush)
-- **Editado**: `index.html` (remover script OneSignal)
-- **Editado**: `vite.config.ts` (remover referencias OneSignal)
-- **Removido**: `src/hooks/useOneSignal.ts`
-- **Removido**: `public/OneSignalSDKWorker.js`
+| Cenario | Android | iOS (PWA 16.4+) |
+|---------|---------|-----------------|
+| App em primeiro plano | Som customizado (mp3) + toast | Som customizado (mp3) + toast |
+| App em segundo plano | Push + som do sistema | Push + som do sistema |
+| App fechado | Push + som do sistema | Push + som do sistema |
+
+### Detalhes tecnicos
+
+**Migracao SQL:**
+```sql
+CREATE TRIGGER on_new_delivery_request_notify
+  AFTER INSERT OR UPDATE ON public.delivery_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_driver_on_new_request();
+```
+
+**Service Worker (`sw-push.js`):**
+- Adicionar `silent: false` nas opcoes de `showNotification` para garantir que o som do sistema toque.
+
+**Arquivos modificados:**
+- `public/sw-push.js` - adicionar `silent: false`
+- Nova migracao SQL para criar o trigger
+- Reimplantacao da edge function `notify-driver`
 
