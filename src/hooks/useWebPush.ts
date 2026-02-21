@@ -49,7 +49,23 @@ export const useWebPush = () => {
       }
       let subscription = await pm.getSubscription();
 
-      // If no subscription or VAPID key changed, create a new one
+      // If existing subscription, check if VAPID key matches
+      if (subscription) {
+        const existingKey = subscription.options?.applicationServerKey;
+        if (existingKey && VAPID_PUBLIC_KEY) {
+          const expectedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+          const existingKeyArray = new Uint8Array(existingKey as ArrayBuffer);
+          const keysMatch = expectedKey.length === existingKeyArray.length &&
+            expectedKey.every((v, i) => v === existingKeyArray[i]);
+          if (!keysMatch) {
+            console.log('[WebPush] VAPID key changed, re-subscribing...');
+            await subscription.unsubscribe();
+            subscription = null;
+          }
+        }
+      }
+
+      // If no subscription, create a new one
       if (!subscription) {
         if (!VAPID_PUBLIC_KEY) {
           console.error('[WebPush] VAPID_PUBLIC_KEY not configured');
