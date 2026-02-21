@@ -19,6 +19,7 @@ self.addEventListener('push', (event) => {
     requireInteraction: true,
     data: data.data || {},
     vibrate: [200, 100, 200],
+    silent: false,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
