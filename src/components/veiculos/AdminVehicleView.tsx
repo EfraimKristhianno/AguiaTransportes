@@ -319,7 +319,7 @@ const AdminVehicleView = () => {
                   <XAxis dataKey="name" className="text-xs" />
                   <YAxis className="text-xs" tickFormatter={(v: number) => `R$ ${v}`} />
                   <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                  <Bar dataKey="cost" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="cost" radius={[4, 4, 0, 0]} label={{ position: 'top', formatter: (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, fontSize: 10 }}>
                     {vehicleCostData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Bar>
                 </BarChart>
