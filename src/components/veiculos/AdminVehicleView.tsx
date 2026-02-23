@@ -303,7 +303,9 @@ const AdminVehicleView = () => {
             const vehicleCosts: Record<string, number> = {};
             filteredLogs.forEach(l => {
               const vehicle = allVehicles.find((v: any) => v.id === l.vehicle_id);
-              const vehicleName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
+              const plate = l.vehicle_plate || vehicle?.plate || 'N/A';
+              const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
+              const vehicleName = `${typeName} - ${plate}`;
               vehicleCosts[vehicleName] = (vehicleCosts[vehicleName] || 0) + (l.total_cost || 0);
             });
             const vehicleCostData = Object.entries(vehicleCosts)
