@@ -1,57 +1,80 @@
 
 
-## Plano: Permitir Editar Todos os Campos do Usuario (Admin/Gestor)
+## Plano: Corrigir Recuperacao de Senha (Link Invalido)
 
-### Problema Atual
-- O campo **email** esta desabilitado (`disabled`) ao editar um usuario
-- O `handleSubmitUser` so envia `name` e `phone` na atualizacao, ignorando o email
-- Alterar o email exige atualizar tanto a tabela `users` quanto o `auth.users` do Supabase (via Admin API)
+### Problema Identificado
+Quando o usuario clica no link de recuperacao de senha, a pagina `/reset-password` carrega e executa `getSession()` imediatamente. Porem, o Supabase JS SDK ainda nao processou os tokens do hash da URL naquele momento, resultando em `session = null`. Isso faz a pagina redirecionar para `/` (login) antes que a sessao de recuperacao seja estabelecida. Quando o usuario tenta clicar no link novamente, o token ja foi consumido ("One-time token not found").
+
+Nos logs de auth, vemos exatamente isso:
+- 21:17:31 - Primeiro /verify - sucesso (token consumido)
+- 21:18:08 - Segundo /verify - falha "One-time token not found"
 
 ### Solucao
 
-**1. Remover `disabled` do campo email no `UserFormDialog.tsx`**
-- Linha 181: remover `disabled={isEditing}` para que o campo fique editavel
+Modificar **`src/pages/ResetPassword.tsx`** para usar `onAuthStateChange` em vez de `getSession()`:
 
-**2. Atualizar `handleSubmitUser` em `Usuarios.tsx`**
-- Incluir `email` no objeto `updates` enviado ao `useUpdateUser` (linha 212)
-
-**3. Modificar `useUpdateUser` em `useUsers.ts`**
-- Quando o email for alterado, chamar uma Edge Function para atualizar o email no `auth.users` via Admin API
-- Atualizar tambem a tabela `users`, `drivers` e `clients` onde o email antigo estiver registrado
-
-**4. Criar/atualizar Edge Function para atualizar email do auth**
-- Criar nova Edge Function `update-user-email` (ou expandir logica existente)
-- Recebe `authId` e `newEmail`
-- Valida que o chamador e admin (mesmo padrao das outras edge functions)
-- Usa `adminClient.auth.admin.updateUserById(authId, { email: newEmail })` para atualizar no Supabase Auth
-- Atualiza o email na tabela `users`, `drivers` e `clients` correspondentes
+1. Remover a verificacao via `getSession()` que redireciona prematuramente
+2. Usar `supabase.auth.onAuthStateChange()` para detectar o evento `PASSWORD_RECOVERY`
+3. Aguardar ate 5 segundos pelo evento antes de considerar o link invalido
+4. Manter o estado de "carregando" enquanto aguarda o processamento dos tokens da URL
 
 ### Detalhes Tecnicos
 
-**Arquivos a modificar:**
+**Arquivo: `src/pages/ResetPassword.tsx`**
+
+Substituir o `useEffect` atual (linhas 29-43) por:
+
+```typescript
+useEffect(() => {
+  let timeout: NodeJS.Timeout;
+  let settled = false;
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (settled) return;
+
+    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+      settled = true;
+      setSessionReady(true);
+      clearTimeout(timeout);
+    }
+  });
+
+  // Also check if already has session (e.g. page refresh)
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session && !settled) {
+      settled = true;
+      setSessionReady(true);
+      clearTimeout(timeout);
+    }
+  });
+
+  // Timeout - if no session after 5s, redirect
+  timeout = setTimeout(() => {
+    if (!settled) {
+      settled = true;
+      toast({
+        variant: 'destructive',
+        title: 'Link invalido ou expirado',
+        description: 'Solicite um novo link de recuperacao de senha.',
+      });
+      navigate('/');
+    }
+  }, 5000);
+
+  return () => {
+    subscription.unsubscribe();
+    clearTimeout(timeout);
+  };
+}, [navigate, toast]);
+```
+
+- Adicionar estado `sessionReady` inicializado como `false`
+- Mostrar tela de carregamento enquanto `sessionReady === false`
+- Quando `sessionReady === true`, mostrar o formulario de nova senha
+
+### Resumo das Mudancas
 
 | Arquivo | Mudanca |
 |---|---|
-| `src/components/UserFormDialog.tsx` | Remover `disabled={isEditing}` do campo email |
-| `src/pages/Usuarios.tsx` | Adicionar `email: data.email` no objeto `updates` do `handleSubmitUser` |
-| `src/hooks/useUsers.ts` | No `useUpdateUser`, detectar mudanca de email e chamar edge function |
-| `supabase/functions/update-user-email/index.ts` | Nova edge function para atualizar email no auth + tabelas relacionadas |
-
-**Edge Function `update-user-email`:**
-```
-POST /functions/v1/update-user-email
-Body: { "authId": "uuid", "newEmail": "novo@email.com" }
-```
-- Valida token JWT do admin
-- Chama `adminClient.auth.admin.updateUserById(authId, { email: newEmail })`
-- Atualiza `users.email` onde `auth_id = authId`
-- Atualiza `drivers.email` onde `user_id = authId`
-- Atualiza `clients.email` onde o email antigo correspondia
-
-**Fluxo no frontend:**
-1. Admin edita usuario e muda o email
-2. `useUpdateUser` atualiza `name`, `phone` na tabela `users`
-3. Se o email mudou, chama `update-user-email` edge function
-4. Edge function atualiza email no auth e tabelas relacionadas
-5. Invalidar queries para refletir as mudancas
+| `src/pages/ResetPassword.tsx` | Substituir `getSession()` por `onAuthStateChange` com timeout de 5s e tela de loading |
 
