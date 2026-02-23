@@ -141,12 +141,13 @@ const AdminVehicleView = () => {
     const totalKm = vLogs.reduce((a, l) => a + (l.km_total || 0), 0);
     const totalLiters = vLogs.reduce((a, l) => a + (l.liters || 0), 0);
     const totalCost = vLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
+    const oilCost = vOil.reduce((a, o) => a + (o.service_cost || 0), 0);
     const latestOil = vOil[0];
     const lastKm = vLogs[0]?.km_final || 0;
     const oilWarning = latestOil ? lastKm >= latestOil.next_change_km : false;
     const maintCount = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).length;
     const maintCost = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
-    return { ...v, totalKm, totalLiters, totalCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
+    return { ...v, totalKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
   });
 
   const vehiclesWithWarning = vehicleStats.filter(v => v.oilWarning).length;
@@ -397,11 +398,12 @@ const AdminVehicleView = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Placa</TableHead>
                   <TableHead>Km Total</TableHead>
                   <TableHead>Gasto Comb.</TableHead>
-                  <TableHead>Manutenções</TableHead>
+                  <TableHead>Gasto Troca Óleo</TableHead>
                   <TableHead>Gasto Manut.</TableHead>
+                  <TableHead>Qtd Manutenções</TableHead>
                   <TableHead>Óleo</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -410,11 +412,12 @@ const AdminVehicleView = () => {
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
-                    <TableCell><Badge variant={v.status === 'active' ? 'default' : 'secondary'}>{v.status === 'active' ? 'Ativo' : v.status === 'maintenance' ? 'Manutenção' : 'Inativo'}</Badge></TableCell>
+                    <TableCell>{v.plate}</TableCell>
                     <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                    <TableCell>{v.maintCount}</TableCell>
+                    <TableCell>R$ {v.oilCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.maintCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                    <TableCell>{v.maintCount}</TableCell>
                     <TableCell>
                       {v.oilWarning ? <Badge variant="destructive">Trocar</Badge> : v.latestOil ? <Badge variant="outline">OK</Badge> : <span className="text-muted-foreground text-xs">-</span>}
                     </TableCell>
