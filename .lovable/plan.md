@@ -1,80 +1,21 @@
 
+## Plano: Habilitar tela de Usuarios para Gestores
 
-## Plano: Corrigir Recuperacao de Senha (Link Invalido)
+Tres arquivos precisam ser atualizados para adicionar `gestor` na permissao da rota `/usuarios`:
 
-### Problema Identificado
-Quando o usuario clica no link de recuperacao de senha, a pagina `/reset-password` carrega e executa `getSession()` imediatamente. Porem, o Supabase JS SDK ainda nao processou os tokens do hash da URL naquele momento, resultando em `session = null`. Isso faz a pagina redirecionar para `/` (login) antes que a sessao de recuperacao seja estabelecida. Quando o usuario tenta clicar no link novamente, o token ja foi consumido ("One-time token not found").
+### 1. `src/components/ProtectedRoute.tsx`
+- Adicionar `'gestor'` ao array de roles da rota `/usuarios` (linha 17)
+- De: `'/usuarios': ['admin']`
+- Para: `'/usuarios': ['admin', 'gestor']`
 
-Nos logs de auth, vemos exatamente isso:
-- 21:17:31 - Primeiro /verify - sucesso (token consumido)
-- 21:18:08 - Segundo /verify - falha "One-time token not found"
+### 2. `src/components/DashboardLayout.tsx`
+- Adicionar `'gestor'` ao array de roles do item de menu "Usuarios" (linha 39)
+- De: `roles: ['admin'] as UserRole[]`
+- Para: `roles: ['admin', 'gestor'] as UserRole[]`
 
-### Solucao
+### 3. `src/hooks/useUserRole.ts`
+- Adicionar `'/usuarios'` na lista de rotas permitidas para o perfil `gestor` (linha 48)
+- De: `gestor: ['/dashboard', '/solicitacoes', '/motoristas', '/clientes']`
+- Para: `gestor: ['/dashboard', '/solicitacoes', '/motoristas', '/clientes', '/usuarios']`
 
-Modificar **`src/pages/ResetPassword.tsx`** para usar `onAuthStateChange` em vez de `getSession()`:
-
-1. Remover a verificacao via `getSession()` que redireciona prematuramente
-2. Usar `supabase.auth.onAuthStateChange()` para detectar o evento `PASSWORD_RECOVERY`
-3. Aguardar ate 5 segundos pelo evento antes de considerar o link invalido
-4. Manter o estado de "carregando" enquanto aguarda o processamento dos tokens da URL
-
-### Detalhes Tecnicos
-
-**Arquivo: `src/pages/ResetPassword.tsx`**
-
-Substituir o `useEffect` atual (linhas 29-43) por:
-
-```typescript
-useEffect(() => {
-  let timeout: NodeJS.Timeout;
-  let settled = false;
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-    if (settled) return;
-
-    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-      settled = true;
-      setSessionReady(true);
-      clearTimeout(timeout);
-    }
-  });
-
-  // Also check if already has session (e.g. page refresh)
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session && !settled) {
-      settled = true;
-      setSessionReady(true);
-      clearTimeout(timeout);
-    }
-  });
-
-  // Timeout - if no session after 5s, redirect
-  timeout = setTimeout(() => {
-    if (!settled) {
-      settled = true;
-      toast({
-        variant: 'destructive',
-        title: 'Link invalido ou expirado',
-        description: 'Solicite um novo link de recuperacao de senha.',
-      });
-      navigate('/');
-    }
-  }, 5000);
-
-  return () => {
-    subscription.unsubscribe();
-    clearTimeout(timeout);
-  };
-}, [navigate, toast]);
-```
-
-- Adicionar estado `sessionReady` inicializado como `false`
-- Mostrar tela de carregamento enquanto `sessionReady === false`
-- Quando `sessionReady === true`, mostrar o formulario de nova senha
-
-### Resumo das Mudancas
-
-| Arquivo | Mudanca |
-|---|---|
-| `src/pages/ResetPassword.tsx` | Substituir `getSession()` por `onAuthStateChange` com timeout de 5s e tela de loading |
-
+Nenhuma alteracao de banco de dados ou edge function e necessaria, pois as permissoes de leitura/escrita da tabela `users` ja permitem acesso para gestores (via funcao `is_admin_or_gestor`).
