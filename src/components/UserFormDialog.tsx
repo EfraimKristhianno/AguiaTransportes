@@ -178,7 +178,6 @@ const UserFormDialog = ({
                       type="email" 
                       placeholder="email@exemplo.com" 
                       {...field} 
-                      disabled={isEditing}
                     />
                   </FormControl>
                   <FormMessage />
