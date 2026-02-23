@@ -412,7 +412,7 @@ const AdminVehicleView = () => {
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
-                    <TableCell>{v.plate}</TableCell>
+                    <TableCell>{plateFilter !== 'all' ? plateFilter : v.plate}</TableCell>
                     <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.oilCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
@@ -422,7 +422,7 @@ const AdminVehicleView = () => {
                       {v.oilWarning ? <Badge variant="destructive">Trocar</Badge> : v.latestOil ? <Badge variant="outline">OK</Badge> : <span className="text-muted-foreground text-xs">-</span>}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle({ id: v.id, plate: v.plate })}>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle({ id: v.id, plate: plateFilter !== 'all' ? plateFilter : v.plate })}>
                         <History className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -440,9 +440,9 @@ const AdminVehicleView = () => {
           onOpenChange={(open) => !open && setSelectedVehicle(null)}
           vehicleId={selectedVehicle.id}
           vehiclePlate={selectedVehicle.plate}
-          logs={logs}
-          oilRecords={oilRecords}
-          maintenanceRecords={maintenanceRecords}
+          logs={filteredLogs}
+          oilRecords={filteredOilRecords}
+          maintenanceRecords={filteredMaintenanceRecords}
         />
       )}
     </div>

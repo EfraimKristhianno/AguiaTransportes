@@ -50,18 +50,18 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
       if (!isFirstPage) doc.addPage();
       isFirstPage = false;
 
-      // Logo
+      // Logo no canto superior esquerdo
       try {
-        doc.addImage(logoAguia, 'PNG', pageWidth - 45, 8, 35, 18);
+        doc.addImage(logoAguia, 'PNG', 10, 6, 35, 18);
       } catch {}
 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Relatório de Veículo', 14, 16);
+      doc.text('Relatório de Veículo', 50, 16);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Veículo: ${vehiclePlate}`, 14, 23);
-      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 29);
+      doc.text(`Veículo: ${vehiclePlate}`, 50, 23);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 50, 29);
     };
 
     filteredVehicles.forEach(vehicle => {
