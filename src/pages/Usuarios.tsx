@@ -93,7 +93,7 @@ const Usuarios = () => {
     selectedUser?.role === "motorista" ? selectedUser?.auth_id : undefined
   );
 
-  const isAdmin = currentUserRole === "admin";
+  const canManageUsers = currentUserRole === "admin" || currentUserRole === "gestor";
 
   const getRoleLabel = (role: UserRole): string => {
     const labels: Record<UserRole, string> = {
@@ -243,8 +243,8 @@ const Usuarios = () => {
     setSelectedUser(null);
   };
 
-  // Show access denied if not admin
-  if (!roleLoading && !isAdmin) {
+  // Show access denied if user cannot manage users
+  if (!roleLoading && !canManageUsers) {
     return (
       <DashboardLayout 
         title="Gestão de Usuários" 
@@ -255,7 +255,7 @@ const Usuarios = () => {
           <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
           <h2 className="text-xl font-semibold text-foreground mb-2">Acesso Restrito</h2>
           <p className="text-muted-foreground max-w-md">
-            Apenas administradores podem acessar a gestão de usuários. 
+            Apenas administradores e gestores podem acessar a gestão de usuários.
             Entre em contato com um administrador se precisar de suporte.
           </p>
         </div>
