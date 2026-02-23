@@ -49,7 +49,7 @@ export const canAccessRoute = (role: UserRole | null | undefined, route: string)
 
   const permissions: Record<UserRole, string[]> = {
     admin: ['/dashboard', '/solicitacoes', '/usuarios', '/motoristas', '/clientes'],
-    gestor: ['/dashboard', '/solicitacoes', '/motoristas', '/clientes'],
+    gestor: ['/dashboard', '/solicitacoes', '/motoristas', '/clientes', '/usuarios'],
     motorista: ['/dashboard', '/solicitacoes'],
     cliente: ['/dashboard', '/solicitacoes'],
   };

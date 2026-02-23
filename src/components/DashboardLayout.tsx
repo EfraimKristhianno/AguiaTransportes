@@ -36,7 +36,7 @@ const allMenuItems = [{
   icon: Users,
   label: 'Usuários',
   path: '/usuarios',
-  roles: ['admin'] as UserRole[]
+  roles: ['admin', 'gestor'] as UserRole[]
 }];
 const getRoleLabel = (role: UserRole | null): string => {
   if (!role) return 'Usuário';
