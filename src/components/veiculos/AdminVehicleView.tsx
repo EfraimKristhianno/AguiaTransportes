@@ -390,7 +390,7 @@ const AdminVehicleView = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Painel Completo de Veículos</CardTitle>
-          <VehicleExportPDF vehicles={allVehicles} logs={logs} oilRecords={oilRecords} maintenanceRecords={maintenanceRecords} />
+          <VehicleExportPDF vehicles={filteredVehicles} logs={filteredLogs} oilRecords={filteredOilRecords} maintenanceRecords={filteredMaintenanceRecords} />
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
