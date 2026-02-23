@@ -52,14 +52,25 @@ const AdminVehicleView = () => {
     },
   });
 
-  // Unique plates from operational records (logs, oil, maintenance)
+  // Unique plates from operational records, filtered by selected vehicle type
   const uniquePlates = useMemo(() => {
+    // Build a set of vehicle IDs that match the selected type
+    const typeFilteredIds = vehicleTypeFilter === 'all'
+      ? null
+      : new Set(allVehicles.filter((v: any) => v.type === vehicleTypeFilter).map((v: any) => v.id));
+
     const plates = new Set<string>();
-    logs.forEach(l => { if (l.vehicle_plate) plates.add(l.vehicle_plate); });
-    oilRecords.forEach(o => { if (o.vehicle_plate) plates.add(o.vehicle_plate); });
-    maintenanceRecords.forEach(m => { if (m.vehicle_plate) plates.add(m.vehicle_plate); });
+    logs.forEach(l => {
+      if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(l.vehicle_plate);
+    });
+    oilRecords.forEach(o => {
+      if (o.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(o.vehicle_id))) plates.add(o.vehicle_plate);
+    });
+    maintenanceRecords.forEach(m => {
+      if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(m.vehicle_plate);
+    });
     return Array.from(plates).sort();
-  }, [logs, oilRecords, maintenanceRecords]);
+  }, [logs, oilRecords, maintenanceRecords, vehicleTypeFilter, allVehicles]);
 
   // Unique vehicle types for filter
   const vehicleTypes = useMemo(() => {
@@ -204,7 +215,7 @@ const AdminVehicleView = () => {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <Select value={vehicleTypeFilter} onValueChange={setVehicleTypeFilter}>
+        <Select value={vehicleTypeFilter} onValueChange={(val) => { setVehicleTypeFilter(val); setPlateFilter('all'); }}>
           <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="Tipo de veículo" />
           </SelectTrigger>
