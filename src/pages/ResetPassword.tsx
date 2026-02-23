@@ -20,27 +20,54 @@
  const ResetPassword = () => {
    const [password, setPassword] = useState('');
    const [confirmPassword, setConfirmPassword] = useState('');
-   const [loading, setLoading] = useState(false);
-   const [success, setSuccess] = useState(false);
-   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
-   const { toast } = useToast();
-   const navigate = useNavigate();
- 
-   useEffect(() => {
-     // Check if we have a valid session from the reset link
-     const checkSession = async () => {
-       const { data: { session } } = await supabase.auth.getSession();
-       if (!session) {
-         toast({
-           variant: 'destructive',
-           title: 'Link inválido ou expirado',
-           description: 'Solicite um novo link de recuperação de senha.',
-         });
-         navigate('/');
-       }
-     };
-     checkSession();
-   }, [navigate, toast]);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    let settled = false;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (settled) return;
+
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+        settled = true;
+        setSessionReady(true);
+        clearTimeout(timeout);
+      }
+    });
+
+    // Also check if already has session (e.g. page refresh)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && !settled) {
+        settled = true;
+        setSessionReady(true);
+        clearTimeout(timeout);
+      }
+    });
+
+    // Timeout - if no session after 5s, redirect
+    timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        toast({
+          variant: 'destructive',
+          title: 'Link inválido ou expirado',
+          description: 'Solicite um novo link de recuperação de senha.',
+        });
+        navigate('/');
+      }
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [navigate, toast]);
  
    const handleSubmit = async (e: React.FormEvent) => {
      e.preventDefault();
@@ -90,7 +117,23 @@
      }
    };
  
-   if (success) {
+  if (!sessionReady && !success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="mb-6 flex justify-center">
+            <img src={logoAguia} alt="Logo" className="h-16 w-auto" />
+          </div>
+          <div className="rounded-xl border border-border bg-card p-8">
+            <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Verificando link de recuperação...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (success) {
      return (
        <div className="min-h-screen flex items-center justify-center bg-background p-4">
          <div className="w-full max-w-md text-center">
