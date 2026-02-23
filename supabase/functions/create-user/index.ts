@@ -71,9 +71,9 @@ Deno.serve(async (req) => {
       .eq('user_id', currentUser.id)
       .single()
 
-    if (roleError || roleData?.role !== 'admin') {
+    if (roleError || !roleData || !['admin', 'gestor'].includes(roleData.role)) {
       return new Response(
-        JSON.stringify({ error: 'Apenas administradores podem criar usuários' }),
+        JSON.stringify({ error: 'Apenas administradores e gestores podem criar usuários' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
