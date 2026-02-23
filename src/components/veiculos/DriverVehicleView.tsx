@@ -31,6 +31,12 @@ const DriverVehicleView = () => {
   const [oilDialogOpen, setOilDialogOpen] = useState(false);
   const [maintDialogOpen, setMaintDialogOpen] = useState(false);
 
+  // Filters
+  const [filterType, setFilterType] = useState('all');
+  const [filterPlate, setFilterPlate] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+
   const [logFiles, setLogFiles] = useState<UploadedFile[]>([]);
   const [oilFiles, setOilFiles] = useState<UploadedFile[]>([]);
   const [maintFiles, setMaintFiles] = useState<UploadedFile[]>([]);
@@ -179,12 +185,43 @@ const DriverVehicleView = () => {
     });
   };
 
-  // Stats
-  const totalKm = logs.reduce((acc, l) => acc + (l.km_total || 0), 0);
-  const totalLiters = logs.reduce((acc, l) => acc + (l.liters || 0), 0);
-  const fuelCost = logs.reduce((acc, l) => acc + (l.total_cost || 0), 0);
-  const oilCost = oilRecords.reduce((acc, o) => acc + (o.service_cost || 0), 0);
-  const maintCost = maintenanceRecords.reduce((acc, m) => acc + (m.service_cost || 0), 0);
+  // Derive filter options from driver's vehicles
+  const vehicleTypes = [...new Set(driverVehicles.map((v: any) => v.type))];
+  const filteredPlates = filterType === 'all'
+    ? driverVehicles
+    : driverVehicles.filter((v: any) => v.type === filterType);
+
+  // Filter helper
+  const inDateRange = (dateStr: string) => {
+    if (!filterStartDate && !filterEndDate) return true;
+    const d = dateStr?.slice(0, 10);
+    if (filterStartDate && d < filterStartDate) return false;
+    if (filterEndDate && d > filterEndDate) return false;
+    return true;
+  };
+  const matchesVehicle = (vehicleId: string, plate?: string | null) => {
+    if (filterType !== 'all') {
+      const veh = driverVehicles.find((v: any) => v.id === vehicleId);
+      if (!veh || veh.type !== filterType) return false;
+    }
+    if (filterPlate !== 'all') {
+      const actualPlate = plate || driverVehicles.find((v: any) => v.id === vehicleId)?.plate;
+      if (actualPlate !== filterPlate) return false;
+    }
+    return true;
+  };
+
+  // Filtered data
+  const filteredLogs = logs.filter(l => matchesVehicle(l.vehicle_id, l.vehicle_plate) && inDateRange(l.log_date));
+  const filteredOilRecords = oilRecords.filter(o => matchesVehicle(o.vehicle_id, o.vehicle_plate) && inDateRange(o.change_date));
+  const filteredMaintenanceRecords = maintenanceRecords.filter(m => matchesVehicle(m.vehicle_id, m.vehicle_plate) && inDateRange(m.maintenance_date));
+
+  // Stats (use filtered data)
+  const totalKm = filteredLogs.reduce((acc, l) => acc + (l.km_total || 0), 0);
+  const totalLiters = filteredLogs.reduce((acc, l) => acc + (l.liters || 0), 0);
+  const fuelCost = filteredLogs.reduce((acc, l) => acc + (l.total_cost || 0), 0);
+  const oilCost = filteredOilRecords.reduce((acc, o) => acc + (o.service_cost || 0), 0);
+  const maintCost = filteredMaintenanceRecords.reduce((acc, m) => acc + (m.service_cost || 0), 0);
   const totalSpent = fuelCost + oilCost + maintCost;
   const latestOil = oilRecords[0];
   const lastLogKm = logs[0]?.km_final || 0;
@@ -200,6 +237,25 @@ const DriverVehicleView = () => {
 
   return (
     <div className="space-y-6">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <Select value={filterType} onValueChange={v => { setFilterType(v); setFilterPlate('all'); }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Todos os tipos" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            {vehicleTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterPlate} onValueChange={setFilterPlate}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as placas" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as placas</SelectItem>
+            {filteredPlates.map((v: any) => <SelectItem key={v.id} value={v.plate}>{v.plate}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Input type="date" className="w-[160px]" placeholder="Data inicial" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
+        <Input type="date" className="w-[160px]" placeholder="Data final" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
+      </div>
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -413,7 +469,7 @@ const DriverVehicleView = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de Registros</CardTitle></CardHeader>
         <CardContent>
-          {logs.length === 0 ? (
+          {filteredLogs.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">Nenhum registro encontrado.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -431,7 +487,7 @@ const DriverVehicleView = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {logs.map((log) => (
+                  {filteredLogs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{log.vehicle?.type || '-'}</TableCell>
@@ -456,7 +512,7 @@ const DriverVehicleView = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de Troca de Óleo</CardTitle></CardHeader>
         <CardContent>
-          {oilRecords.length === 0 ? (
+          {filteredOilRecords.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">Nenhum registro de troca de óleo encontrado.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -474,7 +530,7 @@ const DriverVehicleView = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {oilRecords.map((oil) => (
+                  {filteredOilRecords.map((oil) => (
                     <TableRow key={oil.id}>
                       <TableCell>{format(new Date(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{oil.vehicle?.type || '-'}</TableCell>
@@ -497,7 +553,7 @@ const DriverVehicleView = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de Manutenção</CardTitle></CardHeader>
         <CardContent>
-          {maintenanceRecords.length === 0 ? (
+          {filteredMaintenanceRecords.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">Nenhum registro de manutenção encontrado.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -514,7 +570,7 @@ const DriverVehicleView = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {maintenanceRecords.map((m) => (
+                  {filteredMaintenanceRecords.map((m) => (
                     <TableRow key={m.id}>
                       <TableCell>{format(new Date(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{m.vehicle?.type || '-'}</TableCell>
