@@ -32,7 +32,7 @@ const AdminVehicleView = () => {
   const { data: maintenanceRecords = [] } = useMaintenanceRecords();
   const [selectedVehicle, setSelectedVehicle] = useState<{ id: string; plate: string } | null>(null);
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>('all');
-  const [plateSearch, setPlateSearch] = useState('');
+  const [plateFilter, setPlateFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
@@ -52,26 +52,39 @@ const AdminVehicleView = () => {
     },
   });
 
+  // Unique plates from operational records (logs, oil, maintenance)
+  const uniquePlates = useMemo(() => {
+    const plates = new Set<string>();
+    logs.forEach(l => { if (l.vehicle_plate) plates.add(l.vehicle_plate); });
+    oilRecords.forEach(o => { if (o.vehicle_plate) plates.add(o.vehicle_plate); });
+    maintenanceRecords.forEach(m => { if (m.vehicle_plate) plates.add(m.vehicle_plate); });
+    return Array.from(plates).sort();
+  }, [logs, oilRecords, maintenanceRecords]);
+
   // Unique vehicle types for filter
   const vehicleTypes = useMemo(() => {
     const types = new Set(allVehicles.map((v: any) => v.type));
     return Array.from(types).sort();
   }, [allVehicles]);
 
+  // Get vehicle IDs that match the selected plate
+  const plateMatchedVehicleIds = useMemo(() => {
+    if (plateFilter === 'all') return null; // null means no plate filter
+    const ids = new Set<string>();
+    logs.forEach(l => { if (l.vehicle_plate === plateFilter) ids.add(l.vehicle_id); });
+    oilRecords.forEach(o => { if (o.vehicle_plate === plateFilter) ids.add(o.vehicle_id); });
+    maintenanceRecords.forEach(m => { if (m.vehicle_plate === plateFilter) ids.add(m.vehicle_id); });
+    return ids;
+  }, [plateFilter, logs, oilRecords, maintenanceRecords]);
+
   // Filtered vehicles
   const filteredVehicles = useMemo(() => {
     return allVehicles.filter((v: any) => {
       const matchType = vehicleTypeFilter === 'all' || v.type === vehicleTypeFilter;
-      if (!plateSearch) return matchType;
-      const search = plateSearch.toLowerCase();
-      // Search in vehicle plate AND in record plates (vehicle_plate from logs, oil, maintenance)
-      const matchVehiclePlate = v.plate?.toLowerCase().includes(search);
-      const matchLogPlate = logs.some(l => l.vehicle_id === v.id && l.vehicle_plate?.toLowerCase().includes(search));
-      const matchOilPlate = oilRecords.some(o => o.vehicle_id === v.id && o.vehicle_plate?.toLowerCase().includes(search));
-      const matchMaintPlate = maintenanceRecords.some(m => m.vehicle_id === v.id && m.vehicle_plate?.toLowerCase().includes(search));
-      return matchType && (matchVehiclePlate || matchLogPlate || matchOilPlate || matchMaintPlate);
+      const matchPlate = !plateMatchedVehicleIds || plateMatchedVehicleIds.has(v.id);
+      return matchType && matchPlate;
     });
-  }, [allVehicles, vehicleTypeFilter, plateSearch, logs, oilRecords, maintenanceRecords]);
+  }, [allVehicles, vehicleTypeFilter, plateMatchedVehicleIds]);
 
   // Helper to check if a date string is within the selected range
   const isInDateRange = (dateStr: string) => {
@@ -84,20 +97,20 @@ const AdminVehicleView = () => {
 
   const filteredVehicleIdsSetAll = useMemo(() => new Set(filteredVehicles.map((v: any) => v.id)), [filteredVehicles]);
 
-  // Filtered logs based on filtered vehicles AND date range
+  // Filtered logs based on filtered vehicles, date range AND plate filter
   const filteredLogs = useMemo(() => {
-    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date));
-  }, [logs, filteredVehicleIdsSetAll, startDate, endDate]);
+    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || l.vehicle_plate === plateFilter));
+  }, [logs, filteredVehicleIdsSetAll, startDate, endDate, plateFilter]);
 
-  // Filtered oil records based on filtered vehicles AND date range
+  // Filtered oil records based on filtered vehicles, date range AND plate filter
   const filteredOilRecords = useMemo(() => {
-    return oilRecords.filter(o => filteredVehicleIdsSetAll.has(o.vehicle_id) && isInDateRange(o.change_date));
-  }, [oilRecords, filteredVehicleIdsSetAll, startDate, endDate]);
+    return oilRecords.filter(o => filteredVehicleIdsSetAll.has(o.vehicle_id) && isInDateRange(o.change_date) && (plateFilter === 'all' || o.vehicle_plate === plateFilter));
+  }, [oilRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter]);
 
-  // Filtered maintenance records based on filtered vehicles AND date range  
+  // Filtered maintenance records based on filtered vehicles, date range AND plate filter
   const filteredMaintenanceRecords = useMemo(() => {
-    return maintenanceRecords.filter(m => filteredVehicleIdsSetAll.has(m.vehicle_id) && isInDateRange(m.maintenance_date));
-  }, [maintenanceRecords, filteredVehicleIdsSetAll, startDate, endDate]);
+    return maintenanceRecords.filter(m => filteredVehicleIdsSetAll.has(m.vehicle_id) && isInDateRange(m.maintenance_date) && (plateFilter === 'all' || m.vehicle_plate === plateFilter));
+  }, [maintenanceRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter]);
 
   // Global stats (filtered by vehicle + date)
   const totalKm = filteredLogs.reduce((a, l) => a + (l.km_total || 0), 0);
@@ -202,15 +215,17 @@ const AdminVehicleView = () => {
             ))}
           </SelectContent>
         </Select>
-        <div className="relative w-full sm:w-[250px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por placa..."
-            value={plateSearch}
-            onChange={(e) => setPlateSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+        <Select value={plateFilter} onValueChange={setPlateFilter}>
+          <SelectTrigger className="w-full sm:w-[250px]">
+            <SelectValue placeholder="Filtrar por placa" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as placas</SelectItem>
+            {uniquePlates.map(plate => (
+              <SelectItem key={plate} value={plate}>{plate}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn("w-full sm:w-[170px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
