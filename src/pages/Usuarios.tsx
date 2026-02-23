@@ -211,8 +211,10 @@ const Usuarios = () => {
         updates: {
           name: data.name,
           phone: data.phone,
+          email: data.email,
         },
         role: data.role,
+        previousEmail: selectedUser.email,
       });
       
       // Save vehicle types if user is a motorista

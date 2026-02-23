@@ -264,19 +264,35 @@ export const useUpdateUser = () => {
       authId,
       updates,
       role,
+      previousEmail,
     }: {
       userId: string;
       authId: string;
       updates: Partial<User>;
       role?: UserRole;
+      previousEmail?: string;
     }) => {
-      // Update user
+      // Update user profile
       const { error: userError } = await supabase
         .from('users')
-        .update(updates)
+        .update({ name: updates.name, phone: updates.phone })
         .eq('id', userId);
 
       if (userError) throw userError;
+
+      // If email changed, call edge function to update auth + all related tables
+      if (updates.email && previousEmail && updates.email.toLowerCase() !== previousEmail.toLowerCase()) {
+        const response = await supabase.functions.invoke('update-user-email', {
+          body: { authId, newEmail: updates.email },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Erro ao atualizar email');
+        }
+        if (response.data?.error) {
+          throw new Error(response.data.error);
+        }
+      }
 
       // Update role if provided
       if (role) {
