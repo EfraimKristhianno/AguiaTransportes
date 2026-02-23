@@ -245,24 +245,63 @@ const Dashboard = () => {
 
   const handleDownloadPdf = useCallback(() => {
     const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-    const img = new Image();
-    img.src = logoAguia;
+    // Logo no canto superior direito
     try {
-      doc.addImage(img, 'PNG', 252, 8, 30, 30);
+      doc.addImage(logoAguia, 'PNG', pageWidth - 45, 6, 35, 18);
     } catch {}
 
-    doc.setFontSize(16);
-    doc.text('Relatório de Solicitações', 50, 20);
+    // Título e info à esquerda
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório do Dashboard', 14, 16);
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
     const dateLabel = dateFrom || dateTo
       ? `Período: ${dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: ptBR }) : '...'} até ${dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: ptBR }) : '...'}`
       : 'Todas as datas';
-    doc.text(dateLabel, 50, 28);
-    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 50, 34);
+    doc.text(dateLabel, 14, 23);
+    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 14, 29);
+
+    // Indicadores resumo
+    const totalRequests = filteredRequests.length;
+    const totalFreightValue = filteredRequests.reduce((sum: number, item: any) => {
+      const region = item.region || detectRegionForFreight(item.destination_address);
+      const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
+      if (prices.length > 0) return sum + prices[0].price;
+      return sum;
+    }, 0);
+    const statusCounts: Record<string, number> = {};
+    filteredRequests.forEach((r: any) => {
+      const s = r.status || 'solicitada';
+      statusCounts[s] = (statusCounts[s] || 0) + 1;
+    });
+
+    autoTable(doc, {
+      startY: 35,
+      head: [['Total Solicitações', 'Valor Total Frete', ...Object.keys(statusCounts).map(s => s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' '))]],
+      body: [[
+        totalRequests.toString(),
+        `R$ ${totalFreightValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        ...Object.values(statusCounts).map(v => v.toString()),
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [211, 33, 39], fontSize: 8 },
+      bodyStyles: { fontSize: 8, fontStyle: 'bold' },
+      margin: { left: 14 },
+    });
+
+    let y = (doc as any).lastAutoTable.finalY + 8;
+
+    // Tabela detalhada
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalhamento', 14, y);
+    y += 3;
 
     const getFreightValue = (item: any): string => {
-      const region = (item as any).region || detectRegionForFreight(item.destination_address);
+      const region = item.region || detectRegionForFreight(item.destination_address);
       const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
       return formatSingleFreightPrice(prices);
     };
@@ -280,16 +319,18 @@ const Dashboard = () => {
     autoTable(doc, {
       head: [['Data/Hora', 'Cliente', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
       body: tableData,
-      startY: 42,
+      startY: y,
       styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [220, 38, 38], fontSize: 8 },
+      headStyles: { fillColor: [211, 33, 39], fontSize: 8 },
+      bodyStyles: { fontSize: 7 },
       columnStyles: {
         3: { cellWidth: 50 },
         4: { cellWidth: 50 },
       },
+      margin: { left: 14 },
     });
 
-    doc.save('solicitacoes.pdf');
+    doc.save(`dashboard-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   }, [filteredRequests, dateFrom, dateTo, allFreightPrices]);
   const getStatusBadge = (status: string | null) => {
     const statusConfig: Record<string, {
