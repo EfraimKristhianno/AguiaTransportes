@@ -13,6 +13,7 @@ import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVe
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench } from 'lucide-react';
+import RecordDetailsDialog from './RecordDetailsDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
@@ -499,6 +500,7 @@ const DriverVehicleView = () => {
                     <TableHead>Litros</TableHead>
                     <TableHead>R$/L</TableHead>
                     <TableHead>Total</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -514,6 +516,7 @@ const DriverVehicleView = () => {
                       <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
                       <TableCell>{log.fuel_price ? `R$ ${log.fuel_price.toFixed(2)}` : '-'}</TableCell>
                       <TableCell className="font-medium">{log.total_cost ? `R$ ${log.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
+                      <TableCell><RecordDetailsDialog notes={log.notes} title="Detalhes do Abastecimento" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -542,6 +545,7 @@ const DriverVehicleView = () => {
                     <TableHead>Tipo Óleo</TableHead>
                     <TableHead>Custo</TableHead>
                     <TableHead>Obs.</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -554,7 +558,8 @@ const DriverVehicleView = () => {
                       <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell>{oil.oil_type || '-'}</TableCell>
                       <TableCell className="font-medium">{oil.service_cost ? `R$ ${oil.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{oil.notes || '-'}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{oil.notes?.replace(/\n?\[anexos:[^\]]+\]/, '').trim() || '-'}</TableCell>
+                      <TableCell><RecordDetailsDialog notes={oil.notes} title="Detalhes da Troca de Óleo" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -582,6 +587,7 @@ const DriverVehicleView = () => {
                     <TableHead>Km Atual</TableHead>
                     <TableHead>Custo</TableHead>
                     <TableHead>Obs.</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -597,7 +603,8 @@ const DriverVehicleView = () => {
                       </TableCell>
                       <TableCell className="font-medium">{m.current_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{m.notes || '-'}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{m.notes?.replace(/\n?\[anexos:[^\]]+\]/, '').trim() || '-'}</TableCell>
+                      <TableCell><RecordDetailsDialog notes={m.notes} title="Detalhes da Manutenção" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
