@@ -544,7 +544,6 @@ const DriverVehicleView = () => {
                     <TableHead>Próx. Troca</TableHead>
                     <TableHead>Tipo Óleo</TableHead>
                     <TableHead>Custo</TableHead>
-                    <TableHead>Obs.</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -558,7 +557,6 @@ const DriverVehicleView = () => {
                       <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell>{oil.oil_type || '-'}</TableCell>
                       <TableCell className="font-medium">{oil.service_cost ? `R$ ${oil.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{oil.notes?.replace(/\n?\[anexos:[^\]]+\]/, '').trim() || '-'}</TableCell>
                       <TableCell><RecordDetailsDialog notes={oil.notes} title="Detalhes da Troca de Óleo" /></TableCell>
                     </TableRow>
                   ))}
@@ -586,7 +584,6 @@ const DriverVehicleView = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Km Atual</TableHead>
                     <TableHead>Custo</TableHead>
-                    <TableHead>Obs.</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -603,7 +600,6 @@ const DriverVehicleView = () => {
                       </TableCell>
                       <TableCell className="font-medium">{m.current_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{m.notes?.replace(/\n?\[anexos:[^\]]+\]/, '').trim() || '-'}</TableCell>
                       <TableCell><RecordDetailsDialog notes={m.notes} title="Detalhes da Manutenção" /></TableCell>
                     </TableRow>
                   ))}
