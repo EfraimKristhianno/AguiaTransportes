@@ -49,7 +49,7 @@ const RecordDetailsDialog = ({ notes, title = 'Detalhes do Registro' }: RecordDe
                 <p className="text-xs font-medium text-muted-foreground mb-2">Anexos ({attachments.length})</p>
                 <div className="space-y-2">
                   {attachments.map((path, i) => (
-                    <AttachmentItem key={path} path={path} index={i} />
+                    <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" />
                   ))}
                 </div>
               </div>
