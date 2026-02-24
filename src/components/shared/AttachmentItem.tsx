@@ -5,13 +5,14 @@ import { Paperclip, Loader2, Download } from 'lucide-react';
 interface AttachmentItemProps {
   path: string;
   index: number;
+  bucket?: string;
 }
 
 const isImagePath = (path: string) => /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
 
 const getAttachmentName = (path: string) => path.split('/').pop() || path;
 
-export const AttachmentItem = ({ path, index }: AttachmentItemProps) => {
+export const AttachmentItem = ({ path, index, bucket = 'request-attachments' }: AttachmentItemProps) => {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +20,7 @@ export const AttachmentItem = ({ path, index }: AttachmentItemProps) => {
     const fetchUrl = async () => {
       setLoading(true);
       const { data, error } = await supabase.storage
-        .from('request-attachments')
+        .from(bucket)
         .createSignedUrl(path, 3600);
       if (error) {
         console.error('AttachmentItem: erro ao gerar URL assinada', { path, error });
