@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Package, Hash, MapPin, User, Phone, DollarSign } from 'lucide-react';
+import { Clock, Package, Hash, MapPin, User, Phone, DollarSign, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
@@ -12,6 +12,7 @@ import { filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 import { cn } from '@/lib/utils';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
 import { detectRegionForFreight } from '@/lib/regionDetection';
+import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
     case 'solicitada':
@@ -76,6 +77,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
     role
   } = useAuth();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [trackingRequest, setTrackingRequest] = useState<any>(null);
   const {
     data: currentDriver
   } = useCurrentDriver();
@@ -152,11 +154,26 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                   ) : null;
                 })()}
 
-                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3 shrink-0" />
-                  {request.created_at ? format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", {
-              locale: ptBR
-            }) : 'Data não disponível'}
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    {request.created_at ? format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", {
+                locale: ptBR
+              }) : 'Data não disponível'}
+                  </div>
+                  {request.driver_id && ['aceita', 'coletada', 'em_rota'].includes(request.status || '') && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTrackingRequest(request);
+                      }}
+                      className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                      title="Rastrear motorista"
+                    >
+                      <Navigation className="h-4 w-4" />
+                      <span className="hidden sm:inline">Rastrear</span>
+                    </button>
+                  )}
                 </div>
               </div>)}
         </div>
@@ -165,5 +182,18 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
       <UnifiedRequestDetailsDialog request={selectedRequest} open={!!selectedRequest} onOpenChange={open => {
       if (!open) setSelectedRequest(null);
     }} driverId={driverId} />
+
+      {trackingRequest && (
+        <DriverTrackingDialog
+          open={!!trackingRequest}
+          onOpenChange={(open) => { if (!open) setTrackingRequest(null); }}
+          driverId={trackingRequest.driver_id}
+          driverName={trackingRequest.drivers?.name || 'Motorista'}
+          requestNumber={trackingRequest.request_number}
+          originAddress={trackingRequest.origin_address}
+          destinationAddress={trackingRequest.destination_address}
+          status={trackingRequest.status}
+        />
+      )}
     </div>;
 };
