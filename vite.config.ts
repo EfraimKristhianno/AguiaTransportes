@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "logo-192.png", "logo-512.png"],
       manifest: {
         name: "Águia Transportes",
@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => ({
         lang: "pt-BR"
       },
       workbox: {
-        skipWaiting: true,
+        skipWaiting: false,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
