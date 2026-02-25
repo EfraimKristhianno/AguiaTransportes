@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // VAPID public key - this is a publishable key, safe to store in code
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
+const isDev = import.meta.env.DEV;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -24,7 +25,7 @@ export const useWebPush = () => {
     if (!user || role !== 'motorista') return;
     if (initialized.current) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('[WebPush] Push not supported in this browser');
+      if (isDev) console.warn('[WebPush] Push not supported in this browser');
       return;
     }
 
@@ -32,19 +33,19 @@ export const useWebPush = () => {
       // Register the push service worker
       const registration = await navigator.serviceWorker.register('/sw-push.js', { scope: '/' });
       await navigator.serviceWorker.ready;
-      console.log('[WebPush] Service worker registered');
+      if (isDev) console.log('[WebPush] Service worker registered');
 
       // Request notification permission
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        console.warn('[WebPush] Permission denied');
+        if (isDev) console.warn('[WebPush] Permission denied');
         return;
       }
 
       // Check for existing subscription
       const pm = (registration as any).pushManager;
       if (!pm) {
-        console.warn('[WebPush] PushManager not available');
+        if (isDev) console.warn('[WebPush] PushManager not available');
         return;
       }
       let subscription = await pm.getSubscription();
@@ -58,7 +59,7 @@ export const useWebPush = () => {
           const keysMatch = expectedKey.length === existingKeyArray.length &&
             expectedKey.every((v, i) => v === existingKeyArray[i]);
           if (!keysMatch) {
-            console.log('[WebPush] VAPID key changed, re-subscribing...');
+            if (isDev) console.log('[WebPush] VAPID key changed, re-subscribing...');
             await subscription.unsubscribe();
             subscription = null;
           }
@@ -76,7 +77,7 @@ export const useWebPush = () => {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         });
-        console.log('[WebPush] New subscription created');
+        if (isDev) console.log('[WebPush] New subscription created');
       }
 
       // Extract keys from subscription
@@ -101,7 +102,7 @@ export const useWebPush = () => {
       if (error) {
         console.error('[WebPush] Error saving subscription:', error);
       } else {
-        console.log('[WebPush] Subscription saved for user:', user.id);
+        if (isDev) console.log('[WebPush] Subscription saved');
       }
 
       initialized.current = true;
