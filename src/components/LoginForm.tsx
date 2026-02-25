@@ -71,7 +71,20 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
         body: { name: name.trim(), password },
       });
 
-      if (error || !data?.session) {
+      if (error) {
+        // Try to extract the error body from FunctionsHttpError
+        let errorCode = 'invalid_credentials';
+        try {
+          const errorBody = await (error as any).context?.json?.();
+          if (errorBody?.error) errorCode = errorBody.error;
+        } catch {}
+        const errorMessage = getErrorMessage(errorCode);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao entrar',
+          description: errorMessage,
+        });
+      } else if (!data?.session) {
         const errorMessage = getErrorMessage(data?.error || 'invalid_credentials');
         toast({
           variant: 'destructive',
