@@ -20,7 +20,6 @@ const VEHICLE_SPECS: VehicleSpec[] = [
   { type: 'Moto', length: 0.60, width: 0.60, height: 0.50, capacity: 25 },
   { type: 'Fiorino', length: 1.60, width: 1.10, height: 1.45, capacity: 450 },
   { type: 'Caminhão (3/4)', length: 6.18, width: 2.39, height: 2.39, capacity: 5000 },
-  { type: 'Caminhão', length: 8.30, width: 2.45, height: 3.00, capacity: 14000 },
 ];
 
 interface VehicleDetailsPopoverProps {
