@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Lock, ArrowRight, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 // Validation schema
 const loginSchema = z.object({
-  email: z.string().trim().email('Email inválido').max(255, 'Email muito longo'),
+  name: z.string().trim().min(1, 'Nome é obrigatório').max(255, 'Nome muito longo'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').max(72, 'Senha muito longa'),
 });
 
@@ -19,26 +19,27 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ onToggleMode }: LoginFormProps) => {
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; password?: string; email?: string }>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const validateForm = () => {
     try {
-      loginSchema.parse({ email, password });
+      loginSchema.parse({ name, password });
       setErrors({});
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors: { email?: string; password?: string } = {};
+        const fieldErrors: { name?: string; password?: string } = {};
         error.errors.forEach((err) => {
           if (err.path[0]) {
-            fieldErrors[err.path[0] as 'email' | 'password'] = err.message;
+            fieldErrors[err.path[0] as 'name' | 'password'] = err.message;
           }
         });
         setErrors(fieldErrors);
@@ -49,13 +50,11 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
   const getErrorMessage = (errorCode: string): string => {
     const errorMessages: Record<string, string> = {
-      'invalid_credentials': 'Email ou senha incorretos.',
-      'email_not_confirmed': 'Por favor, confirme seu email antes de fazer login.',
+      'invalid_credentials': 'Nome ou senha incorretos.',
       'user_not_found': 'Usuário não encontrado.',
       'too_many_requests': 'Muitas tentativas. Aguarde alguns minutos.',
-      'over_email_send_rate_limit': 'Limite de envio de emails atingido. Aguarde alguns minutos.',
     };
-    return errorMessages[errorCode] || 'Email ou senha incorretos.';
+    return errorMessages[errorCode] || 'Nome ou senha incorretos.';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,19 +67,19 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      const { data, error } = await supabase.functions.invoke('login-by-name', {
+        body: { name: name.trim(), password },
       });
 
-      if (error) {
-        const errorMessage = getErrorMessage(error.message);
+      if (error || !data?.session) {
+        const errorMessage = getErrorMessage(data?.error || 'invalid_credentials');
         toast({
           variant: 'destructive',
           title: 'Erro ao entrar',
           description: errorMessage,
         });
-      } else if (data.user) {
+      } else {
+        await supabase.auth.setSession(data.session);
         toast({
           title: 'Bem-vindo!',
           description: 'Login realizado com sucesso.',
@@ -102,7 +101,7 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
     e.preventDefault();
     
     try {
-      z.string().email('Email inválido').parse(email.trim());
+      z.string().email('Email inválido').parse(resetEmail.trim());
       setErrors({});
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -115,7 +114,7 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
+        resetEmail.trim().toLowerCase(),
         {
           redirectTo: `${window.location.origin}/reset-password`,
         }
@@ -161,7 +160,7 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
           <div className="space-y-5">
             <div className="rounded-lg bg-primary/10 p-4 text-center">
               <p className="text-sm text-foreground">
-                Enviamos um link de recuperação para <strong>{email}</strong>
+                Enviamos um link de recuperação para <strong>{resetEmail}</strong>
               </p>
             </div>
             <Button
@@ -186,9 +185,9 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
                   id="reset-email"
                   type="email"
                   placeholder="seu@email.com"
-                  value={email}
+                  value={resetEmail}
                   onChange={(e) => {
-                    setEmail(e.target.value);
+                    setResetEmail(e.target.value);
                     if (errors.email) setErrors({});
                   }}
                   className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
@@ -240,24 +239,24 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="name">Nome do Usuário</Label>
           <div className="relative">
-            <Mail className="input-icon h-5 w-5" />
+            <User className="input-icon h-5 w-5" />
             <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
+              id="name"
+              type="text"
+              placeholder="Seu nome"
+              value={name}
               onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                setName(e.target.value);
+                if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
               }}
-              className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
+              className={`pl-10 ${errors.name ? 'border-destructive' : ''}`}
               required
             />
           </div>
-          {errors.email && (
-            <p className="text-sm text-destructive">{errors.email}</p>
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name}</p>
           )}
         </div>
 
