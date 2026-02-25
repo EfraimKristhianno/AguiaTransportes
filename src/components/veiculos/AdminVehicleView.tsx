@@ -138,7 +138,12 @@ const AdminVehicleView = () => {
   const vehicleStats = filteredVehicles.map((v: any) => {
     const vLogs = filteredLogs.filter(l => l.vehicle_id === v.id);
     const vOil = filteredOilRecords.filter(o => o.vehicle_id === v.id);
-    const totalKm = vLogs.reduce((a, l) => a + (l.km_total || 0), 0);
+    const vMaint = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id);
+    // Km Atual: último km informado (maior valor entre abastecimento, óleo e manutenção)
+    const lastKmFromLogs = vLogs.length > 0 ? Math.max(...vLogs.map(l => l.km_final || 0)) : 0;
+    const lastKmFromOil = vOil.length > 0 ? Math.max(...vOil.map(o => o.km_at_change || 0)) : 0;
+    const lastKmFromMaint = vMaint.length > 0 ? Math.max(...vMaint.map(m => m.current_km || 0)) : 0;
+    const currentKm = Math.max(lastKmFromLogs, lastKmFromOil, lastKmFromMaint);
     const totalLiters = vLogs.reduce((a, l) => a + (l.liters || 0), 0);
     const totalCost = vLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
     const oilCost = vOil.reduce((a, o) => a + (o.service_cost || 0), 0);
@@ -147,7 +152,7 @@ const AdminVehicleView = () => {
     const oilWarning = latestOil ? lastKm >= latestOil.next_change_km : false;
     const maintCount = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).length;
     const maintCost = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
-    return { ...v, totalKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
+    return { ...v, currentKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
   });
 
   const vehiclesWithWarning = vehicleStats.filter(v => v.oilWarning).length;
@@ -401,7 +406,7 @@ const AdminVehicleView = () => {
                 <TableRow>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Placa</TableHead>
-                  <TableHead>Km Total</TableHead>
+                  <TableHead>Km Atual</TableHead>
                   <TableHead>Gasto Comb.</TableHead>
                   <TableHead>Gasto Troca Óleo</TableHead>
                   <TableHead>Gasto Manut.</TableHead>
@@ -415,7 +420,7 @@ const AdminVehicleView = () => {
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
                     <TableCell>{plateFilter !== 'all' ? plateFilter : v.plate}</TableCell>
-                    <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
+                    <TableCell>{v.currentKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.oilCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.maintCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>

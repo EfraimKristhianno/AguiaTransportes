@@ -69,8 +69,11 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
       const vOil = oilRecords.filter(o => o.vehicle_id === vehicle.id);
       const vMaint = maintenanceRecords.filter(m => m.vehicle_id === vehicle.id);
 
-      // Indicators
       const totalKm = vLogs.reduce((a, l) => a + (l.km_total || 0), 0);
+      const lastKmFromLogs = vLogs.length > 0 ? Math.max(...vLogs.map(l => l.km_final || 0)) : 0;
+      const lastKmFromOil = vOil.length > 0 ? Math.max(...vOil.map(o => o.km_at_change || 0)) : 0;
+      const lastKmFromMaint = vMaint.length > 0 ? Math.max(...vMaint.map(m => m.current_km || 0)) : 0;
+      const currentKm = Math.max(lastKmFromLogs, lastKmFromOil, lastKmFromMaint);
       const totalLiters = vLogs.reduce((a, l) => a + (l.liters || 0), 0);
       const totalFuelCost = vLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
       const avgKmL = totalLiters > 0 ? (totalKm / totalLiters).toFixed(1) : '-';
@@ -83,9 +86,9 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
       let y = 35;
       autoTable(doc, {
         startY: y,
-        head: [['Km Total', 'Litros', 'Gasto Comb.', 'Média Km/L', 'Manutenções', 'Gasto Manut.', 'Gasto Total']],
+        head: [['Km Atual', 'Litros', 'Gasto Comb.', 'Média Km/L', 'Manutenções', 'Gasto Manut.', 'Gasto Total']],
         body: [[
-          totalKm.toLocaleString('pt-BR'),
+          currentKm.toLocaleString('pt-BR'),
           totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 1 }),
           `R$ ${totalFuelCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
           avgKmL,
