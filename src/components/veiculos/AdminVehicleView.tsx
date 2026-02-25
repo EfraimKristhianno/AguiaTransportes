@@ -134,49 +134,21 @@ const AdminVehicleView = () => {
   const activeVehicles = filteredVehicles.filter((v: any) => v.status === 'active').length;
   const inactiveVehicles = filteredVehicles.length - activeVehicles;
 
-  // Vehicle stats grouped by distinct plate from operational records
-  const vehicleStats = useMemo(() => {
-    const plateMap = new Map<string, { vehicleId: string; type: string; plate: string }>();
-
-    // Collect distinct plates from all filtered operational records
-    filteredLogs.forEach(l => {
-      const plate = l.vehicle_plate;
-      if (plate && !plateMap.has(plate)) {
-        const vehicle = allVehicles.find((v: any) => v.id === l.vehicle_id);
-        plateMap.set(plate, { vehicleId: l.vehicle_id, type: vehicle?.type || 'N/A', plate });
-      }
-    });
-    filteredOilRecords.forEach(o => {
-      const plate = o.vehicle_plate;
-      if (plate && !plateMap.has(plate)) {
-        const vehicle = allVehicles.find((v: any) => v.id === o.vehicle_id);
-        plateMap.set(plate, { vehicleId: o.vehicle_id, type: vehicle?.type || 'N/A', plate });
-      }
-    });
-    filteredMaintenanceRecords.forEach(m => {
-      const plate = m.vehicle_plate;
-      if (plate && !plateMap.has(plate)) {
-        const vehicle = allVehicles.find((v: any) => v.id === m.vehicle_id);
-        plateMap.set(plate, { vehicleId: m.vehicle_id, type: vehicle?.type || 'N/A', plate });
-      }
-    });
-
-    return Array.from(plateMap.values()).map(({ vehicleId, type, plate }) => {
-      const vLogs = filteredLogs.filter(l => l.vehicle_plate === plate);
-      const vOil = filteredOilRecords.filter(o => o.vehicle_plate === plate);
-      const vMaint = filteredMaintenanceRecords.filter(m => m.vehicle_plate === plate);
-      const totalKm = vLogs.reduce((a, l) => a + (l.km_total || 0), 0);
-      const totalLiters = vLogs.reduce((a, l) => a + (l.liters || 0), 0);
-      const totalCost = vLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
-      const oilCost = vOil.reduce((a, o) => a + (o.service_cost || 0), 0);
-      const latestOil = vOil[0];
-      const lastKm = vLogs[0]?.km_final || 0;
-      const oilWarning = latestOil ? lastKm >= latestOil.next_change_km : false;
-      const maintCount = vMaint.length;
-      const maintCost = vMaint.reduce((a, m) => a + (m.service_cost || 0), 0);
-      return { id: `${vehicleId}-${plate}`, vehicleId, type, plate, totalKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
-    });
-  }, [filteredLogs, filteredOilRecords, filteredMaintenanceRecords, allVehicles]);
+  // Vehicle stats (filtered by date)
+  const vehicleStats = filteredVehicles.map((v: any) => {
+    const vLogs = filteredLogs.filter(l => l.vehicle_id === v.id);
+    const vOil = filteredOilRecords.filter(o => o.vehicle_id === v.id);
+    const totalKm = vLogs.reduce((a, l) => a + (l.km_total || 0), 0);
+    const totalLiters = vLogs.reduce((a, l) => a + (l.liters || 0), 0);
+    const totalCost = vLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
+    const oilCost = vOil.reduce((a, o) => a + (o.service_cost || 0), 0);
+    const latestOil = vOil[0];
+    const lastKm = vLogs[0]?.km_final || 0;
+    const oilWarning = latestOil ? lastKm >= latestOil.next_change_km : false;
+    const maintCount = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).length;
+    const maintCost = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
+    return { ...v, totalKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
+  });
 
   const vehiclesWithWarning = vehicleStats.filter(v => v.oilWarning).length;
 
@@ -442,7 +414,7 @@ const AdminVehicleView = () => {
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
-                    <TableCell>{v.plate}</TableCell>
+                    <TableCell>{plateFilter !== 'all' ? plateFilter : v.plate}</TableCell>
                     <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.oilCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
@@ -452,7 +424,7 @@ const AdminVehicleView = () => {
                       {v.oilWarning ? <Badge variant="destructive">Trocar</Badge> : v.latestOil ? <Badge variant="outline">OK</Badge> : <span className="text-muted-foreground text-xs">-</span>}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle({ id: v.vehicleId, plate: v.plate })}>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedVehicle({ id: v.id, plate: plateFilter !== 'all' ? plateFilter : v.plate })}>
                         <History className="h-4 w-4" />
                       </Button>
                     </TableCell>

@@ -13,7 +13,6 @@ import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVe
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench } from 'lucide-react';
-import RecordDetailsDialog from './RecordDetailsDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
@@ -188,18 +187,9 @@ const DriverVehicleView = () => {
 
   // Derive filter options from driver's vehicles
   const vehicleTypes = [...new Set(driverVehicles.map((v: any) => v.type))];
-
-  // Extract real plates from operational records (not base vehicle placeholders)
-  const allRecordPlates = [
-    ...logs.map(l => ({ plate: l.vehicle_plate?.trim(), type: l.vehicle?.type })),
-    ...oilRecords.map(o => ({ plate: o.vehicle_plate?.trim(), type: o.vehicle?.type })),
-    ...maintenanceRecords.map(m => ({ plate: m.vehicle_plate?.trim(), type: m.vehicle?.type })),
-  ].filter(p => p.plate && !p.plate.startsWith('TIPO-'));
-
-  const uniquePlates = [...new Set(
-    (filterType === 'all' ? allRecordPlates : allRecordPlates.filter(p => p.type === filterType))
-      .map(p => p.plate!)
-  )];
+  const filteredPlates = filterType === 'all'
+    ? driverVehicles
+    : driverVehicles.filter((v: any) => v.type === filterType);
 
   // Filter helper
   const inDateRange = (dateStr: string) => {
@@ -215,7 +205,7 @@ const DriverVehicleView = () => {
       if (!veh || veh.type !== filterType) return false;
     }
     if (filterPlate !== 'all') {
-      const actualPlate = (plate || '').trim();
+      const actualPlate = plate || driverVehicles.find((v: any) => v.id === vehicleId)?.plate;
       if (actualPlate !== filterPlate) return false;
     }
     return true;
@@ -226,14 +216,8 @@ const DriverVehicleView = () => {
   const filteredOilRecords = oilRecords.filter(o => matchesVehicle(o.vehicle_id, o.vehicle_plate) && inDateRange(o.change_date));
   const filteredMaintenanceRecords = maintenanceRecords.filter(m => matchesVehicle(m.vehicle_id, m.vehicle_plate) && inDateRange(m.maintenance_date));
 
-   // Stats (use filtered data)
-  // Km Atual: último km informado em qualquer registro (abastecimento, óleo ou manutenção)
-  const allKmEntries = [
-    ...filteredLogs.map(l => ({ km: l.km_final || 0, date: l.log_date })),
-    ...filteredOilRecords.map(o => ({ km: o.km_at_change || 0, date: o.change_date })),
-    ...filteredMaintenanceRecords.map(m => ({ km: m.current_km || 0, date: m.maintenance_date })),
-  ].sort((a, b) => b.date.localeCompare(a.date));
-  const latestKm = allKmEntries.length > 0 ? allKmEntries[0].km : 0;
+  // Stats (use filtered data)
+  const totalKm = filteredLogs.reduce((acc, l) => acc + (l.km_total || 0), 0);
   const totalLiters = filteredLogs.reduce((acc, l) => acc + (l.liters || 0), 0);
   const fuelCost = filteredLogs.reduce((acc, l) => acc + (l.total_cost || 0), 0);
   const oilCost = filteredOilRecords.reduce((acc, o) => acc + (o.service_cost || 0), 0);
@@ -266,7 +250,7 @@ const DriverVehicleView = () => {
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as placas" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as placas</SelectItem>
-            {uniquePlates.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            {filteredPlates.map((v: any) => <SelectItem key={v.id} value={v.plate}>{v.plate}</SelectItem>)}
           </SelectContent>
         </Select>
         <Input type="date" className="w-[160px]" placeholder="Data inicial" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
@@ -278,8 +262,8 @@ const DriverVehicleView = () => {
           <CardContent className="flex items-center gap-3 pt-6">
             <div className="rounded-lg bg-blue-500/10 p-2"><Gauge className="h-5 w-5 text-blue-500" /></div>
             <div>
-              <p className="text-xs text-muted-foreground">Km Atual</p>
-              <p className="text-xl font-bold">{latestKm.toLocaleString('pt-BR')}</p>
+              <p className="text-xs text-muted-foreground">Km Total</p>
+              <p className="text-xl font-bold">{totalKm.toLocaleString('pt-BR')}</p>
             </div>
           </CardContent>
         </Card>
@@ -500,7 +484,6 @@ const DriverVehicleView = () => {
                     <TableHead>Litros</TableHead>
                     <TableHead>R$/L</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -516,7 +499,6 @@ const DriverVehicleView = () => {
                       <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
                       <TableCell>{log.fuel_price ? `R$ ${log.fuel_price.toFixed(2)}` : '-'}</TableCell>
                       <TableCell className="font-medium">{log.total_cost ? `R$ ${log.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell><RecordDetailsDialog notes={log.notes} title="Detalhes do Abastecimento" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -544,7 +526,7 @@ const DriverVehicleView = () => {
                     <TableHead>Próx. Troca</TableHead>
                     <TableHead>Tipo Óleo</TableHead>
                     <TableHead>Custo</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead>Obs.</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -557,7 +539,7 @@ const DriverVehicleView = () => {
                       <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell>{oil.oil_type || '-'}</TableCell>
                       <TableCell className="font-medium">{oil.service_cost ? `R$ ${oil.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell><RecordDetailsDialog notes={oil.notes} title="Detalhes da Troca de Óleo" /></TableCell>
+                      <TableCell className="max-w-[200px] truncate">{oil.notes || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -584,7 +566,7 @@ const DriverVehicleView = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Km Atual</TableHead>
                     <TableHead>Custo</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead>Obs.</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -600,7 +582,7 @@ const DriverVehicleView = () => {
                       </TableCell>
                       <TableCell className="font-medium">{m.current_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell><RecordDetailsDialog notes={m.notes} title="Detalhes da Manutenção" /></TableCell>
+                      <TableCell className="max-w-[200px] truncate">{m.notes || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

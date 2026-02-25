@@ -123,7 +123,7 @@ export const useTransportTypes = () => {
     return useQuery({
       queryKey: ['transport_types'],
       queryFn: async (): Promise<string[]> => {
-        return ['Moto', 'Fiorino', 'Caminhão (3/4)'];
+        return ['Moto', 'Fiorino', 'Caminhão (3/4)', 'Caminhão'];
       },
     });
   };
