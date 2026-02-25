@@ -39,7 +39,7 @@ import { UserWithRole, UserRole } from '@/types/database';
 
 const userFormSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
-  email: z.string().email('Email inválido'),
+  username: z.string().min(3, 'Usuário deve ter pelo menos 3 caracteres').max(50, 'Usuário muito longo'),
   phone: z.string().optional(),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
   role: z.enum(['admin', 'gestor', 'motorista', 'cliente']),
@@ -78,7 +78,7 @@ const UserFormDialog = ({
     ),
     defaultValues: {
       name: '',
-      email: '',
+      username: '',
       phone: '',
       password: '',
       role: 'cliente',
@@ -90,9 +90,14 @@ const UserFormDialog = ({
 
   useEffect(() => {
     if (user) {
+      // Extract username from internal email (remove @aguia.internal suffix)
+      const storedEmail = user.email || '';
+      const username = storedEmail.endsWith('@aguia.internal') 
+        ? storedEmail.replace('@aguia.internal', '') 
+        : storedEmail;
       form.reset({
         name: user.name || '',
-        email: user.email || '',
+        username,
         phone: user.phone || '',
         role: user.role,
         vehicleTypes: initialVehicleTypes,
@@ -101,7 +106,7 @@ const UserFormDialog = ({
     } else {
       form.reset({
         name: '',
-        email: '',
+        username: '',
         phone: '',
         password: '',
         role: 'cliente',
@@ -169,14 +174,14 @@ const UserFormDialog = ({
 
             <FormField
               control={form.control}
-              name="email"
+              name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Usuário</FormLabel>
                   <FormControl>
                     <Input 
-                      type="email" 
-                      placeholder="email@exemplo.com" 
+                      type="text" 
+                      placeholder="Nome de usuário para login" 
                       {...field} 
                     />
                   </FormControl>

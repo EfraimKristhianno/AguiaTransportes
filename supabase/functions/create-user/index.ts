@@ -6,7 +6,8 @@ const corsHeaders = {
 }
 
 interface CreateUserRequest {
-  email: string
+  username: string
+  email?: string
   password: string
   name: string
   phone?: string
@@ -79,11 +80,29 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, password, name, phone, role }: CreateUserRequest = await req.json()
+    const { username, email: providedEmail, password, name, phone, role }: CreateUserRequest = await req.json()
 
-    if (!email || !password || !name || !role) {
+    if (!username || !password || !name || !role) {
       return new Response(
-        JSON.stringify({ error: 'Email, senha, nome e perfil são obrigatórios' }),
+        JSON.stringify({ error: 'Usuário, senha, nome e perfil são obrigatórios' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Generate internal email from username
+    const sanitizedUsername = username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '')
+    const email = providedEmail || `${sanitizedUsername}@aguia.internal`
+
+    // Check if username already exists in users table
+    const { data: existingUser } = await adminClient
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (existingUser) {
+      return new Response(
+        JSON.stringify({ error: 'Este nome de usuário já está cadastrado' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -92,7 +111,7 @@ Deno.serve(async (req) => {
     const { data: authData, error: createAuthError } = await adminClient.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true,
       user_metadata: {
         full_name: name,
         phone

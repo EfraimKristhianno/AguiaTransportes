@@ -129,13 +129,13 @@ export const useCreateUser = () => {
 
   return useMutation({
     mutationFn: async ({
-      email,
+      username,
       password,
       name,
       phone,
       role,
     }: {
-      email: string;
+      username: string;
       password: string;
       name: string;
       phone?: string;
@@ -150,7 +150,7 @@ export const useCreateUser = () => {
       }
 
       const response = await supabase.functions.invoke('create-user', {
-        body: { email, password, name, phone, role },
+        body: { username, password, name, phone, role },
       });
 
       if (response.error) {
@@ -170,7 +170,7 @@ export const useCreateUser = () => {
     onError: (error: Error) => {
       const message = error.message.toLowerCase();
       if (message.includes('já está cadastrado') || message.includes('already registered')) {
-        toast.error('Este email já está cadastrado');
+        toast.error('Este nome de usuário já está cadastrado');
       } else {
         toast.error(error.message);
       }

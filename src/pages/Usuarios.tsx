@@ -194,7 +194,7 @@ const Usuarios = () => {
   const handleSubmitUser = async (
     data: {
       name: string;
-      email: string;
+      username: string;
       phone?: string;
       password?: string;
       role: UserRole;
@@ -204,6 +204,9 @@ const Usuarios = () => {
     authId?: string
   ) => {
     if (userId && selectedUser) {
+      // Generate internal email from username
+      const sanitizedUsername = data.username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+      const newEmail = `${sanitizedUsername}@aguia.internal`;
       // Update existing user
       await updateUser.mutateAsync({
         userId,
@@ -211,7 +214,7 @@ const Usuarios = () => {
         updates: {
           name: data.name,
           phone: data.phone,
-          email: data.email,
+          email: newEmail,
         },
         role: data.role,
         previousEmail: selectedUser.email,
@@ -230,7 +233,7 @@ const Usuarios = () => {
     } else {
       // Create new user
       await createUser.mutateAsync({
-        email: data.email,
+        username: data.username,
         password: data.password!,
         name: data.name,
         phone: data.phone,
@@ -391,7 +394,11 @@ const Usuarios = () => {
                         </div>
                         <div>
                           <span className="font-medium text-foreground">{item.name}</span>
-                          <p className="text-sm text-muted-foreground">{item.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.email?.endsWith('@aguia.internal') 
+                              ? `@${item.email.replace('@aguia.internal', '')}` 
+                              : item.email}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
@@ -474,7 +481,11 @@ const Usuarios = () => {
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">{item.phone || item.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.phone || (item.email?.endsWith('@aguia.internal') 
+                          ? `@${item.email.replace('@aguia.internal', '')}` 
+                          : item.email)}
+                      </p>
                     </div>
                   </div>
                    <DropdownMenu>
