@@ -295,7 +295,22 @@ const AdminVehicleView = () => {
             <div className={`rounded-lg p-2 ${vehiclesWithWarning > 0 ? 'bg-destructive/10' : 'bg-purple-500/10'}`}>
               <AlertTriangle className={`h-5 w-5 ${vehiclesWithWarning > 0 ? 'text-destructive' : 'text-purple-500'}`} />
             </div>
-            <div><p className="text-xs text-muted-foreground">Alertas Óleo</p><p className="text-xl font-bold">{vehiclesWithWarning}</p></div>
+            <div>
+              <p className="text-xs text-muted-foreground">Alertas Óleo</p>
+              <p className="text-xl font-bold">{vehiclesWithWarning}</p>
+              {(() => {
+                const latestOilGlobal = filteredOilRecords.length > 0
+                  ? filteredOilRecords.reduce((latest, o) => {
+                      const d1 = new Date(latest.change_date).getTime();
+                      const d2 = new Date(o.change_date).getTime();
+                      return d2 > d1 ? o : latest;
+                    })
+                  : null;
+                return latestOilGlobal ? (
+                  <p className="text-xs text-muted-foreground mt-1">Próx. troca: {latestOilGlobal.next_change_km.toLocaleString('pt-BR')} km</p>
+                ) : null;
+              })()}
+            </div>
           </CardContent>
         </Card>
       </div>

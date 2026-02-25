@@ -1,10 +1,14 @@
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { VehicleLog, OilChangeRecord, MaintenanceRecord } from '@/hooks/useVehicleLogs';
 import { format } from 'date-fns';
-import { Fuel, Droplets, Wrench } from 'lucide-react';
+import { Fuel, Droplets, Wrench, Eye, Paperclip, Loader2, Download } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   open: boolean;
@@ -20,6 +24,93 @@ const maintenanceTypeLabel: Record<string, string> = {
   preventiva: 'Preventiva',
   corretiva: 'Corretiva',
   preditiva: 'Preditiva',
+};
+
+// Parse notes to extract text and attachment paths
+const parseNotes = (notes: string | null): { text: string; attachments: string[] } => {
+  if (!notes) return { text: '', attachments: [] };
+  const match = notes.match(/\[anexos:([^\]]+)\]/);
+  const attachments = match ? match[1].split(',').map(s => s.trim()).filter(Boolean) : [];
+  const text = notes.replace(/\n?\[anexos:[^\]]+\]/, '').trim();
+  return { text, attachments };
+};
+
+// Inline attachment viewer for vehicle-attachments bucket
+const VehicleAttachment = ({ path, index }: { path: string; index: number }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUrl = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.storage
+        .from('vehicle-attachments')
+        .createSignedUrl(path, 3600);
+      if (!error && data?.signedUrl) setUrl(data.signedUrl);
+      setLoading(false);
+    };
+    fetchUrl();
+  }, [path]);
+
+  const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
+  const fileName = path.split('/').pop() || path;
+
+  if (loading) return <div className="flex items-center gap-2 text-sm text-muted-foreground py-1"><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>Carregando...</span></div>;
+  if (!url) return <div className="flex items-center gap-2 text-sm text-destructive py-1"><Paperclip className="h-3.5 w-3.5" /><span>Erro ao carregar</span></div>;
+
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+        <img src={url} alt={`Anexo ${index + 1}`} className="rounded-md max-h-32 object-cover border border-border hover:opacity-90 transition-opacity" />
+      </a>
+    );
+  }
+
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+      <Download className="h-3.5 w-3.5" />{fileName}
+    </a>
+  );
+};
+
+// Detail popover button
+const DetailButton = ({ notes }: { notes: string | null }) => {
+  const { text, attachments } = parseNotes(notes);
+  const hasContent = text || attachments.length > 0;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="sm" className={hasContent ? '' : 'text-muted-foreground'}>
+          <Eye className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 max-h-[300px] overflow-y-auto" align="end">
+        <div className="space-y-3">
+          <h4 className="font-medium text-sm">Detalhes</h4>
+          {text ? (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Observações</p>
+              <p className="text-sm whitespace-pre-wrap">{text}</p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Sem observações.</p>
+          )}
+          {attachments.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Anexos ({attachments.length})</p>
+              <div className="space-y-2">
+                {attachments.map((path, i) => (
+                  <VehicleAttachment key={path} path={path} index={i} />
+                ))}
+              </div>
+            </div>
+          )}
+          {!hasContent && <p className="text-sm text-muted-foreground">Nenhum detalhe registrado.</p>}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, logs, oilRecords, maintenanceRecords }: Props) => {
@@ -55,6 +146,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                       <TableHead>Combustível</TableHead>
                       <TableHead>Litros</TableHead>
                       <TableHead>Total</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -67,6 +159,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                         <TableCell><Badge variant="outline" className="capitalize">{log.fuel_type}</Badge></TableCell>
                         <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
                         <TableCell className="font-medium">{log.total_cost ? `R$ ${log.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
+                        <TableCell><DetailButton notes={log.notes} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -89,7 +182,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                       <TableHead>Km na Troca</TableHead>
                       <TableHead>Próx. Troca</TableHead>
                       <TableHead>Tipo Óleo</TableHead>
-                      <TableHead>Obs.</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -101,7 +194,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                         <TableCell>{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
                         <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
                         <TableCell>{oil.oil_type || '-'}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{oil.notes || '-'}</TableCell>
+                        <TableCell><DetailButton notes={oil.notes} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -123,7 +216,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                       <TableHead>Motorista</TableHead>
                       <TableHead>Km Atual</TableHead>
                       <TableHead>Custo</TableHead>
-                      <TableHead>Obs.</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -138,7 +231,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                         <TableCell>{m.driver?.name || '-'}</TableCell>
                         <TableCell>{m.current_km.toLocaleString('pt-BR')}</TableCell>
                         <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{m.notes || '-'}</TableCell>
+                        <TableCell><DetailButton notes={m.notes} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
