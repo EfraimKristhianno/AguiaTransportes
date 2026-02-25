@@ -13,6 +13,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validate Authorization header is present
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
     const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
     const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:contato@aguiatransportes.com";
@@ -24,15 +33,17 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { record, type: eventType } = body;
 
-    if (!record) {
-      return new Response(JSON.stringify({ error: "No record" }), {
+    // Strict input validation
+    if (!record || typeof record !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid payload" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const status = record.status || "";
-    const transportType = record.transport_type || "";
+    const status = typeof record.status === "string" ? record.status : "";
+    const transportType = typeof record.transport_type === "string" ? record.transport_type : "";
+    const recordId = typeof record.id === "string" ? record.id : "";
 
     if (!["solicitada", "enviada"].includes(status)) {
       return new Response(JSON.stringify({ skipped: true, reason: "status not relevant" }), {
@@ -40,8 +51,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!transportType) {
-      return new Response(JSON.stringify({ skipped: true, reason: "no transport_type" }), {
+    if (!transportType || !recordId) {
+      return new Response(JSON.stringify({ skipped: true, reason: "missing required fields" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -50,11 +61,32 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Verify the record actually exists in the database to prevent abuse
+    const { data: existingRecord, error: recordError } = await supabase
+      .from("delivery_requests")
+      .select("id, status, transport_type")
+      .eq("id", recordId)
+      .single();
+
+    if (recordError || !existingRecord) {
+      return new Response(JSON.stringify({ error: "Record not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify the status matches what's actually in the database
+    if (!["solicitada", "enviada"].includes(existingRecord.status)) {
+      return new Response(JSON.stringify({ skipped: true, reason: "record status mismatch" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Find drivers with matching vehicle type
     const { data: matchingDrivers } = await supabase
       .from("driver_vehicle_types")
       .select("driver_id, drivers!inner(user_id, status)")
-      .eq("vehicle_type", transportType);
+      .eq("vehicle_type", existingRecord.transport_type);
 
     if (!matchingDrivers || matchingDrivers.length === 0) {
       return new Response(JSON.stringify({ skipped: true, reason: "no matching drivers" }), {
@@ -84,13 +116,10 @@ Deno.serve(async (req) => {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      console.log("[notify-driver] No push subscriptions found for drivers:", targetUserIds);
       return new Response(JSON.stringify({ skipped: true, reason: "no subscriptions" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    console.log(`[notify-driver] Found ${subscriptions.length} subscriptions for ${targetUserIds.length} drivers`);
 
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
@@ -128,13 +157,11 @@ Deno.serve(async (req) => {
         });
 
         sent++;
-        console.log(`[notify-driver] Push sent to ${sub.user_id}`);
       } catch (err: any) {
         if (err.statusCode === 410 || err.statusCode === 404) {
           expiredEndpoints.push(sub.endpoint);
-          console.log(`[notify-driver] Subscription expired for ${sub.user_id}: ${err.statusCode}`);
         } else {
-          console.error(`[notify-driver] Error sending to ${sub.user_id}:`, err.statusCode || err.message || err);
+          console.error(`[notify-driver] Error sending push:`, err.statusCode || err.message);
         }
         failed++;
       }
@@ -146,7 +173,6 @@ Deno.serve(async (req) => {
         .from("push_subscriptions")
         .delete()
         .in("endpoint", expiredEndpoints);
-      console.log(`[notify-driver] Cleaned ${expiredEndpoints.length} expired subscriptions`);
     }
 
     return new Response(
@@ -162,7 +188,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("[notify-driver] Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
