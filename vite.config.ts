@@ -53,6 +53,9 @@ export default defineConfig(({ mode }) => ({
         lang: "pt-BR"
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/~oauth/, /^\/sw-push\.js/],
