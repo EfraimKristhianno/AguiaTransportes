@@ -74,8 +74,7 @@ const AdminVehicleView = () => {
 
   // Unique vehicle types for filter
   const vehicleTypes = useMemo(() => {
-    const excludedTypes = ['Caminhão'];
-    const types = new Set(allVehicles.map((v: any) => v.type).filter((t: string) => !excludedTypes.includes(t)));
+    const types = new Set(allVehicles.map((v: any) => v.type));
     return Array.from(types).sort();
   }, [allVehicles]);
 
