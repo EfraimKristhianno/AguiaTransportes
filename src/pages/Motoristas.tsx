@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Truck as TruckIcon, CheckCircle, Clock, Search, Package } from 'lucide-react';
+import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,15 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useDrivers } from '@/hooks/useDrivers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver, useDriverRequests } from '@/hooks/useDriverRequests';
 import { DriverRequestsTable } from '@/components/motoristas/DriverRequestsTable';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
+import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
 
 const Motoristas = () => {
   const { role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [trackingDriver, setTrackingDriver] = useState<{ id: string; name: string; activeDeliveries: number } | null>(null);
   useRealtimeDeliveryRequests();
   const { data: drivers, isLoading } = useDrivers();
   
@@ -217,6 +220,7 @@ const Motoristas = () => {
                   <TableHead className="text-center">Concluídas</TableHead>
                   <TableHead className="text-center">Ativas</TableHead>
                   <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Rastrear</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -231,13 +235,14 @@ const Motoristas = () => {
                       </TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-20 mx-auto" /></TableCell>
-                    </TableRow>
+                       <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                       <TableCell><Skeleton className="h-6 w-20 mx-auto" /></TableCell>
+                       <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>
+                     </TableRow>
                   ))
                 ) : filteredDrivers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                   <TableRow>
+                     <TableCell colSpan={6} className="h-24 text-center">
                       <p className="text-muted-foreground">
                         {searchTerm ? 'Nenhum motorista encontrado' : 'Nenhum motorista cadastrado'}
                       </p>
@@ -266,6 +271,21 @@ const Motoristas = () => {
                       <TableCell className="text-center">
                         {getStatusBadge(driver.status)}
                       </TableCell>
+                      <TableCell className="text-center">
+                        {driver.active_deliveries > 0 ? (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setTrackingDriver({ id: driver.id, name: driver.name, activeDeliveries: driver.active_deliveries })}
+                            title="Rastrear motorista"
+                          >
+                            <MapPin className="h-4 w-4 text-primary" />
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">-</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -273,6 +293,15 @@ const Motoristas = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {trackingDriver && (
+          <DriverTrackingDialog
+            open={!!trackingDriver}
+            onOpenChange={(open) => !open && setTrackingDriver(null)}
+            driverId={trackingDriver.id}
+            driverName={trackingDriver.name}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

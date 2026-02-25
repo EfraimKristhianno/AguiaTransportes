@@ -198,6 +198,54 @@ export type Database = {
           },
         ]
       }
+      driver_locations: {
+        Row: {
+          delivery_request_id: string | null
+          driver_id: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          speed: number | null
+          updated_at: string
+        }
+        Insert: {
+          delivery_request_id?: string | null
+          driver_id: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          speed?: number | null
+          updated_at?: string
+        }
+        Update: {
+          delivery_request_id?: string | null
+          driver_id?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          speed?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_locations_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_locations_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_vehicle_types: {
         Row: {
           created_at: string | null
