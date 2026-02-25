@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { DriverRequest } from '@/hooks/useDriverRequests';
 import { UnifiedRequestDetailsDialog } from '@/components/shared/UnifiedRequestDetailsDialog';
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
+import { useDriverLocationTracking } from '@/hooks/useDriverLocationTracking';
 
 interface DriverRequestsTableProps {
   requests: DriverRequest[];
@@ -34,6 +35,17 @@ export const DriverRequestsTable = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Find active delivery for GPS tracking
+  const activeDelivery = useMemo(() => {
+    return requests.find(r => ['aceita', 'coletada', 'em_rota'].includes(r.status || ''));
+  }, [requests]);
+
+  // Activate GPS tracking when driver has active delivery
+  useDriverLocationTracking({
+    driverId: driverId,
+    activeDeliveryRequestId: activeDelivery?.id || null,
+    enabled: !!activeDelivery,
+  });
   const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter);
 
   const formatDate = (dateString: string | null) => {
