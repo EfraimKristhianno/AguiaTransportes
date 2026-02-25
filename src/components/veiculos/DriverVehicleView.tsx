@@ -217,7 +217,11 @@ const DriverVehicleView = () => {
   const filteredMaintenanceRecords = maintenanceRecords.filter(m => matchesVehicle(m.vehicle_id, m.vehicle_plate) && inDateRange(m.maintenance_date));
 
   // Stats (use filtered data)
-  const totalKm = filteredLogs.reduce((acc, l) => acc + (l.km_total || 0), 0);
+  // Km Atual: último km informado (maior valor entre abastecimento, óleo e manutenção)
+  const lastKmFromLogs = filteredLogs.length > 0 ? Math.max(...filteredLogs.map(l => l.km_final || 0)) : 0;
+  const lastKmFromOil = filteredOilRecords.length > 0 ? Math.max(...filteredOilRecords.map(o => o.km_at_change || 0)) : 0;
+  const lastKmFromMaint = filteredMaintenanceRecords.length > 0 ? Math.max(...filteredMaintenanceRecords.map(m => m.current_km || 0)) : 0;
+  const currentKm = Math.max(lastKmFromLogs, lastKmFromOil, lastKmFromMaint);
   const totalLiters = filteredLogs.reduce((acc, l) => acc + (l.liters || 0), 0);
   const fuelCost = filteredLogs.reduce((acc, l) => acc + (l.total_cost || 0), 0);
   const oilCost = filteredOilRecords.reduce((acc, o) => acc + (o.service_cost || 0), 0);
@@ -262,8 +266,8 @@ const DriverVehicleView = () => {
           <CardContent className="flex items-center gap-3 pt-6">
             <div className="rounded-lg bg-blue-500/10 p-2"><Gauge className="h-5 w-5 text-blue-500" /></div>
             <div>
-              <p className="text-xs text-muted-foreground">Km Total</p>
-              <p className="text-xl font-bold">{totalKm.toLocaleString('pt-BR')}</p>
+              <p className="text-xs text-muted-foreground">Km Atual</p>
+              <p className="text-xl font-bold">{currentKm.toLocaleString('pt-BR')}</p>
             </div>
           </CardContent>
         </Card>

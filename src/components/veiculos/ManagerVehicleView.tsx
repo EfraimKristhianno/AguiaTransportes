@@ -30,7 +30,12 @@ const ManagerVehicleView = () => {
   // Aggregate stats per vehicle
   const vehicleStats = allVehicles.map((v: any) => {
     const vLogs = logs.filter(l => l.vehicle_id === v.id);
-    const totalKm = vLogs.reduce((a, l) => a + (l.km_total || 0), 0);
+    const vOil = oilRecords.filter(o => o.vehicle_id === v.id);
+    const vMaint = maintenanceRecords.filter(m => m.vehicle_id === v.id);
+    const lastKmFromLogs = vLogs.length > 0 ? Math.max(...vLogs.map(l => l.km_final || 0)) : 0;
+    const lastKmFromOil = vOil.length > 0 ? Math.max(...vOil.map(o => o.km_at_change || 0)) : 0;
+    const lastKmFromMaint = vMaint.length > 0 ? Math.max(...vMaint.map(m => m.current_km || 0)) : 0;
+    const currentKm = Math.max(lastKmFromLogs, lastKmFromOil, lastKmFromMaint);
     const totalLiters = vLogs.reduce((a, l) => a + (l.liters || 0), 0);
     const totalCost = vLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
     const latestOil = oilRecords.find(o => o.vehicle_id === v.id);
@@ -39,16 +44,16 @@ const ManagerVehicleView = () => {
     const maintCount = maintenanceRecords.filter(m => m.vehicle_id === v.id).length;
     const maintCost = maintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
 
-    return { ...v, totalKm, totalLiters, totalCost, latestOil, oilWarning, logCount: vLogs.length, maintCount, maintCost };
+    return { ...v, currentKm, totalLiters, totalCost, latestOil, oilWarning, logCount: vLogs.length, maintCount, maintCost };
   });
 
   // Charts
-  const kmChartData = vehicleStats.filter(v => v.totalKm > 0).map(v => ({ name: v.plate, km: v.totalKm }));
+  const kmChartData = vehicleStats.filter(v => v.currentKm > 0).map(v => ({ name: v.plate, km: v.currentKm }));
   const fuelCounts = logs.reduce((acc, l) => { acc[l.fuel_type] = (acc[l.fuel_type] || 0) + 1; return acc; }, {} as Record<string, number>);
   const fuelChartData = Object.entries(fuelCounts).map(([name, value]) => ({ name, value }));
 
   // Global stats
-  const totalKm = logs.reduce((a, l) => a + (l.km_total || 0), 0);
+  const totalKm = vehicleStats.reduce((a, v) => Math.max(a, v.currentKm), 0);
   const totalCost = logs.reduce((a, l) => a + (l.total_cost || 0), 0);
   const vehiclesWithWarning = vehicleStats.filter(v => v.oilWarning).length;
 
@@ -66,7 +71,7 @@ const ManagerVehicleView = () => {
         </CardContent></Card>
         <Card><CardContent className="flex items-center gap-3 pt-6">
           <div className="rounded-lg bg-green-500/10 p-2"><Gauge className="h-5 w-5 text-green-500" /></div>
-          <div><p className="text-xs text-muted-foreground">Km Total (Frota)</p><p className="text-xl font-bold">{totalKm.toLocaleString('pt-BR')}</p></div>
+          <div><p className="text-xs text-muted-foreground">Km Atual (Frota)</p><p className="text-xl font-bold">{totalKm.toLocaleString('pt-BR')}</p></div>
         </CardContent></Card>
         <Card><CardContent className="flex items-center gap-3 pt-6">
           <div className="rounded-lg bg-amber-500/10 p-2"><Fuel className="h-5 w-5 text-amber-500" /></div>
@@ -133,7 +138,7 @@ const ManagerVehicleView = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Km Total</TableHead>
+                  <TableHead>Km Atual</TableHead>
                   <TableHead>Litros</TableHead>
                   <TableHead>Gasto Comb.</TableHead>
                   <TableHead>Manutenções</TableHead>
@@ -146,7 +151,7 @@ const ManagerVehicleView = () => {
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
-                    <TableCell>{v.totalKm.toLocaleString('pt-BR')}</TableCell>
+                    <TableCell>{v.currentKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>{v.totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>{v.maintCount}</TableCell>
