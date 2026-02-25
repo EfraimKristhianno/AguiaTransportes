@@ -93,9 +93,13 @@ export default defineConfig(({ mode }) => ({
       }
     })
   ].filter(Boolean),
+  optimizeDeps: {
+    exclude: ["react-leaflet", "@react-leaflet/core"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom"],
   },
 }));
