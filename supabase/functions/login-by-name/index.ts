@@ -28,11 +28,14 @@ Deno.serve(async (req) => {
     // Look up user email by name (case-insensitive)
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
-      .select("email")
+      .select("email, name")
       .ilike("name", name.trim())
       .single();
 
+    console.log("User lookup result:", { found: !!userData, name: name.trim(), error: userError?.message });
+
     if (userError || !userData?.email) {
+      console.log("User not found for name:", name.trim());
       return new Response(
         JSON.stringify({ error: "invalid_credentials" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -46,6 +49,7 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
+      console.log("Auth error for email:", userData.email, "error:", authError.message);
       return new Response(
         JSON.stringify({ error: "invalid_credentials" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
