@@ -152,7 +152,14 @@ const AdminVehicleView = () => {
     const oilWarning = latestOil ? lastKm >= latestOil.next_change_km : false;
     const maintCount = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).length;
     const maintCost = filteredMaintenanceRecords.filter(m => m.vehicle_id === v.id).reduce((a, m) => a + (m.service_cost || 0), 0);
-    return { ...v, currentKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost };
+    // Get the latest real plate from operational records
+    const allPlates = [
+      ...vLogs.map(l => l.vehicle_plate).filter(Boolean),
+      ...vOil.map(o => o.vehicle_plate).filter(Boolean),
+      ...vMaint.map(m => m.vehicle_plate).filter(Boolean),
+    ];
+    const displayPlate = allPlates.length > 0 ? allPlates[0] : v.plate;
+    return { ...v, currentKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost, displayPlate };
   });
 
   const vehiclesWithWarning = vehicleStats.filter(v => v.oilWarning).length;
@@ -434,7 +441,7 @@ const AdminVehicleView = () => {
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
-                    <TableCell>{plateFilter !== 'all' ? plateFilter : v.plate}</TableCell>
+                    <TableCell>{plateFilter !== 'all' ? plateFilter : v.displayPlate}</TableCell>
                     <TableCell>{v.currentKm.toLocaleString('pt-BR')}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.oilCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
