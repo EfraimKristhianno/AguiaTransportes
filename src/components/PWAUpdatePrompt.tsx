@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 const PWAUpdatePrompt = () => {
   const {
-    needRefresh: [needRefresh],
+    needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(swUrl, registration) {
@@ -27,7 +27,10 @@ const PWAUpdatePrompt = () => {
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => updateServiceWorker(true)}
+          onClick={() => {
+            setNeedRefresh(false);
+            updateServiceWorker(true);
+          }}
           className="ml-1 font-semibold"
         >
           Atualizar
