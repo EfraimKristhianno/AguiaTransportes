@@ -50,8 +50,8 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
   const getErrorMessage = (errorCode: string): string => {
     const errorMessages: Record<string, string> = {
-      'invalid_credentials': 'Usuário ou senha incorretos.',
-      'user_not_found': 'Usuário não encontrado.',
+      'invalid_credentials': 'Usuário ou senha incorretos. Use o nome de usuário cadastrado (sem espaços).',
+      'user_not_found': 'Usuário não encontrado. Verifique o nome de usuário cadastrado.',
       'too_many_requests': 'Muitas tentativas. Aguarde alguns minutos.',
     };
     return errorMessages[errorCode] || 'Usuário ou senha incorretos.';
