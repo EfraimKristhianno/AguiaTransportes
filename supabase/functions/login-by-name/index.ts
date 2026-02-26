@@ -25,8 +25,16 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Only accept username login (not full name)
-    const sanitizedUsername = name.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+    // Only accept username login (not full name) - reject if contains spaces
+    const trimmedName = name.trim().toLowerCase();
+    if (/\s/.test(trimmedName)) {
+      console.log("Rejected login with full name (contains spaces):", name.trim());
+      return new Response(
+        JSON.stringify({ error: "invalid_credentials" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const sanitizedUsername = trimmedName.replace(/[^a-z0-9._-]/g, '');
     const usernameEmail = `${sanitizedUsername}@aguia.internal`;
     
     // Look up user by username email only
