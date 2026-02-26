@@ -252,13 +252,13 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome do Usuário</Label>
+          <Label htmlFor="name">Usuário</Label>
           <div className="relative">
             <User className="input-icon h-5 w-5" />
             <Input
               id="name"
               type="text"
-              placeholder="Seu nome"
+              placeholder="Seu usuário"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
