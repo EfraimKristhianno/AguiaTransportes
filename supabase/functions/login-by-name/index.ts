@@ -25,28 +25,16 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Look up user email by name (case-insensitive) or by username (email prefix)
-    const sanitizedName = name.trim().toLowerCase().replace(/[^a-z0-9._\s-]/g, '');
-    const usernameEmail = `${sanitizedName.replace(/\s+/g, '')}@aguia.internal`;
+    // Only accept username login (not full name)
+    const sanitizedUsername = name.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+    const usernameEmail = `${sanitizedUsername}@aguia.internal`;
     
-    // Try by name first
-    let { data: userData, error: userError } = await supabaseAdmin
+    // Look up user by username email only
+    const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
       .select("email, name")
-      .ilike("name", name.trim())
+      .eq("email", usernameEmail)
       .maybeSingle();
-
-    // If not found by name, try by generated email (username login)
-    if (!userData) {
-      const { data: userByEmail, error: emailError } = await supabaseAdmin
-        .from("users")
-        .select("email, name")
-        .eq("email", usernameEmail)
-        .maybeSingle();
-      
-      userData = userByEmail;
-      userError = emailError;
-    }
 
     console.log("User lookup result:", { found: !!userData, name: name.trim(), error: userError?.message });
 
