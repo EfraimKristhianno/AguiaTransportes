@@ -396,7 +396,7 @@ const Usuarios = () => {
                           <span className="font-medium text-foreground">{item.name}</span>
                           <p className="text-sm text-muted-foreground">
                             {item.email?.endsWith('@aguia.internal') 
-                              ? `@${item.email.replace('@aguia.internal', '')}` 
+                              ? `Usuário: ${item.email.replace('@aguia.internal', '')}` 
                               : item.email}
                           </p>
                         </div>
@@ -483,7 +483,7 @@ const Usuarios = () => {
                       <p className="font-medium text-foreground">{item.name}</p>
                       <p className="text-sm text-muted-foreground">
                         {item.phone || (item.email?.endsWith('@aguia.internal') 
-                          ? `@${item.email.replace('@aguia.internal', '')}` 
+                          ? `Usuário: ${item.email.replace('@aguia.internal', '')}` 
                           : item.email)}
                       </p>
                     </div>
