@@ -50,11 +50,11 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
   const getErrorMessage = (errorCode: string): string => {
     const errorMessages: Record<string, string> = {
-      'invalid_credentials': 'Nome ou senha incorretos.',
+      'invalid_credentials': 'Usuário ou senha incorretos.',
       'user_not_found': 'Usuário não encontrado.',
       'too_many_requests': 'Muitas tentativas. Aguarde alguns minutos.',
     };
-    return errorMessages[errorCode] || 'Nome ou senha incorretos.';
+    return errorMessages[errorCode] || 'Usuário ou senha incorretos.';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -252,13 +252,13 @@ const LoginForm = ({ onToggleMode }: LoginFormProps) => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome do Usuário</Label>
+          <Label htmlFor="name">Usuário</Label>
           <div className="relative">
             <User className="input-icon h-5 w-5" />
             <Input
               id="name"
               type="text"
-              placeholder="Seu nome"
+              placeholder="seu usuário"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
