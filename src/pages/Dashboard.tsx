@@ -249,7 +249,9 @@ const Dashboard = () => {
 
     // Logo no canto superior direito
     try {
-      doc.addImage(logoAguia, 'PNG', pageWidth - 45, 6, 35, 18);
+      const img = new Image();
+      img.src = logoAguia;
+      doc.addImage(img, 'PNG', pageWidth - 45, 6, 35, 18, undefined, 'FAST');
     } catch {}
 
     // Título e info à esquerda
@@ -306,10 +308,17 @@ const Dashboard = () => {
       return formatSingleFreightPrice(prices);
     };
 
+    const formatDateTimePdf = (dateString: string | null) => {
+      if (!dateString) return '-';
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+    };
+
     const tableData = filteredRequests.map(item => [
-      formatDate(item.scheduled_date || item.created_at),
-      item.client?.name || '-',
-      item.vehicle?.type || item.transport_type || '-',
+      formatDateTimePdf(item.created_at),
+      String((item as any).request_number || '-'),
+      (item as any).clients?.name || '-',
+      (item as any).drivers?.name || '-',
+      item.transport_type || '-',
       item.origin_address || '-',
       item.destination_address || '-',
       (item as any).requester || '-',
@@ -317,15 +326,15 @@ const Dashboard = () => {
     ]);
 
     autoTable(doc, {
-      head: [['Data/Hora', 'Cliente', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
+      head: [['Data/Hora', 'ID', 'Cliente', 'Motorista', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
       body: tableData,
       startY: y,
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [211, 33, 39], fontSize: 8 },
       bodyStyles: { fontSize: 7 },
       columnStyles: {
-        3: { cellWidth: 50 },
-        4: { cellWidth: 50 },
+        5: { cellWidth: 45 },
+        6: { cellWidth: 45 },
       },
       margin: { left: 14 },
     });
