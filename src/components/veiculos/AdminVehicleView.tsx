@@ -378,12 +378,12 @@ const AdminVehicleView = () => {
       </Card>
 
       {/* Charts Row 2 */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Donut: Total Frete por Veículo */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Valor Total de Frete por Veículo</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Total Frete por Veículo</CardTitle></CardHeader>
           <CardContent>
             {(() => {
-              // Calculate freight value per vehicle from delivery requests
               const freightByVehicle: Record<string, number> = {};
               const filteredVehicleIdsForFreight = new Set(filteredVehicles.map((v: any) => v.id));
               
@@ -391,7 +391,6 @@ const AdminVehicleView = () => {
                 if (!req.vehicle_id || !filteredVehicleIdsForFreight.has(req.vehicle_id)) return;
                 if (!req.client_id || !req.transport_type) return;
                 
-                // Find matching freight price
                 const matchingPrices = freightPrices.filter((fp: any) => 
                   fp.client_id === req.client_id && fp.transport_type === req.transport_type &&
                   (!req.region || fp.region === req.region)
@@ -411,29 +410,27 @@ const AdminVehicleView = () => {
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value);
 
-              const total = donutData.reduce((sum, d) => sum + d.value, 0);
-
               const renderCustomLabel = ({ cx, cy, midAngle, outerRadius, percent }: any) => {
                 const RADIAN = Math.PI / 180;
-                const radius = outerRadius + 20;
+                const radius = outerRadius + 22;
                 const x = cx + radius * Math.cos(-midAngle * RADIAN);
                 const y = cy + radius * Math.sin(-midAngle * RADIAN);
                 return percent > 0.03 ? (
-                  <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11}>
+                  <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={600}>
                     {`${(percent * 100).toFixed(0)}%`}
                   </text>
                 ) : null;
               };
 
               return donutData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
                       data={donutData}
                       cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={85}
+                      cy="45%"
+                      innerRadius={55}
+                      outerRadius={95}
                       paddingAngle={3}
                       dataKey="value"
                       label={renderCustomLabel}
@@ -442,51 +439,90 @@ const AdminVehicleView = () => {
                       {donutData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
                     <Tooltip formatter={(v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                    <Legend fontSize={11} />
+                    <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>;
             })()}
           </CardContent>
         </Card>
+
+        {/* Bar: Solicitações por Veículo ao Longo do Tempo */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Combustível ao Longo do Tempo</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Solicitações por Veículo ao Longo do Tempo</CardTitle></CardHeader>
           <CardContent>
-            {fuelTimeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={fuelTimeData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip />
-                  <Legend />
-                  {fuelTypes.map((ft, i) => (
-                    <Bar key={ft} dataKey={ft} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-base">Gastos por Tipo de Manutenção</CardTitle></CardHeader>
-          <CardContent>
-            {maintTypeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={maintTypeData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis type="number" className="text-xs" tickFormatter={(v: number) => `R$ ${v}`} />
-                  <YAxis dataKey="name" type="category" className="text-xs" width={120} />
-                  <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                  <Bar dataKey="cost" radius={[0, 4, 4, 0]}>
-                    {maintTypeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>}
+            {(() => {
+              const filteredVehicleIdsForReqs = new Set(filteredVehicles.map((v: any) => v.id));
+              // Group requests by month and vehicle
+              const vehicleMonthly: Record<string, Record<string, number>> = {};
+              const monthsSet = new Set<string>();
+              const vehicleLabels = new Set<string>();
+
+              deliveryRequests.forEach((req: any) => {
+                if (!req.vehicle_id || !filteredVehicleIdsForReqs.has(req.vehicle_id)) return;
+                const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
+                const plate = vehicle?.plate || 'N/A';
+                const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
+                const label = `${typeName} - ${plate}`;
+                vehicleLabels.add(label);
+
+                // Use created_at or scheduled_date for time grouping
+                const dateStr = req.scheduled_date || req.created_at;
+                if (!dateStr) return;
+                const d = new Date(dateStr);
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                monthsSet.add(monthKey);
+
+                if (!vehicleMonthly[monthKey]) vehicleMonthly[monthKey] = {};
+                vehicleMonthly[monthKey][label] = (vehicleMonthly[monthKey][label] || 0) + 1;
+              });
+
+              const months = Array.from(monthsSet).sort();
+              const labels = Array.from(vehicleLabels);
+              const barData = months.map(m => {
+                const entry: any = { date: format(parseISO(`${m}-01`), 'MMM/yy', { locale: ptBR }) };
+                labels.forEach(l => { entry[l] = vehicleMonthly[m]?.[l] || 0; });
+                return entry;
+              });
+
+              return barData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={barData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" className="text-xs" />
+                    <YAxis className="text-xs" allowDecimals={false} />
+                    <Tooltip />
+                    <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+                    {labels.map((label, i) => (
+                      <Bar key={label} dataKey={label} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>;
+            })()}
           </CardContent>
         </Card>
       </div>
+
+      {/* Gastos por Tipo de Manutenção */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Gastos por Tipo de Manutenção</CardTitle></CardHeader>
+        <CardContent>
+          {maintTypeData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={maintTypeData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis type="number" className="text-xs" tickFormatter={(v: number) => `R$ ${v}`} />
+                <YAxis dataKey="name" type="category" className="text-xs" width={120} />
+                <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+                <Bar dataKey="cost" radius={[0, 4, 4, 0]}>
+                  {maintTypeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <p className="py-12 text-center text-muted-foreground">Sem dados no período</p>}
+        </CardContent>
+      </Card>
 
       {/* Full Vehicle Table */}
       <Card>
