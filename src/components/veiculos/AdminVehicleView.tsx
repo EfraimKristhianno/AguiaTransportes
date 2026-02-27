@@ -504,25 +504,7 @@ const AdminVehicleView = () => {
         </Card>
       </div>
 
-      {/* Gastos por Tipo de Manutenção */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Gastos por Tipo de Manutenção</CardTitle></CardHeader>
-        <CardContent>
-          {maintTypeData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={maintTypeData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" className="text-xs" tickFormatter={(v: number) => `R$ ${v}`} />
-                <YAxis dataKey="name" type="category" className="text-xs" width={120} />
-                <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                <Bar dataKey="cost" radius={[0, 4, 4, 0]}>
-                  {maintTypeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <p className="py-12 text-center text-muted-foreground">Sem dados no período</p>}
-        </CardContent>
-      </Card>
+
 
       {/* Full Vehicle Table */}
       <Card>
