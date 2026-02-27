@@ -487,7 +487,7 @@ const AdminVehicleView = () => {
                     <Tooltip />
                     <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     {labels.map((label, i) => (
-                      <Bar key={label} dataKey={label} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} />
+                      <Bar key={label} dataKey={label} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: 11, fontWeight: 600 }} />
                     ))}
                   </BarChart>
                 </ResponsiveContainer>
