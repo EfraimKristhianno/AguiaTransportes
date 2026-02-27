@@ -9,7 +9,7 @@ import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords } from '@/ho
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Fuel, Car, AlertTriangle, TrendingUp, DollarSign, History, Search, CalendarIcon } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line, PieChart, Pie } from 'recharts';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -48,6 +48,25 @@ const AdminVehicleView = () => {
     queryKey: ['all_drivers_admin'],
     queryFn: async () => {
       const { data } = await supabase.from('drivers').select('*');
+      return data || [];
+    },
+  });
+
+  // Fetch delivery requests with vehicle and freight price info
+  const { data: deliveryRequests = [] } = useQuery({
+    queryKey: ['delivery_requests_freight'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('delivery_requests')
+        .select('id, vehicle_id, client_id, transport_type, region, status');
+      return data || [];
+    },
+  });
+
+  const { data: freightPrices = [] } = useQuery({
+    queryKey: ['all_freight_prices_admin'],
+    queryFn: async () => {
+      const { data } = await supabase.from('freight_prices').select('*');
       return data || [];
     },
   });
@@ -361,19 +380,73 @@ const AdminVehicleView = () => {
       {/* Charts Row 2 */}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card>
-          <CardHeader><CardTitle className="text-base">Km por Veículo</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Valor Total de Frete por Veículo</CardTitle></CardHeader>
           <CardContent>
-            {kmChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={kmChartData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis type="number" className="text-xs" />
-                  <YAxis dataKey="name" type="category" className="text-xs" width={100} />
-                  <Tooltip />
-                  <Bar dataKey="km" fill="#d32127" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>}
+            {(() => {
+              // Calculate freight value per vehicle from delivery requests
+              const freightByVehicle: Record<string, number> = {};
+              const filteredVehicleIdsForFreight = new Set(filteredVehicles.map((v: any) => v.id));
+              
+              deliveryRequests.forEach((req: any) => {
+                if (!req.vehicle_id || !filteredVehicleIdsForFreight.has(req.vehicle_id)) return;
+                if (!req.client_id || !req.transport_type) return;
+                
+                // Find matching freight price
+                const matchingPrices = freightPrices.filter((fp: any) => 
+                  fp.client_id === req.client_id && fp.transport_type === req.transport_type &&
+                  (!req.region || fp.region === req.region)
+                );
+                
+                if (matchingPrices.length > 0) {
+                  const price = matchingPrices[0].price;
+                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
+                  const plate = vehicle?.plate || 'N/A';
+                  const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
+                  const label = `${typeName} - ${plate}`;
+                  freightByVehicle[label] = (freightByVehicle[label] || 0) + Number(price);
+                }
+              });
+
+              const donutData = Object.entries(freightByVehicle)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+              const total = donutData.reduce((sum, d) => sum + d.value, 0);
+
+              const renderCustomLabel = ({ cx, cy, midAngle, outerRadius, percent }: any) => {
+                const RADIAN = Math.PI / 180;
+                const radius = outerRadius + 20;
+                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                return percent > 0.03 ? (
+                  <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11}>
+                    {`${(percent * 100).toFixed(0)}%`}
+                  </text>
+                ) : null;
+              };
+
+              return donutData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={donutData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={85}
+                      paddingAngle={3}
+                      dataKey="value"
+                      label={renderCustomLabel}
+                      labelLine={false}
+                    >
+                      {donutData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                    <Legend fontSize={11} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : <p className="py-12 text-center text-muted-foreground">Sem dados</p>;
+            })()}
           </CardContent>
         </Card>
         <Card>
