@@ -58,7 +58,7 @@ const AdminVehicleView = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('delivery_requests')
-        .select('id, vehicle_id, client_id, transport_type, region, status');
+        .select('id, vehicle_id, client_id, transport_type, region, status, created_at, scheduled_date');
       return data || [];
     },
   });
@@ -379,34 +379,33 @@ const AdminVehicleView = () => {
 
       {/* Charts Row 2 */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Donut: Total Frete por Veículo */}
+        {/* Donut: Total Frete por Tipo de Veículo */}
         <Card>
           <CardHeader><CardTitle className="text-base">Total Frete por Veículo</CardTitle></CardHeader>
           <CardContent>
             {(() => {
-              const freightByVehicle: Record<string, number> = {};
-              const filteredVehicleIdsForFreight = new Set(filteredVehicles.map((v: any) => v.id));
+              const freightByType: Record<string, number> = {};
               
               deliveryRequests.forEach((req: any) => {
-                if (!req.vehicle_id || !filteredVehicleIdsForFreight.has(req.vehicle_id)) return;
                 if (!req.client_id || !req.transport_type) return;
                 
-                const matchingPrices = freightPrices.filter((fp: any) => 
-                  fp.client_id === req.client_id && fp.transport_type === req.transport_type &&
-                  (!req.region || fp.region === req.region)
+                // Match freight price by client + transport_type + region
+                let matchingPrices = freightPrices.filter((fp: any) => 
+                  fp.client_id === req.client_id && fp.transport_type === req.transport_type
                 );
+                if (req.region && matchingPrices.length > 0) {
+                  const regionMatch = matchingPrices.filter((fp: any) => fp.region === req.region);
+                  if (regionMatch.length > 0) matchingPrices = regionMatch;
+                }
                 
                 if (matchingPrices.length > 0) {
-                  const price = matchingPrices[0].price;
-                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                  const plate = vehicle?.plate || 'N/A';
-                  const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
-                  const label = `${typeName} - ${plate}`;
-                  freightByVehicle[label] = (freightByVehicle[label] || 0) + Number(price);
+                  const price = Number(matchingPrices[0].price);
+                  const label = req.transport_type;
+                  freightByType[label] = (freightByType[label] || 0) + price;
                 }
               });
 
-              const donutData = Object.entries(freightByVehicle)
+              const donutData = Object.entries(freightByType)
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value);
 
@@ -447,26 +446,20 @@ const AdminVehicleView = () => {
           </CardContent>
         </Card>
 
-        {/* Bar: Solicitações por Veículo ao Longo do Tempo */}
+        {/* Bar: Solicitações por Tipo de Veículo ao Longo do Tempo */}
         <Card>
           <CardHeader><CardTitle className="text-base">Solicitações por Veículo ao Longo do Tempo</CardTitle></CardHeader>
           <CardContent>
             {(() => {
-              const filteredVehicleIdsForReqs = new Set(filteredVehicles.map((v: any) => v.id));
-              // Group requests by month and vehicle
               const vehicleMonthly: Record<string, Record<string, number>> = {};
               const monthsSet = new Set<string>();
               const vehicleLabels = new Set<string>();
 
               deliveryRequests.forEach((req: any) => {
-                if (!req.vehicle_id || !filteredVehicleIdsForReqs.has(req.vehicle_id)) return;
-                const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                const plate = vehicle?.plate || 'N/A';
-                const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
-                const label = `${typeName} - ${plate}`;
+                if (!req.transport_type) return;
+                const label = req.transport_type;
                 vehicleLabels.add(label);
 
-                // Use created_at or scheduled_date for time grouping
                 const dateStr = req.scheduled_date || req.created_at;
                 if (!dateStr) return;
                 const d = new Date(dateStr);
