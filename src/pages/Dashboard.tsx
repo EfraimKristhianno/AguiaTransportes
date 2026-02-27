@@ -113,6 +113,7 @@ const Dashboard = () => {
           region,
           requester,
           client:clients(name, phone, email),
+          driver:drivers(name),
           material_type:material_types(name),
           vehicle:vehicles(type)
         `).order('created_at', {
@@ -316,8 +317,8 @@ const Dashboard = () => {
     const tableData = filteredRequests.map(item => [
       formatDateTimePdf(item.created_at),
       String((item as any).request_number || '-'),
-      (item as any).clients?.name || '-',
-      (item as any).drivers?.name || '-',
+      (item as any).client?.name || '-',
+      (item as any).driver?.name || '-',
       item.transport_type || '-',
       item.origin_address || '-',
       item.destination_address || '-',
