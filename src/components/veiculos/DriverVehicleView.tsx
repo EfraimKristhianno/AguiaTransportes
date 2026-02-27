@@ -227,16 +227,17 @@ const DriverVehicleView = () => {
   const oilCost = filteredOilRecords.reduce((acc, o) => acc + (o.service_cost || 0), 0);
   const maintCost = filteredMaintenanceRecords.reduce((acc, m) => acc + (m.service_cost || 0), 0);
   const totalSpent = fuelCost + oilCost + maintCost;
-  // Get latest oil record by change_date (most recent)
-  const latestOil = filteredOilRecords.length > 0
-    ? filteredOilRecords.reduce((latest, record) => 
+  // Get latest oil record by change_date - respects active filters, falls back to all records only when no filters are active
+  const oilSourceForCard = filteredOilRecords.length > 0
+    ? filteredOilRecords
+    : (filterType === 'all' && filterPlate === 'all' && !filterStartDate && !filterEndDate)
+      ? oilRecords
+      : [];
+  const latestOil = oilSourceForCard.length > 0
+    ? oilSourceForCard.reduce((latest, record) => 
         new Date(record.change_date) > new Date(latest.change_date) ? record : latest
-      , filteredOilRecords[0])
-    : oilRecords.length > 0
-      ? oilRecords.reduce((latest, record) => 
-          new Date(record.change_date) > new Date(latest.change_date) ? record : latest
-        , oilRecords[0])
-      : null;
+      , oilSourceForCard[0])
+    : null;
   const lastLogKm = logs[0]?.km_final || 0;
   const oilChangeWarning = latestOil && lastLogKm >= latestOil.next_change_km;
 
