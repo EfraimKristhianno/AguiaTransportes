@@ -3,7 +3,7 @@ import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import DashboardLayout from '@/components/DashboardLayout';
-import logoAguia from '@/assets/logo-aguia.png';
+import logoAguiaPdf from '@/assets/logo-aguia-pdf.png';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -251,8 +251,8 @@ const Dashboard = () => {
     // Logo no canto superior direito
     try {
       const img = new Image();
-      img.src = logoAguia;
-      doc.addImage(img, 'PNG', pageWidth - 45, 6, 35, 18, undefined, 'FAST');
+      img.src = logoAguiaPdf;
+      doc.addImage(img, 'PNG', pageWidth - 55, 4, 50, 22, undefined, 'FAST');
     } catch {}
 
     // Título e info à esquerda
