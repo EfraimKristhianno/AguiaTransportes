@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
-import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin, Pencil, Trash2, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Package, Clock, Truck, CheckCircle2, Eye, TrendingUp, Loader2, Hash, MapPin, Pencil, Trash2, DollarSign, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -492,6 +492,16 @@ const Dashboard = () => {
           
         />
       </div>
+
+      {/* Export PDF Button - Admin/Gestor only */}
+      {(role === 'admin' || role === 'gestor') && filteredRequests.length > 0 && (
+        <div className="mb-4 flex justify-end">
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-2">
+            <FileDown className="h-4 w-4" />
+            Exportar PDF
+          </Button>
+        </div>
+      )}
 
       {/* Table */}
       {isLoading ? <div className="flex items-center justify-center py-12">
