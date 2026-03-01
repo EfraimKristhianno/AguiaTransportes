@@ -140,7 +140,7 @@ const Solicitacoes = () => {
           dateTo={dateTo}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
-          onDownloadPdf={handleDownloadPdf}
+          onDownloadPdf={role !== 'cliente' ? handleDownloadPdf : undefined}
         />
 
         <div className="min-h-[300px] md:h-[500px]">
