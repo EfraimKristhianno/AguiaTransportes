@@ -341,33 +341,72 @@ const AdminVehicleView = () => {
         </Card>
       </div>
 
-      {/* Gasto por Veículo - Vertical bars */}
+      {/* Gasto por Veículo - Stacked bars with breakdown */}
       <Card>
         <CardHeader><CardTitle className="text-base">Gasto por Veículo</CardTitle></CardHeader>
         <CardContent>
           {(() => {
-            const vehicleCosts: Record<string, number> = {};
-            filteredLogs.forEach(l => {
-              const vehicle = allVehicles.find((v: any) => v.id === l.vehicle_id);
-              const plate = l.vehicle_plate || vehicle?.plate || 'N/A';
-              const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
-              const vehicleName = `${typeName} - ${plate}`;
-              vehicleCosts[vehicleName] = (vehicleCosts[vehicleName] || 0) + (l.total_cost || 0);
-            });
-            const vehicleCostData = Object.entries(vehicleCosts)
-              .map(([name, cost]) => ({ name, cost }))
-              .sort((a, b) => b.cost - a.cost);
+            const vehicleCostBreakdown: Record<string, { combustivel: number; oleo: number; manutencao: number }> = {};
             
+            const getVehicleKey = (vehicleId: string, plate?: string | null) => {
+              const vehicle = allVehicles.find((v: any) => v.id === vehicleId);
+              const displayPlate = plate || vehicle?.plate || 'N/A';
+              const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
+              return `${typeName} - ${displayPlate}`;
+            };
+
+            filteredLogs.forEach(l => {
+              const key = getVehicleKey(l.vehicle_id, l.vehicle_plate);
+              if (!vehicleCostBreakdown[key]) vehicleCostBreakdown[key] = { combustivel: 0, oleo: 0, manutencao: 0 };
+              vehicleCostBreakdown[key].combustivel += (l.total_cost || 0);
+            });
+            filteredOilRecords.forEach(o => {
+              const key = getVehicleKey(o.vehicle_id, o.vehicle_plate);
+              if (!vehicleCostBreakdown[key]) vehicleCostBreakdown[key] = { combustivel: 0, oleo: 0, manutencao: 0 };
+              vehicleCostBreakdown[key].oleo += (o.service_cost || 0);
+            });
+            filteredMaintenanceRecords.forEach(m => {
+              const key = getVehicleKey(m.vehicle_id, m.vehicle_plate);
+              if (!vehicleCostBreakdown[key]) vehicleCostBreakdown[key] = { combustivel: 0, oleo: 0, manutencao: 0 };
+              vehicleCostBreakdown[key].manutencao += (m.service_cost || 0);
+            });
+
+            const vehicleCostData = Object.entries(vehicleCostBreakdown)
+              .map(([name, costs]) => ({ 
+                name, 
+                Combustível: costs.combustivel, 
+                'Troca Óleo': costs.oleo, 
+                Manutenção: costs.manutencao,
+                total: costs.combustivel + costs.oleo + costs.manutencao 
+              }))
+              .sort((a, b) => b.total - a.total);
+            
+            const CustomTooltip = ({ active, payload, label }: any) => {
+              if (!active || !payload?.length) return null;
+              const data = vehicleCostData.find(d => d.name === label);
+              if (!data) return null;
+              return (
+                <div className="rounded-lg border bg-background p-3 shadow-md text-sm space-y-1">
+                  <p className="font-semibold">{label}</p>
+                  <p className="text-amber-500">Combustível: R$ {data['Combustível'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-blue-500">Troca Óleo: R$ {data['Troca Óleo'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-red-500">Manutenção: R$ {data['Manutenção'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <p className="font-bold border-t pt-1 mt-1">Total: R$ {data.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+              );
+            };
+
             return vehicleCostData.length > 0 ? (
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={vehicleCostData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="name" className="text-xs" />
                   <YAxis className="text-xs" tickFormatter={(v: number) => `R$ ${v}`} />
-                  <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                  <Bar dataKey="cost" radius={[4, 4, 0, 0]} label={{ position: 'top', formatter: (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, fontSize: 10 }}>
-                    {vehicleCostData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Bar>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="Combustível" stackId="cost" fill="#f5a623" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="Troca Óleo" stackId="cost" fill="#4a9eda" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="Manutenção" stackId="cost" fill="#C3110C" radius={[4, 4, 0, 0]} label={{ position: 'top', formatter: (v: number, entry: any) => { const item = vehicleCostData[entry?.index]; return item ? `R$ ${item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''; }, fontSize: 10, fontWeight: 600 }} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
