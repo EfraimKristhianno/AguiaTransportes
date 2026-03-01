@@ -425,10 +425,20 @@ const AdminVehicleView = () => {
             {(() => {
               const freightByType: Record<string, number> = {};
               
-              deliveryRequests.forEach((req: any) => {
-                if (!req.client_id || !req.transport_type) return;
-                
-                // Match freight price by client + transport_type + region
+              // Filter delivery requests by vehicle type, plate, and date
+              const filteredDeliveryReqs = deliveryRequests.filter((req: any) => {
+                if (!req.client_id || !req.transport_type) return false;
+                if (vehicleTypeFilter !== 'all' && req.transport_type !== vehicleTypeFilter) return false;
+                if (plateFilter !== 'all' && req.vehicle_id) {
+                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
+                  if (!vehicle || vehicle.plate !== plateFilter) return false;
+                } else if (plateFilter !== 'all' && !req.vehicle_id) return false;
+                const dateStr = req.scheduled_date || req.created_at;
+                if (dateStr && !isInDateRange(dateStr)) return false;
+                return true;
+              });
+
+              filteredDeliveryReqs.forEach((req: any) => {
                 let matchingPrices = freightPrices.filter((fp: any) => 
                   fp.client_id === req.client_id && fp.transport_type === req.transport_type
                 );
@@ -494,8 +504,20 @@ const AdminVehicleView = () => {
               const monthsSet = new Set<string>();
               const vehicleLabels = new Set<string>();
 
-              deliveryRequests.forEach((req: any) => {
-                if (!req.transport_type) return;
+              // Filter delivery requests by vehicle type, plate, and date
+              const filteredDeliveryReqs2 = deliveryRequests.filter((req: any) => {
+                if (!req.transport_type) return false;
+                if (vehicleTypeFilter !== 'all' && req.transport_type !== vehicleTypeFilter) return false;
+                if (plateFilter !== 'all' && req.vehicle_id) {
+                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
+                  if (!vehicle || vehicle.plate !== plateFilter) return false;
+                } else if (plateFilter !== 'all' && !req.vehicle_id) return false;
+                const dateStr = req.scheduled_date || req.created_at;
+                if (dateStr && !isInDateRange(dateStr)) return false;
+                return true;
+              });
+
+              filteredDeliveryReqs2.forEach((req: any) => {
                 const label = req.transport_type;
                 vehicleLabels.add(label);
 
