@@ -509,9 +509,9 @@ const Dashboard = () => {
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>Cliente</TableHead>
+                  <TableHead>Motorista</TableHead>
                   <TableHead>Material</TableHead>
                   <TableHead>Transporte</TableHead>
-                  
                   <TableHead>Status</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -532,6 +532,7 @@ const Dashboard = () => {
                         {item.client?.phone && <p className="text-sm text-muted-foreground">{item.client.phone}</p>}
                       </div>
                     </TableCell>
+                    <TableCell>{(item as any).driver?.name || '-'}</TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
@@ -586,6 +587,10 @@ const Dashboard = () => {
                   {item.client?.phone && <p className="text-sm text-muted-foreground">{item.client.phone}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Motorista</p>
+                    <p className="font-medium">{(item as any).driver?.name || '-'}</p>
+                  </div>
                   <div>
                     <p className="text-muted-foreground">Material</p>
                     <p className="font-medium">{item.material_type?.name || '-'}</p>
