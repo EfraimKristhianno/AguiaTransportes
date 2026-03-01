@@ -89,18 +89,10 @@ const Index = () => {
           </div>
 
           {/* Versão do app */}
-          <div className="mt-10 w-full max-w-md rounded-xl bg-white/10 p-5 backdrop-blur-sm">
-            <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-white/70">Versão 2.0</h3>
-            <ul className="space-y-1 text-sm text-white/80">
-              <li>• Rastreamento GPS em tempo real dos motoristas</li>
-              <li>• Gestão completa de solicitações de entrega</li>
-              <li>• Controle de frota com histórico de abastecimento e manutenção</li>
-              <li>• Notificações push para motoristas</li>
-              <li>• Relatórios e gráficos de frete por veículo</li>
-              <li>• Perfis: admin, gestor, motorista e cliente</li>
-              <li>• Exportação de relatórios em PDF</li>
-              <li>• Instalável como aplicativo (PWA)</li>
-            </ul>
+          <div className="mt-10">
+            <span className="rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold text-white/80 backdrop-blur-sm">
+              Versão 2.0
+            </span>
           </div>
 
           {/* Install hint */}
