@@ -384,26 +384,12 @@ const AdminVehicleView = () => {
           <CardHeader><CardTitle className="text-base">Total Frete por Veículo</CardTitle></CardHeader>
           <CardContent>
             {(() => {
-              // Filter delivery requests by active filters
-              const filteredDeliveryRequests = deliveryRequests.filter((req: any) => {
-                // Filter by transport_type (maps to vehicleTypeFilter)
-                if (vehicleTypeFilter !== 'all' && req.transport_type !== vehicleTypeFilter) return false;
-                // Filter by plate (match vehicle_id to plate)
-                if (plateFilter !== 'all') {
-                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                  if (!vehicle || vehicle.plate !== plateFilter) return false;
-                }
-                // Filter by date range
-                const dateStr = req.scheduled_date || req.created_at;
-                if (dateStr && !isInDateRange(dateStr)) return false;
-                return true;
-              });
-
-              const freightByVehicle: Record<string, number> = {};
+              const freightByType: Record<string, number> = {};
               
-              filteredDeliveryRequests.forEach((req: any) => {
+              deliveryRequests.forEach((req: any) => {
                 if (!req.client_id || !req.transport_type) return;
                 
+                // Match freight price by client + transport_type + region
                 let matchingPrices = freightPrices.filter((fp: any) => 
                   fp.client_id === req.client_id && fp.transport_type === req.transport_type
                 );
@@ -414,14 +400,12 @@ const AdminVehicleView = () => {
                 
                 if (matchingPrices.length > 0) {
                   const price = Number(matchingPrices[0].price);
-                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                  const plate = vehicle?.plate || '';
-                  const label = plate ? `${req.transport_type} - ${plate}` : req.transport_type;
-                  freightByVehicle[label] = (freightByVehicle[label] || 0) + price;
+                  const label = req.transport_type;
+                  freightByType[label] = (freightByType[label] || 0) + price;
                 }
               });
 
-              const donutData = Object.entries(freightByVehicle)
+              const donutData = Object.entries(freightByType)
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value);
 
@@ -467,27 +451,13 @@ const AdminVehicleView = () => {
           <CardHeader><CardTitle className="text-base">Solicitações por Veículo ao Longo do Tempo</CardTitle></CardHeader>
           <CardContent>
             {(() => {
-              // Filter delivery requests by active filters
-              const filteredDeliveryRequests = deliveryRequests.filter((req: any) => {
-                if (vehicleTypeFilter !== 'all' && req.transport_type !== vehicleTypeFilter) return false;
-                if (plateFilter !== 'all') {
-                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                  if (!vehicle || vehicle.plate !== plateFilter) return false;
-                }
-                const dateStr = req.scheduled_date || req.created_at;
-                if (dateStr && !isInDateRange(dateStr)) return false;
-                return true;
-              });
-
               const vehicleMonthly: Record<string, Record<string, number>> = {};
               const monthsSet = new Set<string>();
               const vehicleLabels = new Set<string>();
 
-              filteredDeliveryRequests.forEach((req: any) => {
+              deliveryRequests.forEach((req: any) => {
                 if (!req.transport_type) return;
-                const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                const plate = vehicle?.plate || '';
-                const label = plate ? `${req.transport_type} - ${plate}` : req.transport_type;
+                const label = req.transport_type;
                 vehicleLabels.add(label);
 
                 const dateStr = req.scheduled_date || req.created_at;
