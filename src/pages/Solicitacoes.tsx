@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import logoAguia from '@/assets/logo-aguia.png';
+import logoAguiaPdf from '@/assets/logo-aguia-pdf.png';
 
 const Solicitacoes = () => {
   const { role } = useAuth();
@@ -34,7 +34,7 @@ const Solicitacoes = () => {
 
     // Logo no canto superior direito
     try {
-      doc.addImage(logoAguia, 'PNG', pageWidth - 45, 6, 35, 18);
+      doc.addImage(logoAguiaPdf, 'PNG', pageWidth - 55, 4, 50, 22);
     } catch {}
 
     // Título e info à esquerda

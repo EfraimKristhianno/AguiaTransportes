@@ -7,7 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { VehicleLog, OilChangeRecord, MaintenanceRecord } from '@/hooks/useVehicleLogs';
-import logoAguia from '@/assets/logo-aguia.png';
+import logoAguiaPdf from '@/assets/logo-aguia-pdf.png';
 
 interface Vehicle {
   id: string;
@@ -52,7 +52,7 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
 
       // Logo no canto superior direito
       try {
-        doc.addImage(logoAguia, 'PNG', pageWidth - 45, 6, 35, 18);
+        doc.addImage(logoAguiaPdf, 'PNG', pageWidth - 55, 4, 50, 22);
       } catch {}
 
       doc.setFontSize(14);
