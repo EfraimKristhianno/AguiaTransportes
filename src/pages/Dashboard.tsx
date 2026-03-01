@@ -489,7 +489,7 @@ const Dashboard = () => {
           dateTo={dateTo}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
-          onDownloadPdf={handleDownloadPdf}
+          
         />
       </div>
 
@@ -511,7 +511,7 @@ const Dashboard = () => {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Material</TableHead>
                   <TableHead>Transporte</TableHead>
-                  {showPrices && <TableHead>Valor</TableHead>}
+                  
                   <TableHead>Status</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -534,17 +534,6 @@ const Dashboard = () => {
                     </TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
-                    {showPrices && (
-                      <TableCell>
-                        <span className="text-sm">
-                          {(() => {
-                            const region = (item as any).region || detectRegionForFreight(item.destination_address);
-                            const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
-                            return formatSingleFreightPrice(prices);
-                          })()}
-                        </span>
-                      </TableCell>
-                    )}
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
                     <TableCell className="text-right">
@@ -605,18 +594,6 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">Transporte</p>
                     <p className="font-medium">{item.vehicle?.type || item.transport_type || '-'}</p>
                   </div>
-                  {showPrices && (
-                    <div className="col-span-2">
-                      <p className="text-muted-foreground">Valor</p>
-                      <p className="font-medium text-sm">
-                        {(() => {
-                          const region = (item as any).region || detectRegionForFreight(item.destination_address);
-                          const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
-                          return formatSingleFreightPrice(prices);
-                        })()}
-                      </p>
-                    </div>
-                  )}
                   <div>
                     <p className="text-muted-foreground">Data</p>
                     <p className="font-medium">{formatDate(item.scheduled_date || item.created_at)}</p>
