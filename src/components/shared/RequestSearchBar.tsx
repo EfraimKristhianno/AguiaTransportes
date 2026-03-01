@@ -36,7 +36,7 @@ export const RequestSearchBar = ({
   onSearchChange,
   statusFilter,
   onStatusChange,
-  placeholder = 'Buscar por ID, cliente, material, NF ou O.P...',
+  placeholder = 'Buscar por ID, cliente, motorista, material, NF ou O.P...',
   dateFrom,
   dateTo,
   onDateFromChange,
@@ -204,12 +204,14 @@ export const filterRequestsBySearch = (
     const requestNumber = String(request.request_number || '');
     const clientName = (request.clients?.name || request.client?.name || '').toLowerCase();
     const materialName = (request.material_types?.name || request.material_type?.name || '').toLowerCase();
+    const driverName = (request.drivers?.name || request.driver?.name || '').toLowerCase();
     const invoiceNumber = (request.invoice_number || '').toLowerCase();
     const opNumber = (request.op_number || '').toLowerCase();
 
     return (
       requestNumber.includes(search) ||
       clientName.includes(search) ||
+      driverName.includes(search) ||
       materialName.includes(search) ||
       invoiceNumber.includes(search) ||
       opNumber.includes(search)
