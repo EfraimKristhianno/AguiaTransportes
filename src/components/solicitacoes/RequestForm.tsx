@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, User, Phone, CalendarIcon, FileText, Send, Hash, Clock } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,15 +28,15 @@ import { Badge } from '@/components/ui/badge';
 
 const requestSchema = z.object({
   clientName: z.string().min(1, 'Nome do cliente é obrigatório'),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
-  requester: z.string().optional(),
-  requesterPhone: z.string().optional(),
+  requester: z.string().min(1, 'Solicitante é obrigatório'),
+  requesterPhone: z.string().min(1, 'Telefone do solicitante é obrigatório'),
   originAddress: z.string().min(1, 'Endereço de coleta é obrigatório'),
   destinationAddress: z.string().min(1, 'Endereço de entrega é obrigatório'),
-  invoiceNumber: z.string().min(1, 'Nota Fiscal é obrigatória'),
+  invoiceNumber: z.string().optional(),
   opNumber: z.string().optional(),
-  scheduledDate: z.string().optional(),
+  scheduledDate: z.string().min(1, 'Data da solicitação é obrigatória'),
   materialTypeId: z.string().min(1, 'Tipo de material é obrigatório'),
   transportType: z.string().min(1, 'Tipo de transporte é obrigatório'),
   notes: z.string().optional(),
@@ -321,7 +322,16 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            const missingFields = Object.values(errors).map(e => e?.message).filter(Boolean);
+            if (missingFields.length > 0) {
+              toast({
+                title: 'Campos obrigatórios não preenchidos',
+                description: missingFields.join(', '),
+                variant: 'destructive',
+              });
+            }
+          })} className="space-y-4">
           {/* ID da Solicitação */}
           <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-2">
             <Hash className="h-4 w-4 text-primary" />
@@ -339,7 +349,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               name="clientName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do cliente *</FormLabel>
+                  <FormLabel>Nome do cliente <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -361,7 +371,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone</FormLabel>
+                  <FormLabel>Telefone <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -386,7 +396,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               name="materialTypeId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de material *</FormLabel>
+                  <FormLabel>Tipo de material <span className="text-red-500">*</span></FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -412,7 +422,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               render={({ field }) => (
                 <FormItem>
                    <div className="flex items-center gap-2">
-                     <FormLabel>Tipo de transporte *</FormLabel>
+                     <FormLabel>Tipo de transporte <span className="text-red-500">*</span></FormLabel>
                      {field.value && (
                        <VehicleDetailsPopover vehicleType={field.value} clientId={clientRecord?.id || selectedClientId} />
                      )}
@@ -473,7 +483,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
 
                 return (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Data da solicitação</FormLabel>
+                    <FormLabel>Data da solicitação <span className="text-red-500">*</span></FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -522,7 +532,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               name="requester"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Solicitante</FormLabel>
+                  <FormLabel>Solicitante <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Nome do solicitante" />
                   </FormControl>
@@ -536,7 +546,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               name="requesterPhone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone do solicitante</FormLabel>
+                  <FormLabel>Telefone do solicitante <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -555,7 +565,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             name="originAddress"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Endereço de coleta *</FormLabel>
+                <FormLabel>Endereço de coleta <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
                   <AddressAutocomplete
                     value={field.value}
@@ -577,7 +587,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               return (
                 <FormItem>
                   <div className="flex items-center gap-2">
-                    <FormLabel>Endereço de entrega *</FormLabel>
+                    <FormLabel>Endereço de entrega <span className="text-red-500">*</span></FormLabel>
                     {region && (
                       <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                         Região: {region}
@@ -604,7 +614,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               name="invoiceNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nota Fiscal *</FormLabel>
+                  <FormLabel>Nota Fiscal</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
