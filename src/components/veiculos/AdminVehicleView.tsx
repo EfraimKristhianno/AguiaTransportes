@@ -399,12 +399,11 @@ const AdminVehicleView = () => {
                 return true;
               });
 
-              const freightByType: Record<string, number> = {};
+              const freightByVehicle: Record<string, number> = {};
               
               filteredDeliveryRequests.forEach((req: any) => {
                 if (!req.client_id || !req.transport_type) return;
                 
-                // Match freight price by client + transport_type + region
                 let matchingPrices = freightPrices.filter((fp: any) => 
                   fp.client_id === req.client_id && fp.transport_type === req.transport_type
                 );
@@ -415,12 +414,14 @@ const AdminVehicleView = () => {
                 
                 if (matchingPrices.length > 0) {
                   const price = Number(matchingPrices[0].price);
-                  const label = req.transport_type;
-                  freightByType[label] = (freightByType[label] || 0) + price;
+                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
+                  const plate = vehicle?.plate || '';
+                  const label = plate ? `${req.transport_type} - ${plate}` : req.transport_type;
+                  freightByVehicle[label] = (freightByVehicle[label] || 0) + price;
                 }
               });
 
-              const donutData = Object.entries(freightByType)
+              const donutData = Object.entries(freightByVehicle)
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value);
 
@@ -484,7 +485,9 @@ const AdminVehicleView = () => {
 
               filteredDeliveryRequests.forEach((req: any) => {
                 if (!req.transport_type) return;
-                const label = req.transport_type;
+                const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
+                const plate = vehicle?.plate || '';
+                const label = plate ? `${req.transport_type} - ${plate}` : req.transport_type;
                 vehicleLabels.add(label);
 
                 const dateStr = req.scheduled_date || req.created_at;
