@@ -107,6 +107,15 @@ const AdminVehicleView = () => {
     return Array.from(types).sort();
   }, [allVehicles]);
 
+  // Build a map of vehicle_id -> real plate from operational records
+  const vehicleIdToPlateMap = useMemo(() => {
+    const map = new Map<string, string>();
+    logs.forEach(l => { if (l.vehicle_plate) map.set(l.vehicle_id, l.vehicle_plate); });
+    oilRecords.forEach(o => { if (o.vehicle_plate) map.set(o.vehicle_id, o.vehicle_plate); });
+    maintenanceRecords.forEach(m => { if (m.vehicle_plate) map.set(m.vehicle_id, m.vehicle_plate); });
+    return map;
+  }, [logs, oilRecords, maintenanceRecords]);
+
   // Get vehicle IDs that match the selected plate
   const plateMatchedVehicleIds = useMemo(() => {
     if (plateFilter === 'all') return null; // null means no plate filter
@@ -114,8 +123,10 @@ const AdminVehicleView = () => {
     logs.forEach(l => { if (l.vehicle_plate === plateFilter) ids.add(l.vehicle_id); });
     oilRecords.forEach(o => { if (o.vehicle_plate === plateFilter) ids.add(o.vehicle_id); });
     maintenanceRecords.forEach(m => { if (m.vehicle_plate === plateFilter) ids.add(m.vehicle_id); });
+    // Also match from vehicles table
+    allVehicles.forEach((v: any) => { if (v.plate === plateFilter) ids.add(v.id); });
     return ids;
-  }, [plateFilter, logs, oilRecords, maintenanceRecords]);
+  }, [plateFilter, logs, oilRecords, maintenanceRecords, allVehicles]);
 
   // Filtered vehicles
   const filteredVehicles = useMemo(() => {
@@ -492,10 +503,10 @@ const AdminVehicleView = () => {
               const filteredDeliveryReqs = deliveryRequests.filter((req: any) => {
                 if (!req.client_id || !req.transport_type) return false;
                 if (vehicleTypeFilter !== 'all' && req.transport_type !== vehicleTypeFilter) return false;
-                if (plateFilter !== 'all' && req.vehicle_id) {
-                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                  if (!vehicle || vehicle.plate !== plateFilter) return false;
-                } else if (plateFilter !== 'all' && !req.vehicle_id) return false;
+                if (plateFilter !== 'all') {
+                  if (!req.vehicle_id) return false;
+                  if (!plateMatchedVehicleIds || !plateMatchedVehicleIds.has(req.vehicle_id)) return false;
+                }
                 const dateStr = req.scheduled_date || req.created_at;
                 if (dateStr && !isInDateRange(dateStr)) return false;
                 return true;
@@ -571,10 +582,10 @@ const AdminVehicleView = () => {
               const filteredDeliveryReqs2 = deliveryRequests.filter((req: any) => {
                 if (!req.transport_type) return false;
                 if (vehicleTypeFilter !== 'all' && req.transport_type !== vehicleTypeFilter) return false;
-                if (plateFilter !== 'all' && req.vehicle_id) {
-                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                  if (!vehicle || vehicle.plate !== plateFilter) return false;
-                } else if (plateFilter !== 'all' && !req.vehicle_id) return false;
+                if (plateFilter !== 'all') {
+                  if (!req.vehicle_id) return false;
+                  if (!plateMatchedVehicleIds || !plateMatchedVehicleIds.has(req.vehicle_id)) return false;
+                }
                 const dateStr = req.scheduled_date || req.created_at;
                 if (dateStr && !isInDateRange(dateStr)) return false;
                 return true;
