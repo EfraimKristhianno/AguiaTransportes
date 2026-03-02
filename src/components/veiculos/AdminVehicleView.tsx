@@ -71,7 +71,7 @@ const AdminVehicleView = () => {
     },
   });
 
-  // Unique plates from operational records, filtered by selected vehicle type
+  // Unique plates from operational records + vehicles table, filtered by selected vehicle type
   const uniquePlates = useMemo(() => {
     // Build a set of vehicle IDs that match the selected type
     const typeFilteredIds = vehicleTypeFilter === 'all'
@@ -79,6 +79,8 @@ const AdminVehicleView = () => {
       : new Set(allVehicles.filter((v: any) => v.type === vehicleTypeFilter).map((v: any) => v.id));
 
     const plates = new Set<string>();
+    
+    // Get plates from operational records
     logs.forEach(l => {
       if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(l.vehicle_plate);
     });
@@ -88,6 +90,14 @@ const AdminVehicleView = () => {
     maintenanceRecords.forEach(m => {
       if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(m.vehicle_plate);
     });
+    
+    // Also include plates from vehicles table (excluding generic TIPO- plates)
+    allVehicles.forEach((v: any) => {
+      if (v.plate && !v.plate.startsWith('TIPO-') && (!typeFilteredIds || typeFilteredIds.has(v.id))) {
+        plates.add(v.plate);
+      }
+    });
+    
     return Array.from(plates).sort();
   }, [logs, oilRecords, maintenanceRecords, vehicleTypeFilter, allVehicles]);
 
