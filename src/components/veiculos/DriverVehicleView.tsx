@@ -187,9 +187,25 @@ const DriverVehicleView = () => {
 
   // Derive filter options from driver's vehicles
   const vehicleTypes = [...new Set(driverVehicles.map((v: any) => v.type))];
-  const filteredPlates = filterType === 'all'
-    ? driverVehicles
-    : driverVehicles.filter((v: any) => v.type === filterType);
+  
+  // Get unique plates from operational records (fuel logs, oil changes, maintenance)
+  const filteredPlates = (() => {
+    const typeFilteredIds = filterType === 'all'
+      ? null
+      : new Set(driverVehicles.filter((v: any) => v.type === filterType).map((v: any) => v.id));
+    
+    const plates = new Set<string>();
+    logs.forEach(l => {
+      if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(l.vehicle_plate);
+    });
+    oilRecords.forEach(o => {
+      if (o.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(o.vehicle_id))) plates.add(o.vehicle_plate);
+    });
+    maintenanceRecords.forEach(m => {
+      if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(m.vehicle_plate);
+    });
+    return Array.from(plates).sort();
+  })();
 
   // Filter helper
   const inDateRange = (dateStr: string) => {
@@ -264,7 +280,7 @@ const DriverVehicleView = () => {
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todas as placas" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as placas</SelectItem>
-            {filteredPlates.map((v: any) => <SelectItem key={v.id} value={v.plate}>{v.plate}</SelectItem>)}
+            {filteredPlates.map((plate: string) => <SelectItem key={plate} value={plate}>{plate}</SelectItem>)}
           </SelectContent>
         </Select>
         <Input type="date" className="w-[160px]" placeholder="Data inicial" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
