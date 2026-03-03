@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => ({
         lang: "pt-BR"
       },
       workbox: {
-        skipWaiting: false,
+        skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
