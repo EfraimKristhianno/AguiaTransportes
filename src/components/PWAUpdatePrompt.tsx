@@ -27,10 +27,15 @@ const PWAUpdatePrompt = () => {
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => {
-            setNeedRefresh(false);
-            updateServiceWorker(true);
-          }}
+         onClick={async () => {
+           // Limpar todos os caches antes de atualizar
+           if ('caches' in window) {
+             const names = await caches.keys();
+             await Promise.all(names.map(name => caches.delete(name)));
+           }
+           setNeedRefresh(false);
+           updateServiceWorker(true);
+         }}
           className="ml-1 font-semibold"
         >
           Atualizar
