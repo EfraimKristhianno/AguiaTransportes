@@ -19,9 +19,13 @@ const getStatusBadgeVariant = (status: string | null) => {
       return 'outline';
     case 'aceita':
       return 'secondary';
+    case 'pendente_coleta':
+      return 'secondary';
     case 'coletada':
       return 'default';
     case 'em_rota':
+      return 'default';
+    case 'pendente_entrega':
       return 'default';
     case 'entregue':
       return 'default';
@@ -35,10 +39,14 @@ const getStatusLabel = (status: string | null) => {
       return 'Solicitada';
     case 'aceita':
       return 'Aceita';
+    case 'pendente_coleta':
+      return 'Pendente Coleta';
     case 'coletada':
       return 'Coletada';
     case 'em_rota':
       return 'Em Trânsito';
+    case 'pendente_entrega':
+      return 'Pendente Entrega';
     case 'entregue':
       return 'Entregue';
     // Legacy status support
@@ -55,10 +63,14 @@ const getStatusClassName = (status: string | null) => {
       return 'bg-amber-50 text-amber-700 border-amber-200';
     case 'aceita':
       return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'pendente_coleta':
+      return 'bg-cyan-50 text-cyan-700 border-cyan-200';
     case 'coletada':
       return 'bg-purple-50 text-purple-700 border-purple-200';
     case 'em_rota':
       return 'bg-orange-50 text-orange-700 border-orange-200';
+    case 'pendente_entrega':
+      return 'bg-yellow-50 text-yellow-700 border-yellow-200';
     case 'entregue':
       return 'bg-emerald-100 text-emerald-700';
     default:
@@ -161,7 +173,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                 locale: ptBR
               }) : 'Data não disponível'}
                   </div>
-                  {request.driver_id && ['aceita', 'coletada', 'em_rota'].includes(request.status || '') && (
+                  {request.driver_id && ['aceita', 'pendente_coleta', 'coletada', 'em_rota', 'pendente_entrega'].includes(request.status || '') && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

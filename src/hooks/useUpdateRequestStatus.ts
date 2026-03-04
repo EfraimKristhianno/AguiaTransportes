@@ -66,8 +66,10 @@ export const useUpdateRequestStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['request_history'] });
       
       const statusLabels: Record<string, string> = {
+        pendente_coleta: 'Pendente Coleta',
         coletada: 'Coletada',
         em_rota: 'Em Trânsito',
+        pendente_entrega: 'Pendente Entrega',
         entregue: 'Entregue',
       };
       toast.success(`Status atualizado para: ${statusLabels[variables.status] || variables.status}`);

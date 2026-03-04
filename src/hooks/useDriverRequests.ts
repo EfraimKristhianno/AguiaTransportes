@@ -80,7 +80,7 @@ export const useDriverRequests = (driverVehicleTypes: string[] = [], driverId?: 
             .from('delivery_requests')
             .select(selectQuery)
             .eq('driver_id', driverId)
-            .in('status', ['aceita', 'coletada', 'em_rota'])
+            .in('status', ['aceita', 'pendente_coleta', 'coletada', 'em_rota', 'pendente_entrega'])
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [], error: null });
 
