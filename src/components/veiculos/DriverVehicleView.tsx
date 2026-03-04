@@ -29,6 +29,7 @@ import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench, Pencil, T
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
+import { AttachmentItem } from '@/components/shared/AttachmentItem';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -71,6 +72,29 @@ const DriverVehicleView = () => {
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'log' | 'oil' | 'maint'; id: string } | null>(null);
+
+  // Edit attachment states
+  const [editLogAttachments, setEditLogAttachments] = useState<string[]>([]);
+  const [editLogNewFiles, setEditLogNewFiles] = useState<UploadedFile[]>([]);
+  const [editOilAttachments, setEditOilAttachments] = useState<string[]>([]);
+  const [editOilNewFiles, setEditOilNewFiles] = useState<UploadedFile[]>([]);
+  const [editMaintAttachments, setEditMaintAttachments] = useState<string[]>([]);
+  const [editMaintNewFiles, setEditMaintNewFiles] = useState<UploadedFile[]>([]);
+
+  // Helper to extract attachment paths from notes
+  const extractAttachments = (notes: string | null): string[] => {
+    if (!notes) return [];
+    const match = notes.match(/\[anexos:([^\]]+)\]/);
+    return match ? match[1].split(',').filter(Boolean) : [];
+  };
+
+  // Helper to build notes with attachments
+  const buildNotesWithAttachments = (text: string, paths: string[]): string | null => {
+    const clean = text.trim();
+    if (!clean && !paths.length) return null;
+    if (!paths.length) return clean || null;
+    return clean ? `${clean}\n[anexos:${paths.join(',')}]` : `[anexos:${paths.join(',')}]`;
+  };
 
 
   const uploadFiles = async (files: UploadedFile[], folder: string): Promise<string[]> => {
@@ -229,11 +253,15 @@ const DriverVehicleView = () => {
       fuel_type: log.fuel_type || 'diesel',
       notes: (log.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
     });
+    setEditLogAttachments(extractAttachments(log.notes));
+    setEditLogNewFiles([]);
     setEditingLog(log);
   };
 
-  const handleUpdateLog = () => {
-    if (!editingLog || !editLogForm) return;
+  const handleUpdateLog = async () => {
+    if (!editingLog || !editLogForm || !currentDriver?.id) return;
+    const newPaths = await uploadFiles(editLogNewFiles, `logs/${currentDriver.id}`);
+    const allPaths = [...editLogAttachments, ...newPaths];
     const totalCostVal = editLogForm.liters && editLogForm.fuel_price
       ? parseFloat(editLogForm.liters) * parseFloat(editLogForm.fuel_price)
       : undefined;
@@ -247,7 +275,7 @@ const DriverVehicleView = () => {
       total_cost: totalCostVal || null,
       fuel_type: editLogForm.fuel_type,
       vehicle_plate: editLogForm.plate || null,
-      notes: editLogForm.notes || null,
+      notes: buildNotesWithAttachments(editLogForm.notes || '', allPaths),
     }, { onSuccess: () => setEditingLog(null) });
   };
 
@@ -262,11 +290,15 @@ const DriverVehicleView = () => {
       service_cost: String(oil.service_cost || ''),
       notes: (oil.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
     });
+    setEditOilAttachments(extractAttachments(oil.notes));
+    setEditOilNewFiles([]);
     setEditingOil(oil);
   };
 
-  const handleUpdateOil = () => {
-    if (!editingOil || !editOilForm) return;
+  const handleUpdateOil = async () => {
+    if (!editingOil || !editOilForm || !currentDriver?.id) return;
+    const newPaths = await uploadFiles(editOilNewFiles, `oil/${currentDriver.id}`);
+    const allPaths = [...editOilAttachments, ...newPaths];
     updateOil.mutate({
       id: editingOil.id,
       vehicle_id: editOilForm.vehicle_id,
@@ -276,7 +308,7 @@ const DriverVehicleView = () => {
       oil_type: editOilForm.oil_type || null,
       service_cost: editOilForm.service_cost ? parseFloat(editOilForm.service_cost) : null,
       vehicle_plate: editOilForm.plate || null,
-      notes: editOilForm.notes || null,
+      notes: buildNotesWithAttachments(editOilForm.notes || '', allPaths),
     }, { onSuccess: () => setEditingOil(null) });
   };
 
@@ -290,11 +322,15 @@ const DriverVehicleView = () => {
       notes: (m.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
       maintenance_date: m.maintenance_date,
     });
+    setEditMaintAttachments(extractAttachments(m.notes));
+    setEditMaintNewFiles([]);
     setEditingMaint(m);
   };
 
-  const handleUpdateMaint = () => {
-    if (!editingMaint || !editMaintForm) return;
+  const handleUpdateMaint = async () => {
+    if (!editingMaint || !editMaintForm || !currentDriver?.id) return;
+    const newPaths = await uploadFiles(editMaintNewFiles, `maintenance/${currentDriver.id}`);
+    const allPaths = [...editMaintAttachments, ...newPaths];
     updateMaint.mutate({
       id: editingMaint.id,
       vehicle_id: editMaintForm.vehicle_id,
@@ -302,7 +338,7 @@ const DriverVehicleView = () => {
       vehicle_plate: editMaintForm.plate || '',
       current_km: parseFloat(editMaintForm.current_km) || 0,
       service_cost: editMaintForm.service_cost ? parseFloat(editMaintForm.service_cost) : null,
-      notes: editMaintForm.notes || null,
+      notes: buildNotesWithAttachments(editMaintForm.notes || '', allPaths),
       maintenance_date: editMaintForm.maintenance_date,
     }, { onSuccess: () => setEditingMaint(null) });
   };
@@ -693,7 +729,6 @@ const DriverVehicleView = () => {
                     <TableHead>Próx. Troca</TableHead>
                     <TableHead>Tipo Óleo</TableHead>
                     <TableHead>Custo</TableHead>
-                    <TableHead>Custo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -738,7 +773,6 @@ const DriverVehicleView = () => {
                     <TableHead>Placa</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Km Atual</TableHead>
-                    <TableHead>Custo</TableHead>
                     <TableHead>Custo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -805,6 +839,17 @@ const DriverVehicleView = () => {
                 <div><Label>Preço/Litro (R$)</Label><Input type="number" step="0.01" value={editLogForm.fuel_price} onChange={e => setEditLogForm((p: any) => ({ ...p, fuel_price: e.target.value }))} /></div>
               </div>
               <div><Label>Observações</Label><Textarea value={editLogForm.notes} onChange={e => setEditLogForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              {editLogAttachments.length > 0 && (
+                <div>
+                  <Label>Anexos existentes</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {editLogAttachments.map((path, i) => (
+                      <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditLogAttachments(prev => prev.filter((_, idx) => idx !== i))} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              <FileUploadArea files={editLogNewFiles} onFilesChange={setEditLogNewFiles} />
               <Button className="w-full" onClick={handleUpdateLog} disabled={updateLog.isPending}>{updateLog.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
           )}
@@ -835,6 +880,17 @@ const DriverVehicleView = () => {
               <div><Label>Tipo de Óleo</Label><Input value={editOilForm.oil_type} onChange={e => setEditOilForm((p: any) => ({ ...p, oil_type: e.target.value }))} /></div>
               <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editOilForm.service_cost} onChange={e => setEditOilForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
               <div><Label>Observações</Label><Textarea value={editOilForm.notes} onChange={e => setEditOilForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              {editOilAttachments.length > 0 && (
+                <div>
+                  <Label>Anexos existentes</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {editOilAttachments.map((path, i) => (
+                      <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditOilAttachments(prev => prev.filter((_, idx) => idx !== i))} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              <FileUploadArea files={editOilNewFiles} onFilesChange={setEditOilNewFiles} />
               <Button className="w-full" onClick={handleUpdateOil} disabled={updateOil.isPending}>{updateOil.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
           )}
@@ -872,6 +928,17 @@ const DriverVehicleView = () => {
               <div><Label>Km Atual</Label><Input type="number" value={editMaintForm.current_km} onChange={e => setEditMaintForm((p: any) => ({ ...p, current_km: e.target.value }))} /></div>
               <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editMaintForm.service_cost} onChange={e => setEditMaintForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
               <div><Label>Observações</Label><Textarea value={editMaintForm.notes} onChange={e => setEditMaintForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              {editMaintAttachments.length > 0 && (
+                <div>
+                  <Label>Anexos existentes</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {editMaintAttachments.map((path, i) => (
+                      <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditMaintAttachments(prev => prev.filter((_, idx) => idx !== i))} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              <FileUploadArea files={editMaintNewFiles} onFilesChange={setEditMaintNewFiles} />
               <Button className="w-full" onClick={handleUpdateMaint} disabled={updateMaint.isPending}>{updateMaint.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
           )}
