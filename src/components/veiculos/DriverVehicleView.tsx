@@ -8,6 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
 import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVehicleLog, useCreateOilChange, useCreateMaintenanceRecord, VehicleLog } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,7 +90,7 @@ const DriverVehicleView = () => {
   const [logForm, setLogForm] = useState({
     vehicle_id: '',
     plate: '',
-    log_date: new Date().toISOString().split('T')[0],
+    log_date: formatLocalDate(new Date()),
     km_atual: '',
     liters: '',
     fuel_price: '',
@@ -94,7 +101,7 @@ const DriverVehicleView = () => {
   const [oilForm, setOilForm] = useState({
     vehicle_id: '',
     plate: '',
-    change_date: new Date().toISOString().split('T')[0],
+    change_date: formatLocalDate(new Date()),
     km_at_change: '',
     next_change_km: '',
     oil_type: '',
@@ -109,7 +116,7 @@ const DriverVehicleView = () => {
     current_km: '',
     service_cost: '',
     notes: '',
-    maintenance_date: new Date().toISOString().split('T')[0],
+    maintenance_date: formatLocalDate(new Date()),
   });
 
   const totalCost = logForm.liters && logForm.fuel_price
@@ -136,7 +143,7 @@ const DriverVehicleView = () => {
     }, {
       onSuccess: () => {
         setLogDialogOpen(false);
-        setLogForm({ vehicle_id: '', plate: '', log_date: new Date().toISOString().split('T')[0], km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
+        setLogForm({ vehicle_id: '', plate: '', log_date: formatLocalDate(new Date()), km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
         setLogFiles([]);
       },
     });
@@ -158,7 +165,7 @@ const DriverVehicleView = () => {
     }, {
       onSuccess: () => {
         setOilDialogOpen(false);
-        setOilForm({ vehicle_id: '', plate: '', change_date: new Date().toISOString().split('T')[0], km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
+        setOilForm({ vehicle_id: '', plate: '', change_date: formatLocalDate(new Date()), km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
         setOilFiles([]);
       },
     });
@@ -179,7 +186,7 @@ const DriverVehicleView = () => {
     }, {
       onSuccess: () => {
         setMaintDialogOpen(false);
-        setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: new Date().toISOString().split('T')[0] });
+        setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: formatLocalDate(new Date()) });
         setMaintFiles([]);
       },
     });
