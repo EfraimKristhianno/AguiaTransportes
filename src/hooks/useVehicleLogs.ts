@@ -221,7 +221,7 @@ export const useUpdateVehicleLog = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase.from('vehicle_logs').update(updates).eq('id', id).select().single();
+      const { data, error } = await supabase.from('vehicle_logs').update(updates).eq('id', id).select().maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -252,7 +252,7 @@ export const useUpdateOilChange = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase.from('oil_change_records').update(updates).eq('id', id).select().single();
+      const { data, error } = await supabase.from('oil_change_records').update(updates).eq('id', id).select().maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -283,7 +283,7 @@ export const useUpdateMaintenanceRecord = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase.from('maintenance_records').update(updates).eq('id', id).select().single();
+      const { data, error } = await supabase.from('maintenance_records').update(updates).eq('id', id).select().maybeSingle();
       if (error) throw error;
       return data;
     },
