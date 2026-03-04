@@ -22,14 +22,15 @@ const parseDateString = (dateStr: string): Date => {
 };
 
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
-import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVehicleLog, useCreateOilChange, useCreateMaintenanceRecord, VehicleLog } from '@/hooks/useVehicleLogs';
+import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVehicleLog, useCreateOilChange, useCreateMaintenanceRecord, useUpdateVehicleLog, useDeleteVehicleLog, useUpdateOilChange, useDeleteOilChange, useUpdateMaintenanceRecord, useDeleteMaintenanceRecord, VehicleLog, OilChangeRecord, MaintenanceRecord } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench } from 'lucide-react';
+import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const DriverVehicleView = () => {
   const { data: currentDriver, isLoading: driverLoading } = useCurrentDriver();
@@ -39,6 +40,12 @@ const DriverVehicleView = () => {
   const createLog = useCreateVehicleLog();
   const createOilChange = useCreateOilChange();
   const createMaintenance = useCreateMaintenanceRecord();
+  const updateLog = useUpdateVehicleLog();
+  const deleteLog = useDeleteVehicleLog();
+  const updateOil = useUpdateOilChange();
+  const deleteOil = useDeleteOilChange();
+  const updateMaint = useUpdateMaintenanceRecord();
+  const deleteMaint = useDeleteMaintenanceRecord();
 
   const [logDialogOpen, setLogDialogOpen] = useState(false);
   const [oilDialogOpen, setOilDialogOpen] = useState(false);
@@ -53,6 +60,18 @@ const DriverVehicleView = () => {
   const [logFiles, setLogFiles] = useState<UploadedFile[]>([]);
   const [oilFiles, setOilFiles] = useState<UploadedFile[]>([]);
   const [maintFiles, setMaintFiles] = useState<UploadedFile[]>([]);
+
+  // Edit states
+  const [editingLog, setEditingLog] = useState<VehicleLog | null>(null);
+  const [editLogForm, setEditLogForm] = useState<any>(null);
+  const [editingOil, setEditingOil] = useState<OilChangeRecord | null>(null);
+  const [editOilForm, setEditOilForm] = useState<any>(null);
+  const [editingMaint, setEditingMaint] = useState<MaintenanceRecord | null>(null);
+  const [editMaintForm, setEditMaintForm] = useState<any>(null);
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'log' | 'oil' | 'maint'; id: string } | null>(null);
+
 
   const uploadFiles = async (files: UploadedFile[], folder: string): Promise<string[]> => {
     const paths: string[] = [];
@@ -198,7 +217,105 @@ const DriverVehicleView = () => {
     });
   };
 
-  // Derive filter options from driver's vehicles
+  // Edit handlers
+  const openEditLog = (log: VehicleLog) => {
+    setEditLogForm({
+      vehicle_id: log.vehicle_id,
+      plate: log.vehicle_plate || '',
+      log_date: log.log_date,
+      km_atual: String(log.km_final || ''),
+      liters: String(log.liters || ''),
+      fuel_price: String(log.fuel_price || ''),
+      fuel_type: log.fuel_type || 'diesel',
+      notes: (log.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
+    });
+    setEditingLog(log);
+  };
+
+  const handleUpdateLog = () => {
+    if (!editingLog || !editLogForm) return;
+    const totalCostVal = editLogForm.liters && editLogForm.fuel_price
+      ? parseFloat(editLogForm.liters) * parseFloat(editLogForm.fuel_price)
+      : undefined;
+    updateLog.mutate({
+      id: editingLog.id,
+      vehicle_id: editLogForm.vehicle_id,
+      log_date: editLogForm.log_date,
+      km_final: parseFloat(editLogForm.km_atual) || 0,
+      liters: editLogForm.liters ? parseFloat(editLogForm.liters) : null,
+      fuel_price: editLogForm.fuel_price ? parseFloat(editLogForm.fuel_price) : null,
+      total_cost: totalCostVal || null,
+      fuel_type: editLogForm.fuel_type,
+      vehicle_plate: editLogForm.plate || null,
+      notes: editLogForm.notes || null,
+    }, { onSuccess: () => setEditingLog(null) });
+  };
+
+  const openEditOil = (oil: OilChangeRecord) => {
+    setEditOilForm({
+      vehicle_id: oil.vehicle_id,
+      plate: oil.vehicle_plate || '',
+      change_date: oil.change_date,
+      km_at_change: String(oil.km_at_change),
+      next_change_km: String(oil.next_change_km),
+      oil_type: oil.oil_type || '',
+      service_cost: String(oil.service_cost || ''),
+      notes: (oil.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
+    });
+    setEditingOil(oil);
+  };
+
+  const handleUpdateOil = () => {
+    if (!editingOil || !editOilForm) return;
+    updateOil.mutate({
+      id: editingOil.id,
+      vehicle_id: editOilForm.vehicle_id,
+      change_date: editOilForm.change_date,
+      km_at_change: parseFloat(editOilForm.km_at_change) || 0,
+      next_change_km: parseFloat(editOilForm.next_change_km) || 0,
+      oil_type: editOilForm.oil_type || null,
+      service_cost: editOilForm.service_cost ? parseFloat(editOilForm.service_cost) : null,
+      vehicle_plate: editOilForm.plate || null,
+      notes: editOilForm.notes || null,
+    }, { onSuccess: () => setEditingOil(null) });
+  };
+
+  const openEditMaint = (m: MaintenanceRecord) => {
+    setEditMaintForm({
+      vehicle_id: m.vehicle_id,
+      plate: m.vehicle_plate || '',
+      maintenance_type: m.maintenance_type,
+      current_km: String(m.current_km),
+      service_cost: String(m.service_cost || ''),
+      notes: (m.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
+      maintenance_date: m.maintenance_date,
+    });
+    setEditingMaint(m);
+  };
+
+  const handleUpdateMaint = () => {
+    if (!editingMaint || !editMaintForm) return;
+    updateMaint.mutate({
+      id: editingMaint.id,
+      vehicle_id: editMaintForm.vehicle_id,
+      maintenance_type: editMaintForm.maintenance_type,
+      vehicle_plate: editMaintForm.plate || '',
+      current_km: parseFloat(editMaintForm.current_km) || 0,
+      service_cost: editMaintForm.service_cost ? parseFloat(editMaintForm.service_cost) : null,
+      notes: editMaintForm.notes || null,
+      maintenance_date: editMaintForm.maintenance_date,
+    }, { onSuccess: () => setEditingMaint(null) });
+  };
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'log') deleteLog.mutate(deleteTarget.id);
+    if (deleteTarget.type === 'oil') deleteOil.mutate(deleteTarget.id);
+    if (deleteTarget.type === 'maint') deleteMaint.mutate(deleteTarget.id);
+    setDeleteTarget(null);
+  };
+
+
   const vehicleTypes = [...new Set(driverVehicles.map((v: any) => v.type))];
   
   // Get unique plates from operational records (fuel logs, oil changes, maintenance)
@@ -527,6 +644,7 @@ const DriverVehicleView = () => {
                     <TableHead>Litros</TableHead>
                     <TableHead>R$/L</TableHead>
                     <TableHead>Total</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -542,6 +660,12 @@ const DriverVehicleView = () => {
                       <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
                       <TableCell>{log.fuel_price ? `R$ ${log.fuel_price.toFixed(2)}` : '-'}</TableCell>
                       <TableCell className="font-medium">{log.total_cost ? `R$ ${log.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditLog(log)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ type: 'log', id: log.id })}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -570,6 +694,7 @@ const DriverVehicleView = () => {
                     <TableHead>Tipo Óleo</TableHead>
                     <TableHead>Custo</TableHead>
                     <TableHead>Obs.</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -583,6 +708,12 @@ const DriverVehicleView = () => {
                       <TableCell>{oil.oil_type || '-'}</TableCell>
                       <TableCell className="font-medium">{oil.service_cost ? `R$ ${oil.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{oil.notes || '-'}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditOil(oil)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ type: 'oil', id: oil.id })}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -610,6 +741,7 @@ const DriverVehicleView = () => {
                     <TableHead>Km Atual</TableHead>
                     <TableHead>Custo</TableHead>
                     <TableHead>Obs.</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -626,6 +758,12 @@ const DriverVehicleView = () => {
                       <TableCell className="font-medium">{m.current_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{m.notes || '-'}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditMaint(m)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ type: 'maint', id: m.id })}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -634,6 +772,127 @@ const DriverVehicleView = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Log Dialog */}
+      <Dialog open={!!editingLog} onOpenChange={(open) => !open && setEditingLog(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Registro</DialogTitle></DialogHeader>
+          {editLogForm && (
+            <div className="space-y-4">
+              <div>
+                <Label>Veículo</Label>
+                <Select value={editLogForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setEditLogForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {driverVehicles.map((v: any) => (<SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Placa</Label><Input value={editLogForm.plate} onChange={e => setEditLogForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <div><Label>Data</Label><Input type="date" value={editLogForm.log_date} onChange={e => setEditLogForm((p: any) => ({ ...p, log_date: e.target.value }))} /></div>
+              <div><Label>Km Atual</Label><Input type="number" value={editLogForm.km_atual} onChange={e => setEditLogForm((p: any) => ({ ...p, km_atual: e.target.value }))} /></div>
+              <div>
+                <Label>Tipo de Combustível</Label>
+                <Select value={editLogForm.fuel_type} onValueChange={v => setEditLogForm((p: any) => ({ ...p, fuel_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="diesel">Diesel</SelectItem>
+                    <SelectItem value="gasolina">Gasolina</SelectItem>
+                    <SelectItem value="gnv">Gás (GNV)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Litros</Label><Input type="number" step="0.01" value={editLogForm.liters} onChange={e => setEditLogForm((p: any) => ({ ...p, liters: e.target.value }))} /></div>
+                <div><Label>Preço/Litro (R$)</Label><Input type="number" step="0.01" value={editLogForm.fuel_price} onChange={e => setEditLogForm((p: any) => ({ ...p, fuel_price: e.target.value }))} /></div>
+              </div>
+              <div><Label>Observações</Label><Textarea value={editLogForm.notes} onChange={e => setEditLogForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              <Button className="w-full" onClick={handleUpdateLog} disabled={updateLog.isPending}>{updateLog.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Oil Dialog */}
+      <Dialog open={!!editingOil} onOpenChange={(open) => !open && setEditingOil(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Troca de Óleo</DialogTitle></DialogHeader>
+          {editOilForm && (
+            <div className="space-y-4">
+              <div>
+                <Label>Veículo</Label>
+                <Select value={editOilForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setEditOilForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {driverVehicles.map((v: any) => (<SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Placa</Label><Input value={editOilForm.plate} onChange={e => setEditOilForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <div><Label>Data da Troca</Label><Input type="date" value={editOilForm.change_date} onChange={e => setEditOilForm((p: any) => ({ ...p, change_date: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Km na Troca</Label><Input type="number" value={editOilForm.km_at_change} onChange={e => setEditOilForm((p: any) => ({ ...p, km_at_change: e.target.value }))} /></div>
+                <div><Label>Próx. Troca (Km)</Label><Input type="number" value={editOilForm.next_change_km} onChange={e => setEditOilForm((p: any) => ({ ...p, next_change_km: e.target.value }))} /></div>
+              </div>
+              <div><Label>Tipo de Óleo</Label><Input value={editOilForm.oil_type} onChange={e => setEditOilForm((p: any) => ({ ...p, oil_type: e.target.value }))} /></div>
+              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editOilForm.service_cost} onChange={e => setEditOilForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
+              <div><Label>Observações</Label><Textarea value={editOilForm.notes} onChange={e => setEditOilForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              <Button className="w-full" onClick={handleUpdateOil} disabled={updateOil.isPending}>{updateOil.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Maintenance Dialog */}
+      <Dialog open={!!editingMaint} onOpenChange={(open) => !open && setEditingMaint(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Manutenção</DialogTitle></DialogHeader>
+          {editMaintForm && (
+            <div className="space-y-4">
+              <div>
+                <Label>Tipo de Manutenção</Label>
+                <Select value={editMaintForm.maintenance_type} onValueChange={v => setEditMaintForm((p: any) => ({ ...p, maintenance_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="preventiva">Preventiva</SelectItem>
+                    <SelectItem value="corretiva">Corretiva</SelectItem>
+                    <SelectItem value="preditiva">Preditiva</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Veículo</Label>
+                <Select value={editMaintForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setEditMaintForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {driverVehicles.map((v: any) => (<SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Placa</Label><Input value={editMaintForm.plate} onChange={e => setEditMaintForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <div><Label>Data</Label><Input type="date" value={editMaintForm.maintenance_date} onChange={e => setEditMaintForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /></div>
+              <div><Label>Km Atual</Label><Input type="number" value={editMaintForm.current_km} onChange={e => setEditMaintForm((p: any) => ({ ...p, current_km: e.target.value }))} /></div>
+              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editMaintForm.service_cost} onChange={e => setEditMaintForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
+              <div><Label>Observações</Label><Textarea value={editMaintForm.notes} onChange={e => setEditMaintForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              <Button className="w-full" onClick={handleUpdateMaint} disabled={updateMaint.isPending}>{updateMaint.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
