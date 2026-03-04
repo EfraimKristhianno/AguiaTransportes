@@ -52,6 +52,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const { user, role } = useAuth();
   const [attachments, setAttachments] = useState<UploadedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const { data: materialTypes = [] } = useMaterialTypes();
   const { data: transportTypes = [] } = useTransportTypes();
@@ -499,14 +500,13 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                     const now = new Date();
                     field.onChange(formatLocalISO(now));
                   }
-                  // Close popover by blurring
-                  (document.activeElement as HTMLElement)?.blur();
+                  setCalendarOpen(false);
                 };
 
                 return (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data da solicitação <span className="text-red-500">*</span></FormLabel>
-                    <Popover>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
