@@ -37,7 +37,7 @@ export const DriverRequestsTable = ({
 
   // Find active delivery for GPS tracking
   const activeDelivery = useMemo(() => {
-    return requests.find(r => ['aceita', 'coletada', 'em_rota'].includes(r.status || ''));
+    return requests.find(r => ['aceita', 'pendente_coleta', 'coletada', 'em_rota', 'pendente_entrega'].includes(r.status || ''));
   }, [requests]);
 
   // Activate GPS tracking when driver has active delivery
@@ -70,6 +70,11 @@ export const DriverRequestsTable = ({
         className: 'bg-blue-50 text-blue-700 border-blue-200',
         icon: <Package className="h-3 w-3 mr-1" />,
       },
+      pendente_coleta: {
+        label: 'Pendente Coleta',
+        className: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+        icon: <Clock className="h-3 w-3 mr-1" />,
+      },
       coletada: {
         label: 'Coletada',
         className: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -79,6 +84,11 @@ export const DriverRequestsTable = ({
         label: 'Em Trânsito',
         className: 'bg-green-50 text-green-700 border-green-200',
         icon: <Package className="h-3 w-3 mr-1" />,
+      },
+      pendente_entrega: {
+        label: 'Pendente Entrega',
+        className: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+        icon: <Clock className="h-3 w-3 mr-1" />,
       },
     };
     const config = statusConfig[status || 'solicitada'] || statusConfig.solicitada;

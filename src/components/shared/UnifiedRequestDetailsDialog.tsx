@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin, Phone, User, Package, Truck, Calendar, FileText,
-  Navigation, Loader2, Hash, Check, Circle,
+  Navigation, Loader2, Hash, Check, Circle, Clock,
   X, ChevronRight, ChevronDown, Send, Eye, Info,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -68,8 +68,10 @@ interface UnifiedRequestDetailsDialogProps {
 const STATUS_FLOW = [
   { value: 'solicitada', label: 'Solicitada', icon: FileText },
   { value: 'aceita', label: 'Aceita', icon: Check },
+  { value: 'pendente_coleta', label: 'Pendente Coleta', icon: Clock },
   { value: 'coletada', label: 'Coletada', icon: Package },
   { value: 'em_rota', label: 'Em Trânsito', icon: Truck },
+  { value: 'pendente_entrega', label: 'Pendente Entrega', icon: Clock },
   { value: 'entregue', label: 'Entregue', icon: Check },
 ];
 
@@ -77,8 +79,10 @@ const getStatusClassName = (status: string | null) => {
   switch (status) {
     case 'solicitada': case 'enviada': return 'bg-amber-50 text-amber-700 border-amber-200';
     case 'aceita': return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'pendente_coleta': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
     case 'coletada': return 'bg-purple-50 text-purple-700 border-purple-200';
     case 'em_rota': return 'bg-orange-50 text-orange-700 border-orange-200';
+    case 'pendente_entrega': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
     case 'entregue': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     default: return 'bg-amber-50 text-amber-700 border-amber-200';
   }
@@ -88,8 +92,10 @@ const getStatusLabel = (status: string | null) => {
   switch (status) {
     case 'solicitada': case 'enviada': return 'Solicitada';
     case 'aceita': return 'Aceita';
+    case 'pendente_coleta': return 'Pendente Coleta';
     case 'coletada': return 'Coletada';
     case 'em_rota': return 'Em Trânsito';
+    case 'pendente_entrega': return 'Pendente Entrega';
     case 'entregue': return 'Entregue';
     default: return status || 'Solicitada';
   }
@@ -213,9 +219,11 @@ export const UnifiedRequestDetailsDialog = ({
   const getNextStatus = () => {
     if (!isAssignedDriver) return null;
     const nextMap: Record<string, string> = {
-      aceita: 'coletada',
+      aceita: 'pendente_coleta',
+      pendente_coleta: 'coletada',
       coletada: 'em_rota',
-      em_rota: 'entregue',
+      em_rota: 'pendente_entrega',
+      pendente_entrega: 'entregue',
     };
     return request.status ? nextMap[request.status] || null : null;
   };

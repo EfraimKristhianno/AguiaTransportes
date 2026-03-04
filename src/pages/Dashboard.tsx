@@ -205,7 +205,7 @@ const Dashboard = () => {
   const stats = useMemo(() => {
     const total = deliveryRequests.length;
     const today = deliveryRequests.filter(r => r.created_at && isToday(new Date(r.created_at))).length;
-    const inProgress = deliveryRequests.filter(r => r.status === 'solicitada' || r.status === 'aceita' || r.status === 'coletada' || r.status === 'em_rota' || r.status === 'enviada').length;
+    const inProgress = deliveryRequests.filter(r => r.status === 'solicitada' || r.status === 'aceita' || r.status === 'pendente_coleta' || r.status === 'coletada' || r.status === 'em_rota' || r.status === 'pendente_entrega' || r.status === 'enviada').length;
     const delivered = deliveryRequests.filter(r => r.status === 'entregue').length;
 
     // Calculate yesterday's total for comparison
@@ -363,6 +363,11 @@ const Dashboard = () => {
         className: 'bg-blue-50 text-blue-700 border-blue-200',
         icon: <CheckCircle2 className="h-3 w-3 mr-1" />
       },
+      pendente_coleta: {
+        label: 'Pendente Coleta',
+        className: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+        icon: <Clock className="h-3 w-3 mr-1" />
+      },
       coletada: {
         label: 'Coletada',
         className: 'bg-purple-50 text-purple-700 border-purple-200',
@@ -372,6 +377,11 @@ const Dashboard = () => {
         label: 'Em Trânsito',
         className: 'bg-orange-50 text-orange-700 border-orange-200',
         icon: <Truck className="h-3 w-3 mr-1" />
+      },
+      pendente_entrega: {
+        label: 'Pendente Entrega',
+        className: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+        icon: <Clock className="h-3 w-3 mr-1" />
       },
       entregue: {
         label: 'Entregue',

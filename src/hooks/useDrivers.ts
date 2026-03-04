@@ -27,7 +27,7 @@ export const useDrivers = () => {
         if (!statsMap[dId]) statsMap[dId] = { total: 0, completed: 0, active: 0 };
         statsMap[dId].total++;
         if (d.status === 'entregue') statsMap[dId].completed++;
-        if (['aceita', 'coletada', 'em_rota'].includes(d.status || '')) statsMap[dId].active++;
+        if (['aceita', 'pendente_coleta', 'coletada', 'em_rota', 'pendente_entrega'].includes(d.status || '')) statsMap[dId].active++;
       });
 
       const driversWithStats: DriverWithStats[] = (data || []).map((driver: any) => {

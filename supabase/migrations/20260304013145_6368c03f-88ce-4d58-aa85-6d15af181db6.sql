@@ -1,0 +1,2 @@
+ALTER TABLE delivery_requests DROP CONSTRAINT IF EXISTS delivery_requests_status_check;
+ALTER TABLE delivery_requests ADD CONSTRAINT delivery_requests_status_check CHECK (status IN ('solicitada', 'aceita', 'pendente_coleta', 'coletada', 'em_rota', 'pendente_entrega', 'entregue', 'cancelada', 'enviada'));
