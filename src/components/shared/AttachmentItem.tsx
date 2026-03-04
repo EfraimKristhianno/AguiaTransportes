@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Paperclip, Loader2, Download } from 'lucide-react';
+import { Paperclip, Loader2, Download, X } from 'lucide-react';
 
 interface AttachmentItemProps {
   path: string;
   index: number;
+  bucket?: string;
+  onRemove?: () => void;
 }
 
 const isImagePath = (path: string) => /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
 
 const getAttachmentName = (path: string) => path.split('/').pop() || path;
 
-export const AttachmentItem = ({ path, index }: AttachmentItemProps) => {
+export const AttachmentItem = ({ path, index, bucket = 'request-attachments', onRemove }: AttachmentItemProps) => {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +21,7 @@ export const AttachmentItem = ({ path, index }: AttachmentItemProps) => {
     const fetchUrl = async () => {
       setLoading(true);
       const { data, error } = await supabase.storage
-        .from('request-attachments')
+        .from(bucket)
         .createSignedUrl(path, 3600);
       if (error) {
         console.error('AttachmentItem: erro ao gerar URL assinada', { path, error });
@@ -51,25 +53,39 @@ export const AttachmentItem = ({ path, index }: AttachmentItemProps) => {
 
   if (isImagePath(path)) {
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
-        <img
-          src={url}
-          alt={`Anexo ${index + 1}`}
-          className="rounded-md max-h-40 object-cover border border-border hover:opacity-90 transition-opacity"
-        />
-      </a>
+      <div className="relative inline-block">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+          <img
+            src={url}
+            alt={`Anexo ${index + 1}`}
+            className="rounded-md max-h-40 object-cover border border-border hover:opacity-90 transition-opacity"
+          />
+        </a>
+        {onRemove && (
+          <button onClick={onRemove} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:bg-destructive/80">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
     );
   }
 
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-2 text-sm text-primary hover:underline"
-    >
-      <Download className="h-3.5 w-3.5" />
-      {getAttachmentName(path)}
-    </a>
+    <div className="flex items-center gap-2">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 text-sm text-primary hover:underline"
+      >
+        <Download className="h-3.5 w-3.5" />
+        {getAttachmentName(path)}
+      </a>
+      {onRemove && (
+        <button onClick={onRemove} className="text-destructive hover:text-destructive/80">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
   );
 };
