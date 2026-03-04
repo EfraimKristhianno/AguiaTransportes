@@ -693,7 +693,7 @@ const DriverVehicleView = () => {
                     <TableHead>Próx. Troca</TableHead>
                     <TableHead>Tipo Óleo</TableHead>
                     <TableHead>Custo</TableHead>
-                    <TableHead>Obs.</TableHead>
+                    <TableHead>Custo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -707,7 +707,6 @@ const DriverVehicleView = () => {
                       <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell>{oil.oil_type || '-'}</TableCell>
                       <TableCell className="font-medium">{oil.service_cost ? `R$ ${oil.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{oil.notes || '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditOil(oil)}><Pencil className="h-4 w-4" /></Button>
@@ -740,7 +739,7 @@ const DriverVehicleView = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Km Atual</TableHead>
                     <TableHead>Custo</TableHead>
-                    <TableHead>Obs.</TableHead>
+                    <TableHead>Custo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -757,7 +756,6 @@ const DriverVehicleView = () => {
                       </TableCell>
                       <TableCell className="font-medium">{m.current_km.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{m.notes || '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditMaint(m)}><Pencil className="h-4 w-4" /></Button>
