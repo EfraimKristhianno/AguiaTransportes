@@ -23,7 +23,9 @@ import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomple
 
 const editSchema = z.object({
   originAddress: z.string().min(1, 'Endereço de coleta é obrigatório'),
+  originCompany: z.string().optional(),
   destinationAddress: z.string().min(1, 'Endereço de entrega é obrigatório'),
+  destinationCompany: z.string().optional(),
   invoiceNumber: z.string().optional(),
   opNumber: z.string().optional(),
   scheduledDate: z.string().optional(),
@@ -53,7 +55,9 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
     resolver: zodResolver(editSchema),
     defaultValues: {
       originAddress: '',
+      originCompany: '',
       destinationAddress: '',
+      destinationCompany: '',
       invoiceNumber: '',
       opNumber: '',
       scheduledDate: '',
@@ -69,7 +73,9 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
     if (request && open) {
       form.reset({
         originAddress: request.origin_address || '',
+        originCompany: request.origin_company || '',
         destinationAddress: request.destination_address || '',
+        destinationCompany: request.destination_company || '',
         invoiceNumber: request.invoice_number || '',
         opNumber: request.op_number || '',
         scheduledDate: request.scheduled_date || '',
@@ -90,7 +96,9 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
         .from('delivery_requests')
         .update({
           origin_address: data.originAddress,
+          origin_company: data.originCompany || null,
           destination_address: data.destinationAddress,
+          destination_company: data.destinationCompany || null,
           invoice_number: data.invoiceNumber || null,
           op_number: data.opNumber || null,
           scheduled_date: data.scheduledDate || null,
@@ -99,7 +107,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
           notes: data.notes || null,
           requester: data.requester || null,
           requester_phone: data.requesterPhone || null,
-        })
+        } as any)
         .eq('id', request.id);
 
       if (error) throw error;
@@ -180,12 +188,28 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
               </FormItem>
             )} />
 
+            <FormField control={form.control} name="originCompany" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa (coleta)</FormLabel>
+                <FormControl><Input {...field} placeholder="Nome da empresa" /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
             <FormField control={form.control} name="destinationAddress" render={({ field }) => (
               <FormItem>
                 <FormLabel>Endereço de entrega *</FormLabel>
                 <FormControl>
                   <AddressAutocomplete value={field.value} onChange={field.onChange} placeholder="Endereço de entrega" />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="destinationCompany" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa (entrega)</FormLabel>
+                <FormControl><Input {...field} placeholder="Nome da empresa" /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

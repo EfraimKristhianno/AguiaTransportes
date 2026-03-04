@@ -1,0 +1,1 @@
+ALTER TABLE public.delivery_requests ADD COLUMN origin_company text, ADD COLUMN destination_company text;
