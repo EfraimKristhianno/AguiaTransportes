@@ -437,58 +437,6 @@ const AdminVehicleView = () => {
         </CardContent>
       </Card>
 
-      {/* Filters for Charts */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Select value={vehicleTypeFilter} onValueChange={(val) => { setVehicleTypeFilter(val); setPlateFilter('all'); }}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Tipo de veículo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
-            {vehicleTypes.map(type => (
-              <SelectItem key={`chart-${type}`} value={type}>{type}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={plateFilter} onValueChange={setPlateFilter}>
-          <SelectTrigger className="w-full sm:w-[250px]">
-            <SelectValue placeholder="Filtrar por placa" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as placas</SelectItem>
-            {uniquePlates.map(plate => (
-              <SelectItem key={`chart-${plate}`} value={plate}>{plate}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className={cn("w-full sm:w-[170px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {startDate ? format(startDate, 'dd/MM/yyyy') : 'Data inicial'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar mode="single" selected={startDate} onSelect={setStartDate} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
-          </PopoverContent>
-        </Popover>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className={cn("w-full sm:w-[170px] justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {endDate ? format(endDate, 'dd/MM/yyyy') : 'Data final'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar mode="single" selected={endDate} onSelect={setEndDate} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
-          </PopoverContent>
-        </Popover>
-        {(startDate || endDate || vehicleTypeFilter !== 'all' || plateFilter !== 'all') && (
-          <Button variant="ghost" size="sm" onClick={() => { setVehicleTypeFilter('all'); setPlateFilter('all'); setStartDate(undefined); setEndDate(undefined); }}>
-            Limpar
-          </Button>
-        )}
-      </div>
 
       {/* Charts Row 2 */}
       <div className="grid gap-6 lg:grid-cols-2">

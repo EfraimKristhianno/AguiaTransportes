@@ -212,6 +212,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                   <TableHeader>
                     <TableRow>
                       <TableHead>Data</TableHead>
+                      <TableHead>Placa</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Motorista</TableHead>
                       <TableHead>Km Atual</TableHead>
@@ -223,6 +224,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                     {vMaint.map(m => (
                       <TableRow key={m.id}>
                         <TableCell>{format(new Date(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell>{m.vehicle_plate || vehiclePlate}</TableCell>
                         <TableCell>
                           <Badge variant={m.maintenance_type === 'corretiva' ? 'destructive' : m.maintenance_type === 'preventiva' ? 'default' : 'secondary'}>
                             {maintenanceTypeLabel[m.maintenance_type] || m.maintenance_type}
