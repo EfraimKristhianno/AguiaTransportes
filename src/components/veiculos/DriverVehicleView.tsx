@@ -15,6 +15,12 @@ const formatLocalDate = (date: Date): string => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
+
+const parseDateString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 import { useCurrentDriver } from '@/hooks/useDriverRequests';
 import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVehicleLog, useCreateOilChange, useCreateMaintenanceRecord, VehicleLog } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
@@ -258,7 +264,7 @@ const DriverVehicleView = () => {
       : [];
   const latestOil = oilSourceForCard.length > 0
     ? oilSourceForCard.reduce((latest, record) => 
-        new Date(record.change_date) > new Date(latest.change_date) ? record : latest
+        parseDateString(record.change_date) > parseDateString(latest.change_date) ? record : latest
       , oilSourceForCard[0])
     : null;
   const lastLogKm = logs[0]?.km_final || 0;
@@ -526,7 +532,7 @@ const DriverVehicleView = () => {
                 <TableBody>
                   {filteredLogs.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{format(parseDateString(log.log_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{log.vehicle?.type || '-'}</TableCell>
                       <TableCell>{log.vehicle_plate || log.vehicle?.plate || '-'}</TableCell>
                       <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
@@ -569,7 +575,7 @@ const DriverVehicleView = () => {
                 <TableBody>
                   {filteredOilRecords.map((oil) => (
                     <TableRow key={oil.id}>
-                      <TableCell>{format(new Date(oil.change_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{format(parseDateString(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{oil.vehicle?.type || '-'}</TableCell>
                       <TableCell>{oil.vehicle_plate || oil.vehicle?.plate || '-'}</TableCell>
                       <TableCell className="font-medium">{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
@@ -609,7 +615,7 @@ const DriverVehicleView = () => {
                 <TableBody>
                   {filteredMaintenanceRecords.map((m) => (
                     <TableRow key={m.id}>
-                      <TableCell>{format(new Date(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{format(parseDateString(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{m.vehicle?.type || '-'}</TableCell>
                       <TableCell>{m.vehicle_plate || m.vehicle?.plate || '-'}</TableCell>
                       <TableCell>
