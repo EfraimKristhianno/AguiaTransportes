@@ -87,7 +87,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
     isLoading
   } = useDeliveryRequests();
   const { data: allFreightPrices = [] } = useAllFreightPrices();
-  const showFreightValue = role === 'admin' || role === 'gestor' || role === 'cliente';
+  const showFreightValue = role === 'admin' || role === 'gestor';
   const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter, dateFrom, dateTo);
   return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
       {/* Request List */}
