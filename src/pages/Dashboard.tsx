@@ -519,7 +519,7 @@ const Dashboard = () => {
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Solicitante</TableHead>
+                  <TableHead>{role === 'gestor' ? 'Motorista' : 'Solicitante'}</TableHead>
                   <TableHead>Material</TableHead>
                   <TableHead>Transporte</TableHead>
                   <TableHead>Status</TableHead>
@@ -542,7 +542,7 @@ const Dashboard = () => {
                         {item.client?.phone && <p className="text-sm text-muted-foreground">{item.client.phone}</p>}
                       </div>
                     </TableCell>
-                    <TableCell>{(item as any).requester || '-'}</TableCell>
+                    <TableCell>{role === 'gestor' ? (item.driver?.name || 'Sem motorista') : ((item as any).requester || '-')}</TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
@@ -598,8 +598,8 @@ const Dashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Solicitante</p>
-                    <p className="font-medium">{(item as any).requester || '-'}</p>
+                    <p className="text-muted-foreground">{role === 'gestor' ? 'Motorista' : 'Solicitante'}</p>
+                    <p className="font-medium">{role === 'gestor' ? (item.driver?.name || 'Sem motorista') : ((item as any).requester || '-')}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Material</p>
