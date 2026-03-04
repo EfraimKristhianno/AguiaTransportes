@@ -33,7 +33,9 @@ const requestSchema = z.object({
   requester: z.string().min(1, 'Solicitante é obrigatório'),
   requesterPhone: z.string().min(1, 'Telefone do solicitante é obrigatório'),
   originAddress: z.string().min(1, 'Endereço de coleta é obrigatório'),
+  originCompany: z.string().optional(),
   destinationAddress: z.string().min(1, 'Endereço de entrega é obrigatório'),
+  destinationCompany: z.string().optional(),
   invoiceNumber: z.string().optional(),
   opNumber: z.string().optional(),
   scheduledDate: z.string().min(1, 'Data da solicitação é obrigatória'),
@@ -119,7 +121,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       requester: '',
       requesterPhone: '',
       originAddress: '',
+      originCompany: '',
       destinationAddress: '',
+      destinationCompany: '',
       invoiceNumber: '',
       opNumber: '',
       scheduledDate: '',
@@ -226,7 +230,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       const createdRequest = await createRequest.mutateAsync({
         client_id: clientId,
         origin_address: data.originAddress,
+        origin_company: data.originCompany || null,
         destination_address: data.destinationAddress,
+        destination_company: data.destinationCompany || null,
         scheduled_date: data.scheduledDate || null,
         material_type_id: data.materialTypeId,
         transport_type: data.transportType,
@@ -272,7 +278,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           requester: '',
           requesterPhone: '',
           originAddress: '',
+          originCompany: '',
           destinationAddress: '',
+          destinationCompany: '',
           invoiceNumber: '',
           opNumber: '',
           scheduledDate: '',
@@ -301,7 +309,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         requester: '',
         requesterPhone: '',
         originAddress: '',
+        originCompany: '',
         destinationAddress: '',
+        destinationCompany: '',
         invoiceNumber: '',
         opNumber: '',
         scheduledDate: '',
@@ -592,53 +602,87 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             />
           </div>
 
-          {/* Origin Address */}
-          <FormField
-            control={form.control}
-            name="originAddress"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Endereço de coleta <span className="text-red-500">*</span></FormLabel>
-                <FormControl>
-                  <AddressAutocomplete
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Digite o endereço de coleta"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Destination Address */}
-          <FormField
-            control={form.control}
-            name="destinationAddress"
-            render={({ field }) => {
-              const region = detectRegionForFreight(field.value);
-              return (
+          {/* Origin Address + Company */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <FormField
+                control={form.control}
+                name="originAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endereço de coleta <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <AddressAutocomplete
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Digite o endereço de coleta"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="originCompany"
+              render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormLabel>Endereço de entrega <span className="text-red-500">*</span></FormLabel>
-                    {region && (
-                      <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                        Região: {region}
-                      </Badge>
-                    )}
-                  </div>
+                  <FormLabel>Empresa (coleta)</FormLabel>
                   <FormControl>
-                    <AddressAutocomplete
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Digite o endereço de entrega"
-                    />
+                    <Input {...field} placeholder="Nome da empresa" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-              );
-            }}
-          />
+              )}
+            />
+          </div>
+
+          {/* Destination Address + Company */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <FormField
+                control={form.control}
+                name="destinationAddress"
+                render={({ field }) => {
+                  const region = detectRegionForFreight(field.value);
+                  return (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Endereço de entrega <span className="text-red-500">*</span></FormLabel>
+                        {region && (
+                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                            Região: {region}
+                          </Badge>
+                        )}
+                      </div>
+                      <FormControl>
+                        <AddressAutocomplete
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Digite o endereço de entrega"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="destinationCompany"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Empresa (entrega)</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Nome da empresa" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* NF and OP fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

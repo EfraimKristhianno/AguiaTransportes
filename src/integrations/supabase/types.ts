@@ -104,6 +104,7 @@ export type Database = {
           created_at: string | null
           delivered_at: string | null
           destination_address: string
+          destination_company: string | null
           driver_id: string | null
           id: string
           invoice_number: string | null
@@ -111,6 +112,7 @@ export type Database = {
           notes: string | null
           op_number: string | null
           origin_address: string
+          origin_company: string | null
           region: string | null
           request_number: number
           requester: string | null
@@ -127,6 +129,7 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           destination_address: string
+          destination_company?: string | null
           driver_id?: string | null
           id?: string
           invoice_number?: string | null
@@ -134,6 +137,7 @@ export type Database = {
           notes?: string | null
           op_number?: string | null
           origin_address: string
+          origin_company?: string | null
           region?: string | null
           request_number?: number
           requester?: string | null
@@ -150,6 +154,7 @@ export type Database = {
           created_at?: string | null
           delivered_at?: string | null
           destination_address?: string
+          destination_company?: string | null
           driver_id?: string | null
           id?: string
           invoice_number?: string | null
@@ -157,6 +162,7 @@ export type Database = {
           notes?: string | null
           op_number?: string | null
           origin_address?: string
+          origin_company?: string | null
           region?: string | null
           request_number?: number
           requester?: string | null

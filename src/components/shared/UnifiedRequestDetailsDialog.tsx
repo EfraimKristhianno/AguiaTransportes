@@ -37,7 +37,9 @@ interface RequestData {
   request_number: number | null;
   client_id?: string | null;
   origin_address: string;
+  origin_company?: string | null;
   destination_address: string;
+  destination_company?: string | null;
   scheduled_date: string | null;
   material_type_id?: string | null;
   driver_id?: string | null;
@@ -483,6 +485,9 @@ export const UnifiedRequestDetailsDialog = ({
                   </h4>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="font-medium text-green-800">{request.origin_address}</p>
+                    {request.origin_company && (
+                      <p className="text-sm text-green-700 mt-1">Empresa: {request.origin_company}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -491,6 +496,9 @@ export const UnifiedRequestDetailsDialog = ({
                   </h4>
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <p className="font-medium text-red-800">{request.destination_address}</p>
+                    {request.destination_company && (
+                      <p className="text-sm text-red-700 mt-1">Empresa: {request.destination_company}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -837,11 +845,17 @@ export const UnifiedRequestDetailsDialog = ({
                 <div className="text-sm space-y-1">
                   <div className="flex items-start gap-1">
                     <MapPin className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
-                    <p>{request.origin_address}</p>
+                    <div>
+                      <p>{request.origin_address}</p>
+                      {request.origin_company && <p className="text-xs text-muted-foreground">Empresa: {request.origin_company}</p>}
+                    </div>
                   </div>
                   <div className="flex items-start gap-1">
                     <MapPin className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
-                    <p>{request.destination_address}</p>
+                    <div>
+                      <p>{request.destination_address}</p>
+                      {request.destination_company && <p className="text-xs text-muted-foreground">Empresa: {request.destination_company}</p>}
+                    </div>
                   </div>
                 </div>
                 {request.notes && (
