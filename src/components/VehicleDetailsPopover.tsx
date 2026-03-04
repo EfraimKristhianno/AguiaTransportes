@@ -6,6 +6,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useFreightPrices } from '@/hooks/useFreightPrices';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface VehicleSpec {
   type: string;
@@ -44,10 +45,12 @@ const formatWeight = (value: number): string => {
 };
 
 const VehicleDetailsPopover = ({ vehicleType, triggerClassName, clientId }: VehicleDetailsPopoverProps) => {
+  const { role } = useAuth();
   const spec = VEHICLE_SPECS.find(s => s.type === vehicleType);
   const { data: freightPrices = [] } = useFreightPrices(clientId);
 
-  const prices = freightPrices.filter(p => p.transport_type === vehicleType);
+  const isClient = role === 'cliente';
+  const prices = isClient ? [] : freightPrices.filter(p => p.transport_type === vehicleType);
 
   if (!spec && prices.length === 0) {
     return null;
