@@ -420,8 +420,7 @@ const DriverVehicleView = () => {
         parseDateString(record.change_date) > parseDateString(latest.change_date) ? record : latest
       , oilSourceForCard[0])
     : null;
-  const lastLogKm = logs[0]?.km_final || 0;
-  const oilChangeWarning = latestOil && lastLogKm >= latestOil.next_change_km;
+  const oilChangeWarning = latestOil && currentKm >= latestOil.next_change_km;
 
   if (driverLoading || logsLoading) {
     return <div className="flex items-center justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
@@ -501,7 +500,7 @@ const DriverVehicleView = () => {
       {oilChangeWarning && (
         <div className="rounded-lg border border-destructive bg-destructive/5 p-4 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-          <p className="text-sm text-destructive font-medium">Atenção: Km atual ({lastLogKm.toLocaleString('pt-BR')}) excedeu a previsão de troca de óleo ({latestOil!.next_change_km.toLocaleString('pt-BR')} km).</p>
+          <p className="text-sm text-destructive font-medium">Atenção: Km atual ({currentKm.toLocaleString('pt-BR')}) excedeu a previsão de troca de óleo ({latestOil!.next_change_km.toLocaleString('pt-BR')} km).</p>
         </div>
       )}
 
