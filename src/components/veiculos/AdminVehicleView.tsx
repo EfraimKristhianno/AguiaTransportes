@@ -444,8 +444,8 @@ const AdminVehicleView = () => {
         <Card>
           <CardHeader><CardTitle className="text-base">Total Frete por Veículo</CardTitle></CardHeader>
           <CardContent>
-            {(() => {
-              const freightByType: Record<string, number> = {};
+        {(() => {
+              const freightByPlate: Record<string, number> = {};
               
               // Filter delivery requests by vehicle type, plate, and date
               const filteredDeliveryReqs = deliveryRequests.filter((req: any) => {
@@ -471,12 +471,15 @@ const AdminVehicleView = () => {
                 
                 if (matchingPrices.length > 0) {
                   const price = Number(matchingPrices[0].price);
-                  const label = req.transport_type;
-                  freightByType[label] = (freightByType[label] || 0) + price;
+                  // Group by vehicle plate instead of transport_type
+                  const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
+                  const realPlate = vehicle ? (vehicleIdToPlateMap.get(vehicle.id) || vehicle.plate) : null;
+                  const label = realPlate && !realPlate.startsWith('TIPO-') ? realPlate : (req.transport_type || 'Sem placa');
+                  freightByPlate[label] = (freightByPlate[label] || 0) + price;
                 }
               });
 
-              const donutData = Object.entries(freightByType)
+              const donutData = Object.entries(freightByPlate)
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value);
 
