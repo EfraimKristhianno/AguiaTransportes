@@ -2,7 +2,7 @@
  import { useNavigate } from 'react-router-dom';
  import { Lock, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
  import { Button } from '@/components/ui/button';
- import { Input } from '@/components/ui/input';
+ import { PasswordInput } from '@/components/ui/password-input';
  import { Label } from '@/components/ui/label';
  import { useToast } from '@/hooks/use-toast';
  import { supabase } from '@/integrations/supabase/client';
@@ -181,18 +181,17 @@
                <Label htmlFor="password">Nova senha</Label>
                <div className="relative">
                  <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                 <Input
-                   id="password"
-                   type="password"
-                   placeholder="Mínimo 6 caracteres"
-                   value={password}
-                   onChange={(e) => {
-                     setPassword(e.target.value);
-                     if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
-                   }}
-                   className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
-                   required
-                 />
+                  <PasswordInput
+                    id="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                    }}
+                    className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
+                    required
+                  />
                </div>
                {errors.password && (
                  <p className="text-sm text-destructive">{errors.password}</p>
@@ -203,16 +202,15 @@
                <Label htmlFor="confirmPassword">Confirmar senha</Label>
                <div className="relative">
                  <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                 <Input
-                   id="confirmPassword"
-                   type="password"
-                   placeholder="Repita a nova senha"
-                   value={confirmPassword}
-                   onChange={(e) => {
-                     setConfirmPassword(e.target.value);
-                     if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }));
-                   }}
-                   className={`pl-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                  <PasswordInput
+                    id="confirmPassword"
+                    placeholder="Repita a nova senha"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                    }}
+                    className={`pl-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                    required
                  />
                </div>

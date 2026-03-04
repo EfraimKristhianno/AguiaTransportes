@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -226,9 +227,8 @@ const RegisterForm = ({ onToggleMode }: RegisterFormProps) => {
           <Label htmlFor="password">Senha</Label>
           <div className="relative">
             <Lock className="input-icon h-5 w-5" />
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => {
