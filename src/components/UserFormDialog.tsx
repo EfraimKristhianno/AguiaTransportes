@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -212,8 +213,7 @@ const UserFormDialog = ({
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password" 
+                      <PasswordInput 
                         placeholder="Mínimo 6 caracteres" 
                         {...field} 
                       />
