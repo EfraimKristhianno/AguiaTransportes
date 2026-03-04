@@ -15,7 +15,7 @@ export interface VehicleLog {
   liters: number | null;
   fuel_price: number | null;
   total_cost: number | null;
-  fuel_type: 'gasolina' | 'alcool' | 'diesel';
+  fuel_type: 'gasolina' | 'alcool' | 'diesel' | 'gnv';
   vehicle_plate: string | null;
   notes: string | null;
   created_at: string;

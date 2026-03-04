@@ -1,0 +1,2 @@
+ALTER TABLE vehicle_logs DROP CONSTRAINT IF EXISTS vehicle_logs_fuel_type_check;
+ALTER TABLE vehicle_logs ADD CONSTRAINT vehicle_logs_fuel_type_check CHECK (fuel_type IN ('gasolina', 'alcool', 'diesel', 'gnv'));
