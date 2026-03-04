@@ -44,6 +44,7 @@ interface EditRequestDialogProps {
 
 export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDialogProps) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [editCalendarOpen, setEditCalendarOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: materialTypes = [] } = useMaterialTypes();
   const { data: transportTypes = [] } = useTransportTypes();
@@ -240,7 +241,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
             <FormField control={form.control} name="scheduledDate" render={({ field }) => (
               <FormItem>
                 <FormLabel>Data agendada</FormLabel>
-                <Popover>
+                <Popover open={editCalendarOpen} onOpenChange={setEditCalendarOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -261,6 +262,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
                       }}
                       defaultMonth={parsedDate || new Date()}
                       initialFocus
+                      className="p-3 pointer-events-auto"
                       locale={ptBR}
                     />
                     <div className="border-t px-3 py-2 flex items-center gap-2">
@@ -286,7 +288,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
                           if (!field.value) {
                             field.onChange(formatLocalISO(new Date()));
                           }
-                          (document.activeElement as HTMLElement)?.blur();
+                          setEditCalendarOpen(false);
                         }}
                         title="Confirmar data e hora"
                       >
