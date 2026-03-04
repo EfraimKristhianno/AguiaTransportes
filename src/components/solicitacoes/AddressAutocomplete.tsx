@@ -68,11 +68,56 @@ export const AddressAutocomplete = ({
     }
 
     try {
-      const res = await fetch(
-        `https://photon.komoot.io/api?q=${encodeURIComponent(query)}&lang=default&limit=5&lat=-25.4&lon=-49.3`
+      // Try Photon first with bbox limited to Paraná/SC/SP region
+      const photonRes = await fetch(
+        `https://photon.komoot.io/api?q=${encodeURIComponent(query)}&lang=default&limit=7&lat=-25.4&lon=-49.3&bbox=-54.6,-27.0,-48.0,-22.5`
       );
-      const data = await res.json();
-      const features: PhotonFeature[] = data.features || [];
+      const photonData = await photonRes.json();
+      let features: PhotonFeature[] = photonData.features || [];
+
+      // If few results, also try Nominatim for structured search (better with numbers/neighborhoods)
+      if (features.length < 3) {
+        try {
+          const nominatimRes = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=br&viewbox=-54.6,-27.0,-48.0,-22.5&bounded=1`,
+            { headers: { 'Accept-Language': 'pt-BR' } }
+          );
+          const nominatimData = await nominatimRes.json();
+          
+          // Convert Nominatim results to PhotonFeature format
+          const nominatimFeatures: PhotonFeature[] = (nominatimData || []).map((item: any) => ({
+            properties: {
+              name: item.address?.road || item.name,
+              street: item.address?.road,
+              housenumber: item.address?.house_number,
+              district: item.address?.suburb || item.address?.neighbourhood,
+              locality: item.address?.village || item.address?.town,
+              city: item.address?.city || item.address?.town || item.address?.village,
+              state: item.address?.state,
+              country: item.address?.country,
+            }
+          }));
+
+          // Merge and deduplicate by formatted address
+          const existingAddresses = new Set(features.map(f => formatAddress(f)));
+          for (const nf of nominatimFeatures) {
+            const addr = formatAddress(nf);
+            if (!existingAddresses.has(addr) && addr.length > 5) {
+              features.push(nf);
+              existingAddresses.add(addr);
+            }
+          }
+        } catch {
+          // Nominatim fallback failed, continue with Photon results
+        }
+      }
+
+      // Filter out results without meaningful address info
+      features = features.filter(f => {
+        const addr = formatAddress(f);
+        return addr.length > 5;
+      }).slice(0, 7);
+
       setSuggestions(features);
       setIsOpen(features.length > 0);
       setHighlightedIndex(-1);
