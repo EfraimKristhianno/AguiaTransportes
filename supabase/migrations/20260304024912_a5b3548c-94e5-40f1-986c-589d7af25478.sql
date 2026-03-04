@@ -1,0 +1,1 @@
+UPDATE vehicles SET type = 'Caminhão (Truck)' WHERE type = 'Caminhão';
