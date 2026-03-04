@@ -1,16 +1,30 @@
 
 
-## Plano: Garantir limpeza de cache sempre ativa
+## Problema
 
-O `main.tsx` já limpa caches e desregistra Service Workers, mas o `PWAUpdatePrompt` re-registra um novo SW logo em seguida via `useRegisterSW`, anulando a limpeza.
+As datas estão sendo **salvas corretamente** no banco (ex: `"2026-03-04"`), mas ao **exibir** nas tabelas de histórico, o código usa `new Date("2026-03-04")` que interpreta a string como meia-noite UTC. No fuso horário do Brasil (UTC-3), isso vira `2026-03-03T21:00:00`, resultando na exibição do dia anterior.
 
-### Mudanças
+Isso acontece em 3 lugares no `DriverVehicleView.tsx`:
+- Linha 529: `format(new Date(log.log_date), 'dd/MM/yyyy')` — tabela de abastecimento
+- Linha 572: `format(new Date(oil.change_date), 'dd/MM/yyyy')` — tabela de troca de óleo
+- Linha 612: `format(new Date(m.maintenance_date), 'dd/MM/yyyy')` — tabela de manutenção
 
-1. **`src/main.tsx`** — Manter o código atual de limpeza de cache (já está OK).
+Também nas comparações de datas para filtros e ordenação (linha 261).
 
-2. **`src/components/PWAUpdatePrompt.tsx`** — Adicionar limpeza de cache também no momento da atualização (quando o usuário clica "Atualizar"), garantindo que o SW novo comece com cache limpo.
+## Solução
 
-3. **`vite.config.ts`** — Verificar se o `workbox` está configurado para não pré-cachear assets antigos (adicionar `skipWaiting: true` e `clientsClaim: true` se ausentes).
+Criar uma função `parseDateString` que interpreta "YYYY-MM-DD" como data local (não UTC):
 
-Isso garante que o cache seja limpo tanto no carregamento inicial quanto nas atualizações do PWA.
+```typescript
+const parseDateString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+```
+
+Substituir todas as ocorrências de `new Date(log.log_date)`, `new Date(oil.change_date)`, `new Date(m.maintenance_date)` e `new Date(record.change_date)` por `parseDateString(...)`.
+
+## Arquivo alterado
+
+- `src/components/veiculos/DriverVehicleView.tsx` — adicionar `parseDateString` e usá-la em todas as conversões de datas "YYYY-MM-DD" para `Date`.
 
