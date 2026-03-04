@@ -221,17 +221,6 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
 
   return (
     <div className="flex items-center gap-2">
-      <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Selecionar veículo" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos os veículos</SelectItem>
-          {vehicles.map(v => (
-            <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
       <Button onClick={handleExport} variant="outline" className="gap-2">
         <FileDown className="h-4 w-4" />
         Exportar PDF
