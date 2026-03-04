@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, MapPin, FileText, Hash, CalendarIcon } from 'lucide-react';
+import { Loader2, MapPin, FileText, Hash, CalendarIcon, Clock, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -115,9 +115,30 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
     }
   };
 
+  const formatLocalISO = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  };
+
+  const parseLocalDate = (str: string): Date => {
+    if (!str) return new Date();
+    const [datePart, timePart] = str.split('T');
+    const [y, mo, d] = datePart.split('-').map(Number);
+    if (timePart) {
+      const [h, mi, s] = timePart.split(':').map(Number);
+      return new Date(y, mo - 1, d, h, mi, s || 0);
+    }
+    return new Date(y, mo - 1, d);
+  };
+
   const dateValue = form.watch('scheduledDate');
-  const parsedDate = dateValue ? new Date(dateValue) : undefined;
-  const timeValue = dateValue ? format(new Date(dateValue), 'HH:mm') : '';
+  const parsedDate = dateValue ? parseLocalDate(dateValue) : undefined;
+  const timeValue = dateValue ? format(parseLocalDate(dateValue), 'HH:mm') : '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -224,7 +245,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
                     <FormControl>
                       <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value ? format(new Date(field.value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "Selecione a data"}
+                        {field.value ? format(parseLocalDate(field.value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "Selecione a data"}
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -234,26 +255,43 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
                       selected={parsedDate}
                       onSelect={(day) => {
                         if (!day) { field.onChange(''); return; }
-                        const [h, m] = (timeValue || '08:00').split(':').map(Number);
-                        day.setHours(h, m);
-                        field.onChange(day.toISOString());
+                        const [h, m] = (timeValue || format(new Date(), 'HH:mm')).split(':').map(Number);
+                        day.setHours(h, m, 0, 0);
+                        field.onChange(formatLocalISO(day));
                       }}
+                      defaultMonth={parsedDate || new Date()}
                       initialFocus
                       locale={ptBR}
                     />
                     <div className="border-t px-3 py-2 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                       <Input
                         type="time"
                         value={timeValue}
                         onChange={(e) => {
                           const time = e.target.value;
-                          const base = parsedDate || new Date();
+                          const base = parsedDate ? new Date(parsedDate) : new Date();
                           const [h, m] = time.split(':').map(Number);
                           base.setHours(h, m, 0, 0);
-                          field.onChange(base.toISOString());
+                          field.onChange(formatLocalISO(base));
                         }}
                         className="w-28"
                       />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-primary hover:text-primary/80"
+                        onClick={() => {
+                          if (!field.value) {
+                            field.onChange(formatLocalISO(new Date()));
+                          }
+                          (document.activeElement as HTMLElement)?.blur();
+                        }}
+                        title="Confirmar data e hora"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
                     </div>
                   </PopoverContent>
                 </Popover>

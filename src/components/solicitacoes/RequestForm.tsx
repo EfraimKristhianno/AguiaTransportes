@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, User, Phone, CalendarIcon, FileText, Send, Hash, Clock } from 'lucide-react';
+import { Plus, User, Phone, CalendarIcon, FileText, Send, Hash, Clock, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { Button } from '@/components/ui/button';
@@ -456,29 +456,51 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               control={form.control}
               name="scheduledDate"
               render={({ field }) => {
-                const dateValue = field.value ? new Date(field.value) : undefined;
-                const timeValue = field.value ? format(new Date(field.value), 'HH:mm') : '';
+                const formatLocalISO = (d: Date): string => {
+                  const year = d.getFullYear();
+                  const month = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  const hours = String(d.getHours()).padStart(2, '0');
+                  const minutes = String(d.getMinutes()).padStart(2, '0');
+                  const seconds = String(d.getSeconds()).padStart(2, '0');
+                  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+                };
+
+                const parseLocalDate = (str: string): Date => {
+                  const [datePart, timePart] = str.split('T');
+                  const [y, mo, d] = datePart.split('-').map(Number);
+                  if (timePart) {
+                    const [h, mi, s] = timePart.split(':').map(Number);
+                    return new Date(y, mo - 1, d, h, mi, s || 0);
+                  }
+                  return new Date(y, mo - 1, d);
+                };
+
+                const dateValue = field.value ? parseLocalDate(field.value) : undefined;
+                const timeValue = field.value ? format(parseLocalDate(field.value), 'HH:mm') : '';
 
                 const handleDateSelect = (day: Date | undefined) => {
                   if (!day) { field.onChange(''); return; }
-                  const [hours, minutes] = (timeValue || '08:00').split(':').map(Number);
-                  day.setHours(hours, minutes);
-                  field.onChange(day.toISOString());
+                  const [hours, minutes] = (timeValue || format(new Date(), 'HH:mm')).split(':').map(Number);
+                  day.setHours(hours, minutes, 0, 0);
+                  field.onChange(formatLocalISO(day));
                 };
 
                 const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   const time = e.target.value;
-                  if (!dateValue) {
-                    const today = new Date();
-                    const [h, m] = time.split(':').map(Number);
-                    today.setHours(h, m, 0, 0);
-                    field.onChange(today.toISOString());
-                  } else {
-                    const [h, m] = time.split(':').map(Number);
-                    const updated = new Date(dateValue);
-                    updated.setHours(h, m);
-                    field.onChange(updated.toISOString());
+                  const base = dateValue ? new Date(dateValue) : new Date();
+                  const [h, m] = time.split(':').map(Number);
+                  base.setHours(h, m, 0, 0);
+                  field.onChange(formatLocalISO(base));
+                };
+
+                const handleConfirmDateTime = () => {
+                  if (!field.value) {
+                    const now = new Date();
+                    field.onChange(formatLocalISO(now));
                   }
+                  // Close popover by blurring
+                  (document.activeElement as HTMLElement)?.blur();
                 };
 
                 return (
@@ -496,7 +518,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {field.value
-                              ? format(new Date(field.value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                              ? format(parseLocalDate(field.value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
                               : "Selecione a data"}
                           </Button>
                         </FormControl>
@@ -506,6 +528,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                           mode="single"
                           selected={dateValue}
                           onSelect={handleDateSelect}
+                          defaultMonth={dateValue || new Date()}
                           initialFocus
                           className="p-3 pointer-events-auto"
                           locale={ptBR}
@@ -518,6 +541,16 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                             onChange={handleTimeChange}
                             className="w-auto"
                           />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-primary hover:text-primary/80"
+                            onClick={handleConfirmDateTime}
+                            title="Confirmar data e hora"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
                         </div>
                       </PopoverContent>
                     </Popover>
