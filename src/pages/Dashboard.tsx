@@ -558,8 +558,8 @@ const Dashboard = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(item)}
-                              title={isClient && (item.status === 'entregue' || item.status === 'cancelada') ? 'Não é possível editar' : 'Editar'}
-                              disabled={isClient && (item.status === 'entregue' || item.status === 'cancelada')}
+                              title={isClient && item.status !== 'solicitada' ? 'Clientes só podem editar solicitações com status "Solicitada"' : 'Editar'}
+                              disabled={isClient && item.status !== 'solicitada'}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -627,7 +627,7 @@ const Dashboard = () => {
                     </Button>
                     {canEditDelete && (
                       <>
-                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => handleEdit(item)}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => handleEdit(item)} disabled={isClient && item.status !== 'solicitada'}>
                           <Pencil className="h-5 w-5" />
                         </Button>
                         <Button
