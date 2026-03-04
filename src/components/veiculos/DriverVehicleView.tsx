@@ -488,7 +488,10 @@ const DriverVehicleView = () => {
             <div>
               <p className="text-xs text-muted-foreground">Próx. Troca Óleo</p>
               {latestOil ? (
-                <p className="text-xl font-bold">{latestOil.next_change_km.toLocaleString('pt-BR')} km</p>
+                <>
+                  <p className="text-xl font-bold">{latestOil.next_change_km.toLocaleString('pt-BR')} km</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Km atual: {currentKm.toLocaleString('pt-BR')}</p>
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">Sem registro</p>
               )}
