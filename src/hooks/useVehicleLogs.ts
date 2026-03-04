@@ -215,3 +215,97 @@ export const useCreateMaintenanceRecord = () => {
     },
   });
 };
+
+// Update hooks
+export const useUpdateVehicleLog = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { data, error } = await supabase.from('vehicle_logs').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle_logs'] });
+      toast.success('Registro atualizado!');
+    },
+    onError: (error: any) => toast.error('Erro ao atualizar: ' + error.message),
+  });
+};
+
+export const useDeleteVehicleLog = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('vehicle_logs').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle_logs'] });
+      toast.success('Registro excluído!');
+    },
+    onError: (error: any) => toast.error('Erro ao excluir: ' + error.message),
+  });
+};
+
+export const useUpdateOilChange = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { data, error } = await supabase.from('oil_change_records').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['oil_change_records'] });
+      toast.success('Registro de óleo atualizado!');
+    },
+    onError: (error: any) => toast.error('Erro ao atualizar: ' + error.message),
+  });
+};
+
+export const useDeleteOilChange = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('oil_change_records').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['oil_change_records'] });
+      toast.success('Registro de óleo excluído!');
+    },
+    onError: (error: any) => toast.error('Erro ao excluir: ' + error.message),
+  });
+};
+
+export const useUpdateMaintenanceRecord = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { data, error } = await supabase.from('maintenance_records').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance_records'] });
+      toast.success('Manutenção atualizada!');
+    },
+    onError: (error: any) => toast.error('Erro ao atualizar: ' + error.message),
+  });
+};
+
+export const useDeleteMaintenanceRecord = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('maintenance_records').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance_records'] });
+      toast.success('Manutenção excluída!');
+    },
+    onError: (error: any) => toast.error('Erro ao excluir: ' + error.message),
+  });
+};
