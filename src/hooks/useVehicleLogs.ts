@@ -53,7 +53,7 @@ export const useVehicleLogs = () => {
       let query = supabase
         .from('vehicle_logs')
         .select('*, vehicle:vehicles(id, plate, type, brand, model), driver:drivers(id, name)')
-        .order('log_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (isDriverOnly && currentDriver?.id) {
         query = query.eq('driver_id', currentDriver.id);
@@ -78,7 +78,7 @@ export const useOilChangeRecords = () => {
       let query = supabase
         .from('oil_change_records')
         .select('*, vehicle:vehicles(id, plate, type), driver:drivers(id, name)')
-        .order('change_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (isDriverOnly && currentDriver?.id) {
         query = query.eq('driver_id', currentDriver.id);
@@ -176,7 +176,7 @@ export const useMaintenanceRecords = () => {
       let query = supabase
         .from('maintenance_records')
         .select('*, vehicle:vehicles(id, plate, type), driver:drivers(id, name)')
-        .order('maintenance_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (isDriverOnly && currentDriver?.id) {
         query = query.eq('driver_id', currentDriver.id);
