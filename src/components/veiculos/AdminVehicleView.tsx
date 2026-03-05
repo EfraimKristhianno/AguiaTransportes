@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Fuel, Car, AlertTriangle, TrendingUp, DollarSign, History, Search, CalendarIcon } from 'lucide-react';
+import { Fuel, Car, AlertTriangle, TrendingUp, DollarSign, History, CalendarIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line, PieChart, Pie } from 'recharts';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
 import VehicleExportPDF from './VehicleExportPDF';
+import VehicleHistoryGrids from './VehicleHistoryGrids';
 
 const COLORS = ['#d32127', '#e8783a', '#f5a623', '#4a9eda', '#6bc5a0'];
 
@@ -633,6 +634,13 @@ const AdminVehicleView = () => {
         </CardContent>
       </Card>
 
+      {/* Inline History Grids */}
+      <VehicleHistoryGrids
+        filteredLogs={filteredLogs}
+        filteredOilRecords={filteredOilRecords}
+        filteredMaintenanceRecords={filteredMaintenanceRecords}
+        allVehicles={allVehicles}
+      />
       {selectedVehicle && (
         <VehicleHistoryDialog
           open={!!selectedVehicle}
