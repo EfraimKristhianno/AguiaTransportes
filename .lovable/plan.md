@@ -1,61 +1,24 @@
 
 
-## Plan: Implementar lógica de frete baseada em origem E destino
+## Plan: Atualizar credenciais VAPID para notificações push
 
-### Regras de negócio
+### O que será feito
 
-1. Coleta = Metropolitana/Araucária + Entrega = Curitiba → preço Metropolitana/Araucária
-2. Coleta = Curitiba + Entrega = Metropolitana/Araucária → preço Metropolitana/Araucária
-3. Coleta = Curitiba + Entrega = Curitiba → preço Curitiba
-4. Qualquer endereço fora das 3 regiões conhecidas → "A combinar"
+As credenciais VAPID que você compartilhou precisam ser atualizadas em dois lugares:
 
-Resumo: sempre prevalece a região "mais distante" (Metropolitana/Araucária > Curitiba). Se algum endereço não for reconhecido como Curitiba, Metropolitana ou Araucária, o frete fica "a combinar".
+1. **Secrets do Supabase** (usados pela Edge Function `notify-driver`):
+   - `VAPID_PUBLIC_KEY` → `BE0HfQeUt04qQQGS9Rr2AnSmFUNFE12Otsrn94riIJ7EhOrd8aQnCLs7AdGboHu8vMWlqE6plwI_tNaSPcVixxw`
+   - `VAPID_PRIVATE_KEY` → `6O4FZpC65GpnRgd-gC8179GCICPugkv8d3VxsCC_qEM`
+   - `VAPID_SUBJECT` → `mailto:efraimkristhianno@gmail.com`
 
-### Alterações
+2. **Variável de ambiente do frontend** (`.env`):
+   - `VITE_VAPID_PUBLIC_KEY` → atualizar com a nova chave pública
 
-**1. `src/lib/regionDetection.ts`** - Nova função `resolveFreightRegion`
+3. **Limpeza de cache (main.tsx)**: Incrementar versão para `v7` para forçar re-inscrição dos service workers com a nova chave VAPID.
 
-Criar uma função que recebe os dois endereços (origem e destino) e retorna a região efetiva para precificação, ou `null` para "a combinar":
+### Detalhes técnicos
 
-```
-resolveFreightRegion(originAddress, destinationAddress) → FreightRegion | 'a_combinar' | null
-```
-
-Lógica:
-- Detecta região de cada endereço via `detectRegionFromAddress`
-- Se algum for `null` → retorna `null`
-- Se ambos = Curitiba → 'Curitiba'
-- Se algum = Metropolitana ou Araucária → retorna essa região (prioridade Metropolitana/Araucária)
-- Caso contrário → `null` (a combinar)
-
-**2. `src/hooks/useFreightPrices.ts`** - Atualizar `getFreightPricesForRequest`
-
-Aceitar `originAddress` e `destinationAddress` em vez de apenas `region`, e usar a nova `resolveFreightRegion` internamente. Atualizar `formatSingleFreightPrice` para retornar "A combinar" quando a região resolvida indicar isso.
-
-**3. Atualizar todos os pontos de uso** (7 arquivos):
-
-- `RequestForm.tsx` - enviar região correta ao salvar; exibir badge com região resolvida
-- `RequestList.tsx` - passar ambos endereços para cálculo do frete
-- `UnifiedRequestDetailsDialog.tsx` - idem
-- `Solicitacoes.tsx` - idem para totais e PDF
-- `Dashboard.tsx` - idem para totais
-- `AdminVehicleView.tsx` - idem para relatório de veículos
-- `EditRequestDialog.tsx` - atualizar região ao editar endereços
-
-Em cada ponto, substituir chamadas como:
-```ts
-// Antes
-const region = detectRegionForFreight(request.destination_address);
-const prices = getFreightPricesForRequest(allPrices, clientId, transportType, region);
-
-// Depois  
-const freightRegion = resolveFreightRegion(request.origin_address, request.destination_address);
-const prices = getFreightPricesForRequest(allPrices, clientId, transportType, freightRegion);
-```
-
-E `formatSingleFreightPrice` retornará "A combinar" quando `freightRegion` for `null` e não houver preços correspondentes.
-
-**4. Campo `region` no banco** - Atualizar para salvar a região resolvida (já existe a coluna `region` em `delivery_requests`), usando a nova lógica ao criar/editar solicitações.
-
-Nenhuma migração de banco necessária -- a coluna `region` já existe como `text`.
+- O hook `useWebPush.ts` já possui lógica para detectar mudança de chave VAPID e forçar re-inscrição automaticamente — nenhuma alteração de código necessária nele.
+- A Edge Function `notify-driver` já lê as secrets via `Deno.env.get()` — só precisa atualizar os valores.
+- O `main.tsx` desregistra service workers antigos no carregamento, garantindo que a nova chave será usada.
 
