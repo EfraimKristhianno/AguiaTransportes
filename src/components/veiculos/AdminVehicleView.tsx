@@ -483,14 +483,14 @@ const AdminVehicleView = () => {
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value);
 
-              const renderCustomLabel = ({ cx, cy, midAngle, outerRadius, percent }: any) => {
+              const renderCustomLabel = ({ cx, cy, midAngle, outerRadius, percent, value }: any) => {
                 const RADIAN = Math.PI / 180;
-                const radius = outerRadius + 22;
+                const radius = outerRadius + 28;
                 const x = cx + radius * Math.cos(-midAngle * RADIAN);
                 const y = cy + radius * Math.sin(-midAngle * RADIAN);
                 return percent > 0.03 ? (
-                  <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={600}>
-                    {`${(percent * 100).toFixed(0)}%`}
+                  <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight={600}>
+                    {`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                   </text>
                 ) : null;
               };
