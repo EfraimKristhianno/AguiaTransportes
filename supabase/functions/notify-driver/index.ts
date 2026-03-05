@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
     const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
-    const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:contato@aguiatransportes.com";
+    const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:efraimkristhianno@gmail.com";
 
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
       throw new Error("VAPID keys not configured");
@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
     const notificationPayload = JSON.stringify({
       title,
       body: message,
-      tag: `request-${record.id}`,
+      tag: `request-${record.id}-${Date.now()}`,
       data: {
         request_id: record.id,
         request_number: record.request_number,
@@ -151,10 +151,24 @@ Deno.serve(async (req) => {
           },
         };
 
-        await webpush.sendNotification(pushSub, notificationPayload, {
-          TTL: 3600,
-          urgency: "high",
-        });
+        // Detect platform from endpoint for optimal headers
+        const isApple = sub.endpoint.includes("web.push.apple.com");
+        const isFCM = sub.endpoint.includes("fcm.googleapis.com") || sub.endpoint.includes("push.services.mozilla.com");
+
+        const pushOptions: any = {
+          TTL: 86400, // 24 hours - ensures delivery even if device is offline
+          urgency: "high", // Critical for background delivery on both platforms
+        };
+
+        // For Apple Push (iOS Safari/PWA), set the Topic header
+        // Apple requires this for reliable background delivery
+        if (isApple) {
+          pushOptions.headers = {
+            "Topic": "web.app.lovable.03d2b86de99344f0825dfdf29f6db22b",
+          };
+        }
+
+        await webpush.sendNotification(pushSub, notificationPayload, pushOptions);
 
         sent++;
       } catch (err: any) {
