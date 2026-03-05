@@ -1,30 +1,61 @@
 
 
-## Problema
+## Plan: Implementar lógica de frete baseada em origem E destino
 
-As datas estão sendo **salvas corretamente** no banco (ex: `"2026-03-04"`), mas ao **exibir** nas tabelas de histórico, o código usa `new Date("2026-03-04")` que interpreta a string como meia-noite UTC. No fuso horário do Brasil (UTC-3), isso vira `2026-03-03T21:00:00`, resultando na exibição do dia anterior.
+### Regras de negócio
 
-Isso acontece em 3 lugares no `DriverVehicleView.tsx`:
-- Linha 529: `format(new Date(log.log_date), 'dd/MM/yyyy')` — tabela de abastecimento
-- Linha 572: `format(new Date(oil.change_date), 'dd/MM/yyyy')` — tabela de troca de óleo
-- Linha 612: `format(new Date(m.maintenance_date), 'dd/MM/yyyy')` — tabela de manutenção
+1. Coleta = Metropolitana/Araucária + Entrega = Curitiba → preço Metropolitana/Araucária
+2. Coleta = Curitiba + Entrega = Metropolitana/Araucária → preço Metropolitana/Araucária
+3. Coleta = Curitiba + Entrega = Curitiba → preço Curitiba
+4. Qualquer endereço fora das 3 regiões conhecidas → "A combinar"
 
-Também nas comparações de datas para filtros e ordenação (linha 261).
+Resumo: sempre prevalece a região "mais distante" (Metropolitana/Araucária > Curitiba). Se algum endereço não for reconhecido como Curitiba, Metropolitana ou Araucária, o frete fica "a combinar".
 
-## Solução
+### Alterações
 
-Criar uma função `parseDateString` que interpreta "YYYY-MM-DD" como data local (não UTC):
+**1. `src/lib/regionDetection.ts`** - Nova função `resolveFreightRegion`
 
-```typescript
-const parseDateString = (dateStr: string): Date => {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
+Criar uma função que recebe os dois endereços (origem e destino) e retorna a região efetiva para precificação, ou `null` para "a combinar":
+
+```
+resolveFreightRegion(originAddress, destinationAddress) → FreightRegion | 'a_combinar' | null
 ```
 
-Substituir todas as ocorrências de `new Date(log.log_date)`, `new Date(oil.change_date)`, `new Date(m.maintenance_date)` e `new Date(record.change_date)` por `parseDateString(...)`.
+Lógica:
+- Detecta região de cada endereço via `detectRegionFromAddress`
+- Se algum for `null` → retorna `null`
+- Se ambos = Curitiba → 'Curitiba'
+- Se algum = Metropolitana ou Araucária → retorna essa região (prioridade Metropolitana/Araucária)
+- Caso contrário → `null` (a combinar)
 
-## Arquivo alterado
+**2. `src/hooks/useFreightPrices.ts`** - Atualizar `getFreightPricesForRequest`
 
-- `src/components/veiculos/DriverVehicleView.tsx` — adicionar `parseDateString` e usá-la em todas as conversões de datas "YYYY-MM-DD" para `Date`.
+Aceitar `originAddress` e `destinationAddress` em vez de apenas `region`, e usar a nova `resolveFreightRegion` internamente. Atualizar `formatSingleFreightPrice` para retornar "A combinar" quando a região resolvida indicar isso.
+
+**3. Atualizar todos os pontos de uso** (7 arquivos):
+
+- `RequestForm.tsx` - enviar região correta ao salvar; exibir badge com região resolvida
+- `RequestList.tsx` - passar ambos endereços para cálculo do frete
+- `UnifiedRequestDetailsDialog.tsx` - idem
+- `Solicitacoes.tsx` - idem para totais e PDF
+- `Dashboard.tsx` - idem para totais
+- `AdminVehicleView.tsx` - idem para relatório de veículos
+- `EditRequestDialog.tsx` - atualizar região ao editar endereços
+
+Em cada ponto, substituir chamadas como:
+```ts
+// Antes
+const region = detectRegionForFreight(request.destination_address);
+const prices = getFreightPricesForRequest(allPrices, clientId, transportType, region);
+
+// Depois  
+const freightRegion = resolveFreightRegion(request.origin_address, request.destination_address);
+const prices = getFreightPricesForRequest(allPrices, clientId, transportType, freightRegion);
+```
+
+E `formatSingleFreightPrice` retornará "A combinar" quando `freightRegion` for `null` e não houver preços correspondentes.
+
+**4. Campo `region` no banco** - Atualizar para salvar a região resolvida (já existe a coluna `region` em `delivery_requests`), usando a nova lógica ao criar/editar solicitações.
+
+Nenhuma migração de banco necessária -- a coluna `region` já existe como `text`.
 
