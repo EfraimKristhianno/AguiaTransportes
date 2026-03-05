@@ -1,24 +1,33 @@
 
 
-## Plan: Atualizar credenciais VAPID para notificações push
+## Diagnóstico do Problema
 
-### O que será feito
+O vídeo mostra a tela recarregando infinitamente no celular. A causa raiz é uma combinação de dois problemas:
 
-As credenciais VAPID que você compartilhou precisam ser atualizadas em dois lugares:
+1. **`sessionStorage` não persiste em reloads de PWA no celular** — Em muitos navegadores móveis, `sessionStorage` é limpa quando a página recarrega ou quando o app PWA é reaberto. Então o flag `pwa-update-dismissed-v2` é perdido a cada reload.
 
-1. **Secrets do Supabase** (usados pela Edge Function `notify-driver`):
-   - `VAPID_PUBLIC_KEY` → `BE0HfQeUt04qQQGS9Rr2AnSmFUNFE12Otsrn94riIJ7EhOrd8aQnCLs7AdGboHu8vMWlqE6plwI_tNaSPcVixxw`
-   - `VAPID_PRIVATE_KEY` → `6O4FZpC65GpnRgd-gC8179GCICPugkv8d3VxsCC_qEM`
-   - `VAPID_SUBJECT` → `mailto:efraimkristhianno@gmail.com`
+2. **`window.location.reload()` no `handleUpdate` cria um loop** — Após o reload, o Service Worker ainda detecta uma atualização pendente, `needRefresh` volta a ser `true`, o `sessionStorage` está limpo, e o prompt aparece de novo, causando outro reload.
 
-2. **Variável de ambiente do frontend** (`.env`):
-   - `VITE_VAPID_PUBLIC_KEY` → atualizar com a nova chave pública
+## Plano de Correção
 
-3. **Limpeza de cache (main.tsx)**: Incrementar versão para `v7` para forçar re-inscrição dos service workers com a nova chave VAPID.
+### 1. Trocar `sessionStorage` por `localStorage` com TTL
 
-### Detalhes técnicos
+Usar `localStorage` com um timestamp. Após clicar em "Atualizar" ou "Fechar", salvar a hora atual. O prompt só reaparece se passaram mais de 24 horas desde a última dispensa. Isso sobrevive a reloads e reopenings do app.
 
-- O hook `useWebPush.ts` já possui lógica para detectar mudança de chave VAPID e forçar re-inscrição automaticamente — nenhuma alteração de código necessária nele.
-- A Edge Function `notify-driver` já lê as secrets via `Deno.env.get()` — só precisa atualizar os valores.
-- O `main.tsx` desregistra service workers antigos no carregamento, garantindo que a nova chave será usada.
+### 2. Remover `window.location.reload()`
+
+Eliminar completamente o `setTimeout(() => window.location.reload(), 500)`. Em vez disso, chamar `updateServiceWorker(true)` que faz o reload controlado pela biblioteca vite-plugin-pwa. Mas SOMENTE se o prompt não foi previamente dispensado (verificado via localStorage).
+
+### 3. Proteção contra loop no `useRegisterSW`
+
+Adicionar verificação do localStorage ANTES de permitir que `needRefresh` mostre o prompt. Se foi dispensado nas últimas 24h, ignorar silenciosamente.
+
+### Arquivo alterado
+
+**`src/components/PWAUpdatePrompt.tsx`** — Refatoração completa:
+- `localStorage` com chave contendo timestamp ao invés de `sessionStorage` com boolean
+- Função `isDismissedRecently()` que verifica se passaram menos de 24h
+- `handleUpdate`: seta localStorage, chama `updateServiceWorker(true)` sem reload manual
+- `handleDismiss`: seta localStorage, esconde prompt
+- Guard no render: se dispensado recentemente, retorna null
 
