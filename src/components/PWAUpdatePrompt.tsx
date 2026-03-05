@@ -1,47 +1,42 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
 
-const DISMISSED_KEY = 'pwa-update-dismissed-v2';
+const DISMISSED_KEY = 'pwa-update-dismissed-ts';
+const DISMISS_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+const isDismissedRecently = (): boolean => {
+  const ts = localStorage.getItem(DISMISSED_KEY);
+  if (!ts) return false;
+  return Date.now() - parseInt(ts, 10) < DISMISS_TTL;
+};
+
+const markDismissed = () => {
+  localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+};
 
 const PWAUpdatePrompt = () => {
-  const [dismissed, setDismissed] = useState(() => {
-    return sessionStorage.getItem(DISMISSED_KEY) === 'true';
-  });
-
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegisteredSW(_swUrl, _registration) {
-      // No interval checks - rely on browser's native SW update detection
-    },
-    onRegisterError(_error) {
-      // Silently handle registration errors
-    },
+    onRegisteredSW() {},
+    onRegisterError() {},
   });
 
+  // Guard: don't show if dismissed recently
+  if (!needRefresh || isDismissedRecently()) return null;
+
   const handleUpdate = () => {
-    // Mark as dismissed BEFORE triggering update to prevent loop
-    sessionStorage.setItem(DISMISSED_KEY, 'true');
-    setDismissed(true);
+    markDismissed();
     setNeedRefresh(false);
-    // Use false to NOT auto-reload - let the new SW activate naturally
-    updateServiceWorker(false);
-    // Manually reload once after a short delay
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    updateServiceWorker(true);
   };
 
   const handleDismiss = () => {
-    sessionStorage.setItem(DISMISSED_KEY, 'true');
-    setDismissed(true);
+    markDismissed();
     setNeedRefresh(false);
   };
-
-  if (!needRefresh || dismissed) return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-bottom-4 fade-in duration-300">
