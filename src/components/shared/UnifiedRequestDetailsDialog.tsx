@@ -153,6 +153,7 @@ export const UnifiedRequestDetailsDialog = ({
   const [stepNotesText, setStepNotesText] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [driverStepDialogOpen, setDriverStepDialogOpen] = useState(false);
+  const [selectedNextStatus, setSelectedNextStatus] = useState<string | null>(null);
   
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
 
@@ -200,6 +201,7 @@ export const UnifiedRequestDetailsDialog = ({
       setStepNotesText('');
       setDriverStepDialogOpen(false);
       setAdminSelectedStatus('');
+      setSelectedNextStatus(null);
     } else if (request) {
       setNotesText(request.notes || '');
     }
@@ -217,21 +219,46 @@ export const UnifiedRequestDetailsDialog = ({
   const canAccept = isDriver && driverId && (request.status === 'solicitada' || request.status === 'enviada');
   const isAssignedDriver = isDriver && driverId && request.driver_id;
 
-  // Next status for driver progression
-  const getNextStatus = () => {
-    if (!isAssignedDriver) return null;
+  // Next status options for driver progression
+  const getNextStatusOptions = (): { value: string; label: string }[] => {
+    if (!isAssignedDriver || !request.status) return [];
+    
+    // Statuses with choice
+    if (request.status === 'aceita') {
+      return [
+        { value: 'pendente_coleta', label: 'Pendente Coleta' },
+        { value: 'coletada', label: 'Coletada' },
+      ];
+    }
+    if (request.status === 'em_rota') {
+      return [
+        { value: 'pendente_entrega', label: 'Pendente Entrega' },
+        { value: 'entregue', label: 'Entregue' },
+      ];
+    }
+    
+    // Single next status
     const nextMap: Record<string, string> = {
-      aceita: 'pendente_coleta',
       pendente_coleta: 'coletada',
       coletada: 'em_rota',
-      em_rota: 'pendente_entrega',
       pendente_entrega: 'entregue',
     };
-    return request.status ? nextMap[request.status] || null : null;
+    const next = nextMap[request.status];
+    if (!next) return [];
+    const label = STATUS_FLOW.find(s => s.value === next)?.label || next;
+    return [{ value: next, label }];
   };
 
-  const nextStatus = getNextStatus();
-  const nextStatusLabel = nextStatus ? STATUS_FLOW.find(s => s.value === nextStatus)?.label : null;
+
+  const nextStatusOptions = getNextStatusOptions();
+  
+  // Auto-select when there's only one option
+  const effectiveNextStatus = nextStatusOptions.length === 1 
+    ? nextStatusOptions[0].value 
+    : selectedNextStatus;
+  const effectiveNextLabel = nextStatusOptions.length === 1
+    ? nextStatusOptions[0].label
+    : nextStatusOptions.find(o => o.value === selectedNextStatus)?.label || null;
 
   const handleAccept = async () => {
     if (!driverId) return;
@@ -273,8 +300,9 @@ export const UnifiedRequestDetailsDialog = ({
     } finally { setIsAccepting(false); }
   };
 
-  const handleUpdateStatus = async () => {
-    if (!nextStatus) return;
+  const handleUpdateStatus = async (statusOverride?: string) => {
+    const targetStatus = statusOverride || effectiveNextStatus;
+    if (!targetStatus) return;
     setIsUpdatingStatus(true);
     try {
       const paths: string[] = [];
@@ -284,7 +312,7 @@ export const UnifiedRequestDetailsDialog = ({
       }
       await updateStatusMutation.mutateAsync({
         requestId: request.id,
-        status: nextStatus,
+        status: targetStatus,
         attachmentPaths: paths,
         notes: stepNotesText || undefined,
       });
@@ -753,18 +781,35 @@ export const UnifiedRequestDetailsDialog = ({
                 </div>
               )}
 
-              {isAssignedDriver && nextStatus && (
+              {isAssignedDriver && nextStatusOptions.length > 0 && (
                 <div className="space-y-3 border-t pt-4">
+                  {nextStatusOptions.length > 1 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {nextStatusOptions.map((opt) => (
+                        <Button
+                          key={opt.value}
+                          variant={selectedNextStatus === opt.value ? 'default' : 'outline'}
+                          className="h-11 text-sm"
+                          onClick={() => setSelectedNextStatus(opt.value)}
+                          disabled={isUpdatingStatus}
+                        >
+                          {opt.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                    <div className="flex items-center gap-2">
                     <Button
-                      onClick={handleUpdateStatus}
+                      onClick={() => handleUpdateStatus()}
                       className="flex-1 h-12 text-base"
-                      disabled={isUpdatingStatus}
+                      disabled={isUpdatingStatus || !effectiveNextStatus}
                     >
                       {isUpdatingStatus ? (
                         <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Atualizando...</>
+                      ) : effectiveNextLabel ? (
+                        <>Confirmar: {effectiveNextLabel}</>
                       ) : (
-                        <>Confirmar: {nextStatusLabel}</>
+                        <>Selecione o próximo status</>
                       )}
                     </Button>
                     <Button
