@@ -801,7 +801,7 @@ export const UnifiedRequestDetailsDialog = ({
                    <div className="flex items-center gap-2">
                     <Button
                       onClick={() => handleUpdateStatus()}
-                      className="flex-1 h-12 text-base"
+                      className="flex-1 h-12 text-base hover:bg-primary/90"
                       disabled={isUpdatingStatus || !effectiveNextStatus}
                     >
                       {isUpdatingStatus ? (
