@@ -502,7 +502,7 @@ const DriverVehicleView = () => {
 
       {oilChangeWarning && (
         <div className="rounded-lg border border-destructive bg-destructive/5 p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 animate-pulse" />
           <p className="text-sm text-destructive font-medium">Atenção: Km atual ({currentKm.toLocaleString('pt-BR')}) excedeu a previsão de troca de óleo ({latestOil!.next_change_km.toLocaleString('pt-BR')} km).</p>
         </div>
       )}
