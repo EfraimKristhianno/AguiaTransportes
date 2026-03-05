@@ -1,9 +1,9 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-const DISMISSED_KEY = 'pwa-update-dismissed';
+const DISMISSED_KEY = 'pwa-update-dismissed-v2';
 
 const PWAUpdatePrompt = () => {
   const [dismissed, setDismissed] = useState(() => {
@@ -13,13 +13,26 @@ const PWAUpdatePrompt = () => {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
-  } = useRegisterSW();
+  } = useRegisterSW({
+    onRegisteredSW(_swUrl, _registration) {
+      // No interval checks - rely on browser's native SW update detection
+    },
+    onRegisterError(_error) {
+      // Silently handle registration errors
+    },
+  });
 
   const handleUpdate = () => {
+    // Mark as dismissed BEFORE triggering update to prevent loop
     sessionStorage.setItem(DISMISSED_KEY, 'true');
     setDismissed(true);
     setNeedRefresh(false);
-    updateServiceWorker(true);
+    // Use false to NOT auto-reload - let the new SW activate naturally
+    updateServiceWorker(false);
+    // Manually reload once after a short delay
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
   };
 
   const handleDismiss = () => {
