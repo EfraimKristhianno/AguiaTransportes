@@ -1,33 +1,61 @@
 
 
-## Diagnóstico do Problema
+## Plan: Implementar lógica de frete baseada em origem E destino
 
-O vídeo mostra a tela recarregando infinitamente no celular. A causa raiz é uma combinação de dois problemas:
+### Regras de negócio
 
-1. **`sessionStorage` não persiste em reloads de PWA no celular** — Em muitos navegadores móveis, `sessionStorage` é limpa quando a página recarrega ou quando o app PWA é reaberto. Então o flag `pwa-update-dismissed-v2` é perdido a cada reload.
+1. Coleta = Metropolitana/Araucária + Entrega = Curitiba → preço Metropolitana/Araucária
+2. Coleta = Curitiba + Entrega = Metropolitana/Araucária → preço Metropolitana/Araucária
+3. Coleta = Curitiba + Entrega = Curitiba → preço Curitiba
+4. Qualquer endereço fora das 3 regiões conhecidas → "A combinar"
 
-2. **`window.location.reload()` no `handleUpdate` cria um loop** — Após o reload, o Service Worker ainda detecta uma atualização pendente, `needRefresh` volta a ser `true`, o `sessionStorage` está limpo, e o prompt aparece de novo, causando outro reload.
+Resumo: sempre prevalece a região "mais distante" (Metropolitana/Araucária > Curitiba). Se algum endereço não for reconhecido como Curitiba, Metropolitana ou Araucária, o frete fica "a combinar".
 
-## Plano de Correção
+### Alterações
 
-### 1. Trocar `sessionStorage` por `localStorage` com TTL
+**1. `src/lib/regionDetection.ts`** - Nova função `resolveFreightRegion`
 
-Usar `localStorage` com um timestamp. Após clicar em "Atualizar" ou "Fechar", salvar a hora atual. O prompt só reaparece se passaram mais de 24 horas desde a última dispensa. Isso sobrevive a reloads e reopenings do app.
+Criar uma função que recebe os dois endereços (origem e destino) e retorna a região efetiva para precificação, ou `null` para "a combinar":
 
-### 2. Remover `window.location.reload()`
+```
+resolveFreightRegion(originAddress, destinationAddress) → FreightRegion | 'a_combinar' | null
+```
 
-Eliminar completamente o `setTimeout(() => window.location.reload(), 500)`. Em vez disso, chamar `updateServiceWorker(true)` que faz o reload controlado pela biblioteca vite-plugin-pwa. Mas SOMENTE se o prompt não foi previamente dispensado (verificado via localStorage).
+Lógica:
+- Detecta região de cada endereço via `detectRegionFromAddress`
+- Se algum for `null` → retorna `null`
+- Se ambos = Curitiba → 'Curitiba'
+- Se algum = Metropolitana ou Araucária → retorna essa região (prioridade Metropolitana/Araucária)
+- Caso contrário → `null` (a combinar)
 
-### 3. Proteção contra loop no `useRegisterSW`
+**2. `src/hooks/useFreightPrices.ts`** - Atualizar `getFreightPricesForRequest`
 
-Adicionar verificação do localStorage ANTES de permitir que `needRefresh` mostre o prompt. Se foi dispensado nas últimas 24h, ignorar silenciosamente.
+Aceitar `originAddress` e `destinationAddress` em vez de apenas `region`, e usar a nova `resolveFreightRegion` internamente. Atualizar `formatSingleFreightPrice` para retornar "A combinar" quando a região resolvida indicar isso.
 
-### Arquivo alterado
+**3. Atualizar todos os pontos de uso** (7 arquivos):
 
-**`src/components/PWAUpdatePrompt.tsx`** — Refatoração completa:
-- `localStorage` com chave contendo timestamp ao invés de `sessionStorage` com boolean
-- Função `isDismissedRecently()` que verifica se passaram menos de 24h
-- `handleUpdate`: seta localStorage, chama `updateServiceWorker(true)` sem reload manual
-- `handleDismiss`: seta localStorage, esconde prompt
-- Guard no render: se dispensado recentemente, retorna null
+- `RequestForm.tsx` - enviar região correta ao salvar; exibir badge com região resolvida
+- `RequestList.tsx` - passar ambos endereços para cálculo do frete
+- `UnifiedRequestDetailsDialog.tsx` - idem
+- `Solicitacoes.tsx` - idem para totais e PDF
+- `Dashboard.tsx` - idem para totais
+- `AdminVehicleView.tsx` - idem para relatório de veículos
+- `EditRequestDialog.tsx` - atualizar região ao editar endereços
+
+Em cada ponto, substituir chamadas como:
+```ts
+// Antes
+const region = detectRegionForFreight(request.destination_address);
+const prices = getFreightPricesForRequest(allPrices, clientId, transportType, region);
+
+// Depois  
+const freightRegion = resolveFreightRegion(request.origin_address, request.destination_address);
+const prices = getFreightPricesForRequest(allPrices, clientId, transportType, freightRegion);
+```
+
+E `formatSingleFreightPrice` retornará "A combinar" quando `freightRegion` for `null` e não houver preços correspondentes.
+
+**4. Campo `region` no banco** - Atualizar para salvar a região resolvida (já existe a coluna `region` em `delivery_requests`), usando a nova lógica ao criar/editar solicitações.
+
+Nenhuma migração de banco necessária -- a coluna `region` já existe como `text`.
 
