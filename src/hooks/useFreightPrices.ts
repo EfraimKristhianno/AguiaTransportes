@@ -67,7 +67,17 @@ export const formatFreightPrices = (prices: FreightPrice[]): string => {
     .join(' / ');
 };
 
-export const formatSingleFreightPrice = (prices: FreightPrice[]): string => {
+/**
+ * Formats freight price for display.
+ * When resolvedRegion is explicitly null (meaning "A combinar"), returns "A combinar".
+ * When prices array is empty and no region context, returns "-".
+ */
+export const formatSingleFreightPrice = (prices: FreightPrice[], resolvedRegion?: FreightRegion | null): string => {
+  // If region was explicitly resolved as null (unknown region), show "A combinar"
+  if (resolvedRegion === null && resolvedRegion !== undefined) {
+    if (prices.length === 0) return 'A combinar';
+  }
+  
   if (prices.length === 0) return '-';
   if (prices.length === 1) {
     return `R$ ${Number(prices[0].price).toFixed(2).replace('.', ',')}`;
@@ -76,3 +86,7 @@ export const formatSingleFreightPrice = (prices: FreightPrice[]): string => {
     .map(p => `${p.region}: R$ ${Number(p.price).toFixed(2).replace('.', ',')}`)
     .join(' / ');
 };
+
+// Re-export type for convenience
+import type { FreightRegion } from '@/lib/regionDetection';
+export type { FreightRegion };

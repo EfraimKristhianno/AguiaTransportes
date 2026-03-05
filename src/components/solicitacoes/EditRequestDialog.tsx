@@ -20,6 +20,7 @@ import { useTransportTypes } from '@/hooks/useDeliveryRequests';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
+import { resolveFreightRegion } from '@/lib/regionDetection';
 
 const editSchema = z.object({
   originAddress: z.string().min(1, 'Endereço de coleta é obrigatório'),
@@ -92,6 +93,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
     if (!request?.id) return;
     setIsSaving(true);
     try {
+      const resolvedRegion = resolveFreightRegion(data.originAddress, data.destinationAddress);
       const { error } = await supabase
         .from('delivery_requests')
         .update({
@@ -107,6 +109,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
           notes: data.notes || null,
           requester: data.requester || null,
           requester_phone: data.requesterPhone || null,
+          region: resolvedRegion,
         } as any)
         .eq('id', request.id);
 

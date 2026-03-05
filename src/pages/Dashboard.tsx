@@ -19,7 +19,7 @@ import { EditRequestDialog } from '@/components/solicitacoes/EditRequestDialog';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
-import { detectRegionForFreight } from '@/lib/regionDetection';
+import { resolveFreightRegion } from '@/lib/regionDetection';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -235,7 +235,7 @@ const Dashboard = () => {
   const totalFreight = useMemo(() => {
     if (role !== 'admin' && role !== 'gestor') return 0;
     return filteredRequests.reduce((sum, item) => {
-      const region = (item as any).region || detectRegionForFreight(item.destination_address);
+      const region = resolveFreightRegion((item as any).origin_address, item.destination_address);
       const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
       if (prices.length > 0) {
         return sum + prices[0].price;
@@ -270,7 +270,7 @@ const Dashboard = () => {
     // Indicadores resumo
     const totalRequests = filteredRequests.length;
     const totalFreightValue = filteredRequests.reduce((sum: number, item: any) => {
-      const region = item.region || detectRegionForFreight(item.destination_address);
+      const region = resolveFreightRegion(item.origin_address, item.destination_address);
       const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
       if (prices.length > 0) return sum + prices[0].price;
       return sum;
@@ -304,9 +304,9 @@ const Dashboard = () => {
     y += 3;
 
     const getFreightValue = (item: any): string => {
-      const region = item.region || detectRegionForFreight(item.destination_address);
+      const region = resolveFreightRegion(item.origin_address, item.destination_address);
       const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
-      return formatSingleFreightPrice(prices);
+      return formatSingleFreightPrice(prices, region);
     };
 
     const formatDateTimePdf = (dateString: string | null) => {

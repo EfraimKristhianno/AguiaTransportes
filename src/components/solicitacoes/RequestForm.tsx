@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import VehicleDetailsPopover from '@/components/VehicleDetailsPopover';
 import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
-import { detectRegionForFreight } from '@/lib/regionDetection';
+import { resolveFreightRegion } from '@/lib/regionDetection';
 import { Badge } from '@/components/ui/badge';
 
 const requestSchema = z.object({
@@ -223,8 +223,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         throw new Error('Não foi possível identificar o cliente para a solicitação.');
       }
 
-      // Detect region from destination address
-      const detectedRegion = detectRegionForFreight(data.destinationAddress);
+      // Detect region from both origin and destination addresses
+      const detectedRegion = resolveFreightRegion(data.originAddress, data.destinationAddress);
 
       // 1. Create the request first (without attachments)
       const createdRequest = await createRequest.mutateAsync({
@@ -645,14 +645,15 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 control={form.control}
                 name="destinationAddress"
                 render={({ field }) => {
-                  const region = detectRegionForFreight(field.value);
+                  const originAddr = form.getValues('originAddress');
+                  const freightRegion = resolveFreightRegion(originAddr, field.value);
                   return (
                     <FormItem>
                       <div className="flex items-center gap-2">
                         <FormLabel>Endereço de entrega <span className="text-red-500">*</span></FormLabel>
-                        {region && (
+                        {field.value && (
                           <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                            Região: {region}
+                            {freightRegion ? `Região: ${freightRegion}` : 'A combinar'}
                           </Badge>
                         )}
                       </div>

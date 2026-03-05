@@ -8,6 +8,7 @@ import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/Re
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
+import { resolveFreightRegion } from '@/lib/regionDetection';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
@@ -52,9 +53,10 @@ const Solicitacoes = () => {
     // Indicadores resumo
     const totalRequests = filteredRequests.length;
     const totalFreightValue = filteredRequests.reduce((sum: number, item: any) => {
-      const matched = getFreightPricesForRequest(allPrices, item.client_id, item.transport_type, item.region);
-      const priceText = formatSingleFreightPrice(matched);
-      const numVal = priceText !== '-' ? parseFloat(priceText.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+      const region = resolveFreightRegion(item.origin_address, item.destination_address);
+      const matched = getFreightPricesForRequest(allPrices, item.client_id, item.transport_type, region);
+      const priceText = formatSingleFreightPrice(matched, region);
+      const numVal = priceText !== '-' && priceText !== 'A combinar' ? parseFloat(priceText.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
       return sum + (isNaN(numVal) ? 0 : numVal);
     }, 0);
     const statusCounts: Record<string, number> = {};
@@ -91,8 +93,9 @@ const Solicitacoes = () => {
     };
 
     const getFreightValue = (item: any): string => {
-      const matched = getFreightPricesForRequest(allPrices, item.client_id, item.transport_type, item.region);
-      return formatSingleFreightPrice(matched);
+      const region = resolveFreightRegion(item.origin_address, item.destination_address);
+      const matched = getFreightPricesForRequest(allPrices, item.client_id, item.transport_type, region);
+      return formatSingleFreightPrice(matched, region);
     };
 
     const tableData = filteredRequests.map((item: any) => [
