@@ -29,7 +29,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
-import { detectRegionForFreight } from '@/lib/regionDetection';
+import { resolveFreightRegion } from '@/lib/regionDetection';
 import { DollarSign } from 'lucide-react';
 
 interface RequestData {
@@ -415,9 +415,9 @@ export const UnifiedRequestDetailsDialog = ({
 
               {/* Freight Value */}
               {showFreightValue && (() => {
-                const region = detectRegionForFreight(request.destination_address);
+                const region = resolveFreightRegion(request.origin_address, request.destination_address);
                 const prices = getFreightPricesForRequest(allFreightPrices, request.client_id, request.transport_type, region);
-                const priceText = formatSingleFreightPrice(prices);
+                const priceText = formatSingleFreightPrice(prices, region);
                 return priceText !== '-' ? (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">

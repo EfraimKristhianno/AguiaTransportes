@@ -11,7 +11,7 @@ import { ptBR } from 'date-fns/locale';
 import { filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 import { cn } from '@/lib/utils';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
-import { detectRegionForFreight } from '@/lib/regionDetection';
+import { resolveFreightRegion } from '@/lib/regionDetection';
 import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
@@ -155,9 +155,9 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                 </div>
 
                 {showFreightValue && (() => {
-                  const region = detectRegionForFreight(request.destination_address);
+                  const region = resolveFreightRegion(request.origin_address, request.destination_address);
                   const prices = getFreightPricesForRequest(allFreightPrices, request.client_id, request.transport_type, region);
-                  const priceText = formatSingleFreightPrice(prices);
+                  const priceText = formatSingleFreightPrice(prices, region);
                   return priceText !== '-' ? (
                     <div className="mt-2 flex items-center gap-1 text-sm font-semibold text-emerald-700">
                       <DollarSign className="h-3 w-3 shrink-0" />
