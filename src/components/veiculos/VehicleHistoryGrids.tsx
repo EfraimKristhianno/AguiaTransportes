@@ -308,9 +308,11 @@ interface Props {
   filteredOilRecords: OilChangeRecord[];
   filteredMaintenanceRecords: MaintenanceRecord[];
   allVehicles: any[];
+  vehicleStats?: any[];
+  plateFilter?: string;
 }
 
-const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMaintenanceRecords, allVehicles }: Props) => {
+const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMaintenanceRecords, allVehicles, vehicleStats = [], plateFilter = 'all' }: Props) => {
   const deleteLog = useDeleteVehicleLog();
   const deleteOil = useDeleteOilChange();
   const deleteMaint = useDeleteMaintenanceRecord();
@@ -348,6 +350,36 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
     doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 23);
 
     let y = 32;
+
+    // Painel Completo de Veículos
+    if (vehicleStats.length > 0) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Painel Completo de Veículos', 14, y);
+      y += 3;
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Tipo', 'Placa', 'Km Atual', 'Gasto Comb.', 'Gasto Troca Óleo', 'Gasto Manut.', 'Qtd Manutenções', 'Óleo']],
+        body: vehicleStats.map((v: any) => [
+          v.type || '-',
+          plateFilter !== 'all' ? plateFilter : (v.displayPlate || v.plate || '-'),
+          v.currentKm?.toLocaleString('pt-BR') || '0',
+          `R$ ${(v.totalCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          `R$ ${(v.oilCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          `R$ ${(v.maintCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          String(v.maintCount || 0),
+          v.oilWarning ? 'Trocar' : v.latestOil ? 'OK' : '-',
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [211, 33, 39], fontSize: 7 },
+        bodyStyles: { fontSize: 7 },
+        margin: { left: 14 },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+
+      if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 20; }
+    }
 
     // Fuel logs
     doc.setFontSize(11);
