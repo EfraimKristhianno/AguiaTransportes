@@ -353,8 +353,8 @@ const AdminVehicleView = () => {
               {(() => {
                 const latestOilGlobal = filteredOilRecords.length > 0
                   ? filteredOilRecords.reduce((latest, o) => {
-                      const d1 = new Date(latest.change_date).getTime();
-                      const d2 = new Date(o.change_date).getTime();
+                      const d1 = parseDateString(latest.change_date).getTime();
+                      const d2 = parseDateString(o.change_date).getTime();
                       return d2 > d1 ? o : latest;
                     })
                   : null;
