@@ -71,35 +71,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const tagOneSignalUser = async (userRole: string, userId: string) => {
     try {
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push(async (OneSignal: any) => {
-        await OneSignal.login(userId);
-        await OneSignal.User.addTags({ role: userRole });
+      // Wait for OneSignal to be ready
+      const getOneSignal = (): Promise<any> => {
+        return new Promise((resolve) => {
+          if ((window as any).OneSignal) {
+            resolve((window as any).OneSignal);
+          } else {
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            window.OneSignalDeferred.push(async (OneSignal: any) => {
+              resolve(OneSignal);
+            });
+          }
+        });
+      };
 
-        // If driver, tag their transport types
-        if (userRole === 'motorista') {
-          const { data: driverData } = await supabase
-            .from('drivers')
-            .select('id')
-            .eq('user_id', userId)
-            .maybeSingle();
+      const OneSignal = await getOneSignal();
+      
+      await OneSignal.login(userId);
+      await OneSignal.User.addTags({ role: userRole });
 
-          if (driverData) {
-            const { data: vehicleTypes } = await supabase
-              .from('driver_vehicle_types')
-              .select('vehicle_type')
-              .eq('driver_id', driverData.id);
-
-            if (vehicleTypes) {
-              const tags: Record<string, string> = {};
-              vehicleTypes.forEach((vt) => {
-                tags[`transport_${vt.vehicle_type}`] = 'true';
-              });
-              await OneSignal.User.addTags(tags);
-            }
+      // If driver, request permission and tag transport types
+      if (userRole === 'motorista') {
+        // Request push permission for drivers
+        const permission = OneSignal.Notifications?.permission;
+        if (!permission) {
+          try {
+            await OneSignal.Notifications.requestPermission();
+          } catch (permErr) {
+            console.log('Permission request failed, will show manual button:', permErr);
           }
         }
-      });
+
+        const { data: driverData } = await supabase
+          .from('drivers')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (driverData) {
+          const { data: vehicleTypes } = await supabase
+            .from('driver_vehicle_types')
+            .select('vehicle_type')
+            .eq('driver_id', driverData.id);
+
+          if (vehicleTypes) {
+            const tags: Record<string, string> = {};
+            vehicleTypes.forEach((vt) => {
+              tags[`transport_${vt.vehicle_type}`] = 'true';
+            });
+            await OneSignal.User.addTags(tags);
+          }
+        }
+      }
     } catch (e) {
       console.error('OneSignal tagging error:', e);
     }
