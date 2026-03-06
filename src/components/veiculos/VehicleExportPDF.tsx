@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { parseDateString } from '@/lib/utils';
+import { formatKmDisplay } from '@/components/ui/km-input';
 import { VehicleLog, OilChangeRecord, MaintenanceRecord } from '@/hooks/useVehicleLogs';
 import logoAguiaPdf from '@/assets/logo-aguia-pdf.png';
 
@@ -89,7 +90,7 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
         startY: y,
         head: [['Km Atual', 'Litros', 'Gasto Comb.', 'Média Km/L', 'Manutenções', 'Gasto Manut.', 'Gasto Total']],
         body: [[
-          currentKm.toLocaleString('pt-BR'),
+          formatKmDisplay(currentKm),
           totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 1 }),
           `R$ ${totalFuelCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
           avgKmL,

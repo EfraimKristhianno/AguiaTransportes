@@ -16,6 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { formatKmDisplay } from '@/components/ui/km-input';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
 import VehicleHistoryGrids from './VehicleHistoryGrids';
 
@@ -376,7 +377,7 @@ const AdminVehicleView = () => {
                     })
                   : null;
                 return latestOilGlobal ? (
-                  <p className="text-xs text-muted-foreground mt-1">Próx. troca: {latestOilGlobal.next_change_km.toLocaleString('pt-BR')} km</p>
+                  <p className="text-xs text-muted-foreground mt-1">Próx. troca: {formatKmDisplay(latestOilGlobal.next_change_km)} km</p>
                 ) : null;
               })()}
             </div>
@@ -632,7 +633,7 @@ const AdminVehicleView = () => {
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
                     <TableCell>{plateFilter !== 'all' ? plateFilter : v.displayPlate}</TableCell>
-                    <TableCell>{v.currentKm.toLocaleString('pt-BR')}</TableCell>
+                    <TableCell>{formatKmDisplay(v.currentKm)}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.oilCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>R$ {v.maintCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>

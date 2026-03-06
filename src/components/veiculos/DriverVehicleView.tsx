@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { KmInput, formatKmDisplay } from '@/components/ui/km-input';
 
 const formatLocalDate = (date: Date): string => {
   const year = date.getFullYear();
@@ -458,7 +459,7 @@ const DriverVehicleView = () => {
             <div className="rounded-lg bg-blue-500/10 p-2"><Gauge className="h-5 w-5 text-blue-500" /></div>
             <div>
               <p className="text-xs text-muted-foreground">Km Atual</p>
-              <p className="text-xl font-bold">{currentKm.toLocaleString('pt-BR')}</p>
+              <p className="text-xl font-bold">{formatKmDisplay(currentKm)}</p>
             </div>
           </CardContent>
         </Card>
@@ -489,8 +490,8 @@ const DriverVehicleView = () => {
               <p className="text-xs text-muted-foreground">Próx. Troca Óleo</p>
               {latestOil ? (
                 <>
-                  <p className="text-xl font-bold">{latestOil.next_change_km.toLocaleString('pt-BR')} km</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Km atual: {currentKm.toLocaleString('pt-BR')}</p>
+                  <p className="text-xl font-bold">{formatKmDisplay(latestOil.next_change_km)} km</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Km atual: {formatKmDisplay(currentKm)}</p>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">Sem registro</p>
@@ -503,7 +504,7 @@ const DriverVehicleView = () => {
       {oilChangeWarning && (
         <div className="rounded-lg border border-destructive bg-destructive/5 p-4 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-          <p className="text-sm text-destructive font-medium">Atenção: Km atual ({currentKm.toLocaleString('pt-BR')}) excedeu a previsão de troca de óleo ({latestOil!.next_change_km.toLocaleString('pt-BR')} km).</p>
+          <p className="text-sm text-destructive font-medium">Atenção: Km atual ({formatKmDisplay(currentKm)}) excedeu a previsão de troca de óleo ({formatKmDisplay(latestOil!.next_change_km)} km).</p>
         </div>
       )}
 
@@ -537,7 +538,7 @@ const DriverVehicleView = () => {
               </div>
               <div>
                 <Label>Km Atual</Label>
-                <Input type="number" value={logForm.km_atual} onChange={e => setLogForm(p => ({ ...p, km_atual: e.target.value }))} placeholder="Quilometragem atual" />
+                <KmInput value={logForm.km_atual} onValueChange={v => setLogForm(p => ({ ...p, km_atual: v }))} placeholder="Quilometragem atual" />
               </div>
               <div>
                 <Label>Tipo de Combustível</Label>
@@ -591,8 +592,8 @@ const DriverVehicleView = () => {
               </div>
               <div><Label>Data da Troca</Label><Input type="date" value={oilForm.change_date} onChange={e => setOilForm(p => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Km na Troca</Label><Input type="number" value={oilForm.km_at_change} onChange={e => setOilForm(p => ({ ...p, km_at_change: e.target.value }))} /></div>
-                <div><Label>Próx. Troca (Km)</Label><Input type="number" value={oilForm.next_change_km} onChange={e => setOilForm(p => ({ ...p, next_change_km: e.target.value }))} /></div>
+                <div><Label>Km na Troca</Label><KmInput value={oilForm.km_at_change} onValueChange={v => setOilForm(p => ({ ...p, km_at_change: v }))} /></div>
+                <div><Label>Próx. Troca (Km)</Label><KmInput value={oilForm.next_change_km} onValueChange={v => setOilForm(p => ({ ...p, next_change_km: v }))} /></div>
               </div>
               <div><Label>Tipo de Óleo</Label><Input value={oilForm.oil_type} onChange={e => setOilForm(p => ({ ...p, oil_type: e.target.value }))} /></div>
               <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" min="0" placeholder="0.00" value={oilForm.service_cost} onChange={e => setOilForm(p => ({ ...p, service_cost: e.target.value }))} /></div>
@@ -644,7 +645,7 @@ const DriverVehicleView = () => {
               </div>
               <div>
                 <Label>Km Atual</Label>
-                <Input type="number" value={maintForm.current_km} onChange={e => setMaintForm(p => ({ ...p, current_km: e.target.value }))} placeholder="Quilometragem atual" />
+                <KmInput value={maintForm.current_km} onValueChange={v => setMaintForm(p => ({ ...p, current_km: v }))} placeholder="Quilometragem atual" />
               </div>
               <div>
                 <Label>Custo do Serviço (R$)</Label>
@@ -691,7 +692,7 @@ const DriverVehicleView = () => {
                       <TableCell>{format(parseDateString(log.log_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{log.vehicle?.type || '-'}</TableCell>
                       <TableCell>{log.vehicle_plate || log.vehicle?.plate || '-'}</TableCell>
-                      <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="font-medium">{formatKmDisplay(log.km_final)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{log.fuel_type}</Badge>
                       </TableCell>
@@ -740,8 +741,8 @@ const DriverVehicleView = () => {
                       <TableCell>{format(parseDateString(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{oil.vehicle?.type || '-'}</TableCell>
                       <TableCell>{oil.vehicle_plate || oil.vehicle?.plate || '-'}</TableCell>
-                      <TableCell className="font-medium">{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
-                      <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="font-medium">{formatKmDisplay(oil.km_at_change)}</TableCell>
+                      <TableCell>{formatKmDisplay(oil.next_change_km)}</TableCell>
                       <TableCell>{oil.oil_type || '-'}</TableCell>
                       <TableCell className="font-medium">{oil.service_cost ? `R$ ${oil.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
                       <TableCell className="text-right">
@@ -790,7 +791,7 @@ const DriverVehicleView = () => {
                           {m.maintenance_type === 'preventiva' ? 'Preventiva' : m.maintenance_type === 'corretiva' ? 'Corretiva' : m.maintenance_type === 'preditiva' ? 'Preditiva' : m.maintenance_type}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{m.current_km.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="font-medium">{formatKmDisplay(m.current_km)}</TableCell>
                       <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -824,7 +825,7 @@ const DriverVehicleView = () => {
               </div>
               <div><Label>Placa</Label><Input value={editLogForm.plate} onChange={e => setEditLogForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
               <div><Label>Data</Label><Input type="date" value={editLogForm.log_date} onChange={e => setEditLogForm((p: any) => ({ ...p, log_date: e.target.value }))} /></div>
-              <div><Label>Km Atual</Label><Input type="number" value={editLogForm.km_atual} onChange={e => setEditLogForm((p: any) => ({ ...p, km_atual: e.target.value }))} /></div>
+              <div><Label>Km Atual</Label><KmInput value={editLogForm.km_atual} onValueChange={v => setEditLogForm((p: any) => ({ ...p, km_atual: v }))} /></div>
               <div>
                 <Label>Tipo de Combustível</Label>
                 <Select value={editLogForm.fuel_type} onValueChange={v => setEditLogForm((p: any) => ({ ...p, fuel_type: v }))}>
@@ -876,8 +877,8 @@ const DriverVehicleView = () => {
               <div><Label>Placa</Label><Input value={editOilForm.plate} onChange={e => setEditOilForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
               <div><Label>Data da Troca</Label><Input type="date" value={editOilForm.change_date} onChange={e => setEditOilForm((p: any) => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Km na Troca</Label><Input type="number" value={editOilForm.km_at_change} onChange={e => setEditOilForm((p: any) => ({ ...p, km_at_change: e.target.value }))} /></div>
-                <div><Label>Próx. Troca (Km)</Label><Input type="number" value={editOilForm.next_change_km} onChange={e => setEditOilForm((p: any) => ({ ...p, next_change_km: e.target.value }))} /></div>
+                <div><Label>Km na Troca</Label><KmInput value={editOilForm.km_at_change} onValueChange={v => setEditOilForm((p: any) => ({ ...p, km_at_change: v }))} /></div>
+                <div><Label>Próx. Troca (Km)</Label><KmInput value={editOilForm.next_change_km} onValueChange={v => setEditOilForm((p: any) => ({ ...p, next_change_km: v }))} /></div>
               </div>
               <div><Label>Tipo de Óleo</Label><Input value={editOilForm.oil_type} onChange={e => setEditOilForm((p: any) => ({ ...p, oil_type: e.target.value }))} /></div>
               <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editOilForm.service_cost} onChange={e => setEditOilForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
@@ -927,7 +928,7 @@ const DriverVehicleView = () => {
               </div>
               <div><Label>Placa</Label><Input value={editMaintForm.plate} onChange={e => setEditMaintForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
               <div><Label>Data</Label><Input type="date" value={editMaintForm.maintenance_date} onChange={e => setEditMaintForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /></div>
-              <div><Label>Km Atual</Label><Input type="number" value={editMaintForm.current_km} onChange={e => setEditMaintForm((p: any) => ({ ...p, current_km: e.target.value }))} /></div>
+              <div><Label>Km Atual</Label><KmInput value={editMaintForm.current_km} onValueChange={v => setEditMaintForm((p: any) => ({ ...p, current_km: v }))} /></div>
               <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editMaintForm.service_cost} onChange={e => setEditMaintForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
               <div><Label>Observações</Label><Textarea value={editMaintForm.notes} onChange={e => setEditMaintForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
               {editMaintAttachments.length > 0 && (
