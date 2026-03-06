@@ -428,7 +428,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                     <TableBody>
                       {vMaint.map(m => (
                         <TableRow key={m.id}>
-                          <TableCell>{format(new Date(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>{format(parseDateString(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{m.vehicle_plate || vehiclePlate}</TableCell>
                           <TableCell>
                             <Badge variant={m.maintenance_type === 'corretiva' ? 'destructive' : m.maintenance_type === 'preventiva' ? 'default' : 'secondary'}>
