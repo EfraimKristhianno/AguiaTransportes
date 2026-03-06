@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { VehicleLog, OilChangeRecord, MaintenanceRecord, useUpdateVehicleLog, useUpdateOilChange, useUpdateMaintenanceRecord } from '@/hooks/useVehicleLogs';
 import { format } from 'date-fns';
+import { parseDateString } from '@/lib/utils';
 import { Fuel, Droplets, Wrench, Eye, Paperclip, Loader2, Download, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
@@ -139,7 +140,7 @@ const FuelDetailDialog = ({ record, open, onClose }: { record: VehicleLog | null
         <div className="space-y-4">
           <div><Label>Veículo</Label><Input readOnly value={record.vehicle?.type || '-'} className="bg-muted" /></div>
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
-          <div><Label>Data</Label>{editing ? <Input type="date" value={form.log_date} onChange={e => setForm((p: any) => ({ ...p, log_date: e.target.value }))} /> : <Input readOnly value={format(new Date(record.log_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
+          <div><Label>Data</Label>{editing ? <Input type="date" value={form.log_date} onChange={e => setForm((p: any) => ({ ...p, log_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.log_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
           <div><Label>Km Atual</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.km_atual : (record.km_final?.toLocaleString('pt-BR') || '-')} onChange={e => setForm((p: any) => ({ ...p, km_atual: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div>
             <Label>Tipo de Combustível</Label>
@@ -212,7 +213,7 @@ const OilDetailDialog = ({ record, open, onClose }: { record: OilChangeRecord | 
         <div className="space-y-4">
           <div><Label>Veículo</Label><Input readOnly value={record.vehicle?.type || '-'} className="bg-muted" /></div>
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
-          <div><Label>Data da Troca</Label>{editing ? <Input type="date" value={form.change_date} onChange={e => setForm((p: any) => ({ ...p, change_date: e.target.value }))} /> : <Input readOnly value={format(new Date(record.change_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
+          <div><Label>Data da Troca</Label>{editing ? <Input type="date" value={form.change_date} onChange={e => setForm((p: any) => ({ ...p, change_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.change_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Km na Troca</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.km_at_change : record.km_at_change.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, km_at_change: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
             <div><Label>Próx. Troca (Km)</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.next_change_km : record.next_change_km.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, next_change_km: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
