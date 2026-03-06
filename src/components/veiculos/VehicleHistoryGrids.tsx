@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Trash2, FileDown, Pencil, Loader2, Paperclip, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { parseDateString } from '@/lib/utils';
 import { VehicleLog, OilChangeRecord, MaintenanceRecord, useDeleteVehicleLog, useDeleteOilChange, useDeleteMaintenanceRecord, useUpdateVehicleLog, useUpdateOilChange, useUpdateMaintenanceRecord } from '@/hooks/useVehicleLogs';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -134,7 +135,7 @@ const FuelDetailDialog = ({ record, open, onClose }: { record: VehicleLog | null
         <div className="space-y-4">
           <div><Label>Veículo</Label><Input readOnly value={record.vehicle?.type || '-'} className="bg-muted" /></div>
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
-          <div><Label>Data</Label>{editing ? <Input type="date" value={form.log_date} onChange={e => setForm((p: any) => ({ ...p, log_date: e.target.value }))} /> : <Input readOnly value={format(new Date(record.log_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
+          <div><Label>Data</Label>{editing ? <Input type="date" value={form.log_date} onChange={e => setForm((p: any) => ({ ...p, log_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.log_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
           <div><Label>Km Atual</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.km_atual : (record.km_final?.toLocaleString('pt-BR') || '-')} onChange={e => setForm((p: any) => ({ ...p, km_atual: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div>
             <Label>Tipo de Combustível</Label>
@@ -207,7 +208,7 @@ const OilDetailDialog = ({ record, open, onClose }: { record: OilChangeRecord | 
         <div className="space-y-4">
           <div><Label>Veículo</Label><Input readOnly value={record.vehicle?.type || '-'} className="bg-muted" /></div>
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
-          <div><Label>Data da Troca</Label>{editing ? <Input type="date" value={form.change_date} onChange={e => setForm((p: any) => ({ ...p, change_date: e.target.value }))} /> : <Input readOnly value={format(new Date(record.change_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
+          <div><Label>Data da Troca</Label>{editing ? <Input type="date" value={form.change_date} onChange={e => setForm((p: any) => ({ ...p, change_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.change_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Km na Troca</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.km_at_change : record.km_at_change.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, km_at_change: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
             <div><Label>Próx. Troca (Km)</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.next_change_km : record.next_change_km.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, next_change_km: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
@@ -279,7 +280,7 @@ const MaintDetailDialog = ({ record, open, onClose }: { record: MaintenanceRecor
           </div>
           <div><Label>Veículo</Label><Input readOnly value={record.vehicle?.type || '-'} className="bg-muted" /></div>
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
-          <div><Label>Data</Label>{editing ? <Input type="date" value={form.maintenance_date} onChange={e => setForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /> : <Input readOnly value={format(new Date(record.maintenance_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
+          <div><Label>Data</Label>{editing ? <Input type="date" value={form.maintenance_date} onChange={e => setForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.maintenance_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
           <div><Label>Km Atual</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.current_km : record.current_km.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, current_km: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div><Label>Custo do Serviço (R$)</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} step="0.01" value={editing ? form.service_cost : (record.service_cost ? `R$ ${record.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-')} onChange={e => setForm((p: any) => ({ ...p, service_cost: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div><Label>Observações</Label><Textarea readOnly={!editing} value={form.notes || (editing ? '' : 'Sem observações')} onChange={e => setForm((p: any) => ({ ...p, notes: e.target.value }))} className={!editing ? 'bg-muted resize-none' : ''} /></div>
@@ -392,7 +393,7 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
         startY: y,
         head: [['Data', 'Veículo', 'Placa', 'Km Atual', 'Combustível', 'Litros', 'R$/L', 'Total']],
         body: filteredLogs.map(l => [
-          format(new Date(l.log_date), 'dd/MM/yyyy'),
+          format(parseDateString(l.log_date), 'dd/MM/yyyy'),
           getVehicleType(l.vehicle_id),
           l.vehicle_plate || '-',
           l.km_final?.toLocaleString('pt-BR') || '-',
@@ -425,7 +426,7 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
         startY: y,
         head: [['Data', 'Veículo', 'Placa', 'Km na Troca', 'Próx. Troca', 'Tipo Óleo', 'Custo']],
         body: filteredOilRecords.map(o => [
-          format(new Date(o.change_date), 'dd/MM/yyyy'),
+          format(parseDateString(o.change_date), 'dd/MM/yyyy'),
           getVehicleType(o.vehicle_id),
           o.vehicle_plate || '-',
           o.km_at_change.toLocaleString('pt-BR'),
@@ -457,7 +458,7 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
         startY: y,
         head: [['Data', 'Veículo', 'Placa', 'Tipo', 'Km Atual', 'Custo']],
         body: filteredMaintenanceRecords.map(m => [
-          format(new Date(m.maintenance_date), 'dd/MM/yyyy'),
+          format(parseDateString(m.maintenance_date), 'dd/MM/yyyy'),
           getVehicleType(m.vehicle_id),
           m.vehicle_plate || '-',
           maintenanceTypeLabel[m.maintenance_type] || m.maintenance_type,
@@ -515,7 +516,7 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
                 <TableBody>
                   {filteredLogs.map(log => (
                     <TableRow key={log.id}>
-                      <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{format(parseDateString(log.log_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{log.vehicle?.type || getVehicleType(log.vehicle_id)}</TableCell>
                       <TableCell>{log.vehicle_plate || '-'}</TableCell>
                       <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR') || '-'}</TableCell>
@@ -564,7 +565,7 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
                 <TableBody>
                   {filteredOilRecords.map(oil => (
                     <TableRow key={oil.id}>
-                      <TableCell>{format(new Date(oil.change_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{format(parseDateString(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{oil.vehicle?.type || getVehicleType(oil.vehicle_id)}</TableCell>
                       <TableCell>{oil.vehicle_plate || '-'}</TableCell>
                       <TableCell>{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
@@ -611,7 +612,7 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
                 <TableBody>
                   {filteredMaintenanceRecords.map(m => (
                     <TableRow key={m.id}>
-                      <TableCell>{format(new Date(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{format(parseDateString(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{m.vehicle?.type || getVehicleType(m.vehicle_id)}</TableCell>
                       <TableCell>{m.vehicle_plate || '-'}</TableCell>
                       <TableCell>
