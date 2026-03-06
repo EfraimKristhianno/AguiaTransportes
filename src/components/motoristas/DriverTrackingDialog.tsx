@@ -72,10 +72,10 @@ function MapCenterUpdater({ lat, lng }: { lat: number; lng: number }) {
 
 const statusLabels: Record<string, string> = {
   aceita: 'Aceita',
-  pendente_coleta: 'Pendente Coleta',
+  pendente_coleta: 'Coleta Pendente',
   coletada: 'Coletada',
   em_rota: 'Em Trânsito',
-  pendente_entrega: 'Pendente Entrega',
+  pendente_entrega: 'Entrega Pendente',
   solicitada: 'Solicitada',
   enviada: 'Enviada',
 };

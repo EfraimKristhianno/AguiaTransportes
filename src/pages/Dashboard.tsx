@@ -364,7 +364,7 @@ const Dashboard = () => {
         icon: <CheckCircle2 className="h-3 w-3 mr-1" />
       },
       pendente_coleta: {
-        label: 'Pendente Coleta',
+        label: 'Coleta Pendente',
         className: 'bg-cyan-50 text-cyan-700 border-cyan-200',
         icon: <Clock className="h-3 w-3 mr-1" />
       },
@@ -379,7 +379,7 @@ const Dashboard = () => {
         icon: <Truck className="h-3 w-3 mr-1" />
       },
       pendente_entrega: {
-        label: 'Pendente Entrega',
+        label: 'Entrega Pendente',
         className: 'bg-yellow-50 text-yellow-700 border-yellow-200',
         icon: <Clock className="h-3 w-3 mr-1" />
       },
