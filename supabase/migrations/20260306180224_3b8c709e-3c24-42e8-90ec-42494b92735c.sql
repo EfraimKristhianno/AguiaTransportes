@@ -1,0 +1,1 @@
+UPDATE driver_vehicle_types SET vehicle_type = 'Caminhão (Truck)' WHERE vehicle_type = 'Caminhão';
