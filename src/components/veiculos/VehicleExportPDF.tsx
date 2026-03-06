@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import { parseDateString } from '@/lib/utils';
 import { VehicleLog, OilChangeRecord, MaintenanceRecord } from '@/hooks/useVehicleLogs';
 import logoAguiaPdf from '@/assets/logo-aguia-pdf.png';
 
@@ -115,7 +116,7 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
           startY: y,
           head: [['Data', 'Motorista', 'Km Inicial', 'Km Final', 'Km Total', 'Combustível', 'Litros', 'Preço/L', 'Total']],
           body: vLogs.map(l => [
-            format(new Date(l.log_date), 'dd/MM/yyyy'),
+            format(parseDateString(l.log_date), 'dd/MM/yyyy'),
             l.driver?.name || '-',
             l.km_initial?.toLocaleString('pt-BR') || '-',
             l.km_final?.toLocaleString('pt-BR') || '-',
@@ -155,7 +156,7 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
           startY: y,
           head: [['Data', 'Motorista', 'Km na Troca', 'Próx. Troca', 'Tipo Óleo', 'Observação']],
           body: vOil.map(o => [
-            format(new Date(o.change_date), 'dd/MM/yyyy'),
+            format(parseDateString(o.change_date), 'dd/MM/yyyy'),
             o.driver?.name || '-',
             o.km_at_change.toLocaleString('pt-BR'),
             o.next_change_km.toLocaleString('pt-BR'),
@@ -191,7 +192,7 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
           startY: y,
           head: [['Data', 'Tipo', 'Motorista', 'Placa', 'Km Atual', 'Custo', 'Observação']],
           body: vMaint.map(m => [
-            format(new Date(m.maintenance_date), 'dd/MM/yyyy'),
+            format(parseDateString(m.maintenance_date), 'dd/MM/yyyy'),
             maintenanceTypeLabel[m.maintenance_type] || m.maintenance_type,
             m.driver?.name || '-',
             m.vehicle_plate,

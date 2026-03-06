@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Fuel, Car, AlertTriangle, TrendingUp, DollarSign, CalendarIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line, PieChart, Pie } from 'recharts';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { parseDateString } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -140,7 +141,7 @@ const AdminVehicleView = () => {
   // Helper to check if a date string is within the selected range
   const isInDateRange = (dateStr: string) => {
     if (!startDate && !endDate) return true;
-    const d = new Date(dateStr);
+    const d = parseDateString(dateStr);
     if (startDate && d < startOfDay(startDate)) return false;
     if (endDate && d > endOfDay(endDate)) return false;
     return true;
@@ -352,8 +353,8 @@ const AdminVehicleView = () => {
               {(() => {
                 const latestOilGlobal = filteredOilRecords.length > 0
                   ? filteredOilRecords.reduce((latest, o) => {
-                      const d1 = new Date(latest.change_date).getTime();
-                      const d2 = new Date(o.change_date).getTime();
+                      const d1 = parseDateString(latest.change_date).getTime();
+                      const d2 = parseDateString(o.change_date).getTime();
                       return d2 > d1 ? o : latest;
                     })
                   : null;
