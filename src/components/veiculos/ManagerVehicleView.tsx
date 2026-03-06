@@ -10,6 +10,7 @@ import { Fuel, Gauge, Droplets, Car, AlertTriangle, History } from 'lucide-react
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
 import VehicleExportPDF from './VehicleExportPDF';
+import { formatKmDisplay } from '@/components/ui/km-input';
 
 const COLORS = ['#d32127', '#e8783a', '#f5a623', '#4a9eda', '#6bc5a0'];
 
@@ -71,7 +72,7 @@ const ManagerVehicleView = () => {
         </CardContent></Card>
         <Card><CardContent className="flex items-center gap-3 pt-6">
           <div className="rounded-lg bg-green-500/10 p-2"><Gauge className="h-5 w-5 text-green-500" /></div>
-          <div><p className="text-xs text-muted-foreground">Km Atual (Frota)</p><p className="text-xl font-bold">{totalKm.toLocaleString('pt-BR')}</p></div>
+          <div><p className="text-xs text-muted-foreground">Km Atual (Frota)</p><p className="text-xl font-bold">{formatKmDisplay(totalKm)}</p></div>
         </CardContent></Card>
         <Card><CardContent className="flex items-center gap-3 pt-6">
           <div className="rounded-lg bg-amber-500/10 p-2"><Fuel className="h-5 w-5 text-amber-500" /></div>
@@ -151,7 +152,7 @@ const ManagerVehicleView = () => {
                 {vehicleStats.map((v) => (
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.type}</TableCell>
-                    <TableCell>{v.currentKm.toLocaleString('pt-BR')}</TableCell>
+                    <TableCell>{formatKmDisplay(v.currentKm)}</TableCell>
                     <TableCell>{v.totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</TableCell>
                     <TableCell>R$ {v.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>{v.maintCount}</TableCell>
