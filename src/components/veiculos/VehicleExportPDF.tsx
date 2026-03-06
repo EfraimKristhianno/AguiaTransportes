@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { parseDateString } from '@/lib/utils';
+import { formatKmDisplay } from '@/components/ui/km-input';
 import { VehicleLog, OilChangeRecord, MaintenanceRecord } from '@/hooks/useVehicleLogs';
 import logoAguiaPdf from '@/assets/logo-aguia-pdf.png';
 
