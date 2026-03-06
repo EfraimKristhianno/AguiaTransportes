@@ -12,10 +12,10 @@ const STATUS_OPTIONS = [
   { value: 'all', label: 'Todos' },
   { value: 'solicitada', label: 'Solicitada' },
   { value: 'aceita', label: 'Aceita' },
-  { value: 'pendente_coleta', label: 'Pendente Coleta' },
+  { value: 'pendente_coleta', label: 'Coleta Pendente' },
   { value: 'coletada', label: 'Coletada' },
   { value: 'em_rota', label: 'Em Trânsito' },
-  { value: 'pendente_entrega', label: 'Pendente Entrega' },
+  { value: 'pendente_entrega', label: 'Entrega Pendente' },
   { value: 'entregue', label: 'Entregue' },
   { value: 'cancelada', label: 'Cancelada' },
 ];

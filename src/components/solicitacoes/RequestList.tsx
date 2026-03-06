@@ -40,13 +40,13 @@ const getStatusLabel = (status: string | null) => {
     case 'aceita':
       return 'Aceita';
     case 'pendente_coleta':
-      return 'Pendente Coleta';
+      return 'Coleta Pendente';
     case 'coletada':
       return 'Coletada';
     case 'em_rota':
       return 'Em Trânsito';
     case 'pendente_entrega':
-      return 'Pendente Entrega';
+      return 'Entrega Pendente';
     case 'entregue':
       return 'Entregue';
     // Legacy status support

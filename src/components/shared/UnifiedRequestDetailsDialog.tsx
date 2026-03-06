@@ -70,10 +70,10 @@ interface UnifiedRequestDetailsDialogProps {
 const STATUS_FLOW = [
   { value: 'solicitada', label: 'Solicitada', icon: FileText },
   { value: 'aceita', label: 'Aceita', icon: Check },
-  { value: 'pendente_coleta', label: 'Pendente Coleta', icon: Clock },
+  { value: 'pendente_coleta', label: 'Coleta Pendente', icon: Clock },
   { value: 'coletada', label: 'Coletada', icon: Package },
   { value: 'em_rota', label: 'Em Trânsito', icon: Truck },
-  { value: 'pendente_entrega', label: 'Pendente Entrega', icon: Clock },
+  { value: 'pendente_entrega', label: 'Entrega Pendente', icon: Clock },
   { value: 'entregue', label: 'Entregue', icon: Check },
 ];
 
@@ -94,10 +94,10 @@ const getStatusLabel = (status: string | null) => {
   switch (status) {
     case 'solicitada': case 'enviada': return 'Solicitada';
     case 'aceita': return 'Aceita';
-    case 'pendente_coleta': return 'Pendente Coleta';
+    case 'pendente_coleta': return 'Coleta Pendente';
     case 'coletada': return 'Coletada';
     case 'em_rota': return 'Em Trânsito';
-    case 'pendente_entrega': return 'Pendente Entrega';
+    case 'pendente_entrega': return 'Entrega Pendente';
     case 'entregue': return 'Entregue';
     default: return status || 'Solicitada';
   }
@@ -226,13 +226,13 @@ export const UnifiedRequestDetailsDialog = ({
     // Statuses with choice
     if (request.status === 'aceita') {
       return [
-        { value: 'pendente_coleta', label: 'Pendente Coleta' },
+        { value: 'pendente_coleta', label: 'Coleta Pendente' },
         { value: 'coletada', label: 'Coletada' },
       ];
     }
     if (request.status === 'em_rota') {
       return [
-        { value: 'pendente_entrega', label: 'Pendente Entrega' },
+        { value: 'pendente_entrega', label: 'Entrega Pendente' },
         { value: 'entregue', label: 'Entregue' },
       ];
     }
