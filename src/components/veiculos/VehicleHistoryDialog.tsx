@@ -353,7 +353,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                     <TableBody>
                       {vLogs.map(log => (
                         <TableRow key={log.id}>
-                          <TableCell>{format(new Date(log.log_date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>{format(parseDateString(log.log_date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{log.driver?.name || '-'}</TableCell>
                           <TableCell>{log.vehicle_plate || vehiclePlate}</TableCell>
                           <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
@@ -391,7 +391,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                     <TableBody>
                       {vOil.map(oil => (
                         <TableRow key={oil.id}>
-                          <TableCell>{format(new Date(oil.change_date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>{format(parseDateString(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{oil.driver?.name || '-'}</TableCell>
                           <TableCell>{oil.vehicle_plate || vehiclePlate}</TableCell>
                           <TableCell>{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
