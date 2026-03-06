@@ -9,10 +9,17 @@ const PWAUpdatePrompt = () => {
   } = useRegisterSW({
     onRegisteredSW(swUrl, registration) {
       if (registration) {
-        // Check for updates every 60 seconds
+        // Check for updates every 30 seconds
         setInterval(() => {
           registration.update();
-        }, 60 * 1000);
+        }, 30 * 1000);
+
+        // Also check on visibility change (when user returns to tab)
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            registration.update();
+          }
+        });
       }
     },
   });
