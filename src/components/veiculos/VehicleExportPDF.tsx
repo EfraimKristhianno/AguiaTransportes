@@ -89,7 +89,7 @@ const VehicleExportPDF = ({ vehicles, logs, oilRecords, maintenanceRecords }: Pr
         startY: y,
         head: [['Km Atual', 'Litros', 'Gasto Comb.', 'Média Km/L', 'Manutenções', 'Gasto Manut.', 'Gasto Total']],
         body: [[
-          currentKm.toLocaleString('pt-BR'),
+          formatKmDisplay(currentKm),
           totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 1 }),
           `R$ ${totalFuelCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
           avgKmL,
