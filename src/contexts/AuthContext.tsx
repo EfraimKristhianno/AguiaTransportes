@@ -54,15 +54,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         setRole('cliente'); // Default role
+        tagOneSignalUser('cliente', userId);
         return;
       }
 
-      setRole(roleData?.role as UserRole || 'cliente');
+      const userRole = (roleData?.role as UserRole) || 'cliente';
+      setRole(userRole);
+      tagOneSignalUser(userRole, userId);
     } catch (error) {
       console.error('Error fetching user role:', error);
       setRole('cliente');
     } finally {
       setRoleLoading(false);
+    }
+  };
+
+  const tagOneSignalUser = async (userRole: string, userId: string) => {
+    try {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async (OneSignal: any) => {
+        await OneSignal.login(userId);
+        await OneSignal.User.addTags({ role: userRole });
+
+        // If driver, tag their transport types
+        if (userRole === 'motorista') {
+          const { data: driverData } = await supabase
+            .from('drivers')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          if (driverData) {
+            const { data: vehicleTypes } = await supabase
+              .from('driver_vehicle_types')
+              .select('vehicle_type')
+              .eq('driver_id', driverData.id);
+
+            if (vehicleTypes) {
+              const tags: Record<string, string> = {};
+              vehicleTypes.forEach((vt) => {
+                tags[`transport_${vt.vehicle_type}`] = 'true';
+              });
+              await OneSignal.User.addTags(tags);
+            }
+          }
+        }
+      });
+    } catch (e) {
+      console.error('OneSignal tagging error:', e);
     }
   };
 

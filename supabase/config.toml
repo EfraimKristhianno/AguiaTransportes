@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.login-by-name]
 verify_jwt = false
+
+[functions.notify-driver]
+verify_jwt = false
