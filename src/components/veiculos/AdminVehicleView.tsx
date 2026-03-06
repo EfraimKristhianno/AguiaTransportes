@@ -171,11 +171,16 @@ const AdminVehicleView = () => {
   const oilCostTotal = filteredOilRecords.reduce((a, o) => a + (o.service_cost || 0), 0);
   const maintCostTotal = filteredMaintenanceRecords.reduce((a, m) => a + (m.service_cost || 0), 0);
   const totalCost = fuelCost + oilCostTotal + maintCostTotal;
-  // Média Km/L: only consider logs with both km_total > 0 and liters > 0
-  const logsWithFuel = filteredLogs.filter(l => (l.km_total || 0) > 0 && (l.liters || 0) > 0);
-  const fuelKm = logsWithFuel.reduce((a, l) => a + (l.km_total || 0), 0);
-  const fuelLiters = logsWithFuel.reduce((a, l) => a + (l.liters || 0), 0);
-  const avgKmPerLiter = fuelLiters > 0 ? fuelKm / fuelLiters : 0;
+  // Média Km/L: (max km_final - min km_initial) / total liters no período
+  const logsWithKm = filteredLogs.filter(l => (l.km_initial || 0) > 0 && (l.km_final || 0) > 0);
+  const fuelLiters = filteredLogs.reduce((a, l) => a + (l.liters || 0), 0);
+  const avgKmPerLiter = useMemo(() => {
+    if (logsWithKm.length === 0 || fuelLiters <= 0) return 0;
+    const minKmInitial = Math.min(...logsWithKm.map(l => l.km_initial));
+    const maxKmFinal = Math.max(...logsWithKm.map(l => l.km_final));
+    const totalDistance = maxKmFinal - minKmInitial;
+    return totalDistance > 0 ? totalDistance / fuelLiters : 0;
+  }, [filteredLogs]);
   const activeVehicles = filteredVehicles.filter((v: any) => v.status === 'active').length;
   const inactiveVehicles = filteredVehicles.length - activeVehicles;
 
