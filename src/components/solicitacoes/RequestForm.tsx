@@ -428,7 +428,13 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {materialTypes.map((type) => (
+                      {[...materialTypes]
+                        .sort((a, b) => {
+                          if (a.name === 'Outros') return 1;
+                          if (b.name === 'Outros') return -1;
+                          return a.name.localeCompare(b.name);
+                        })
+                        .map((type) => (
                         <SelectItem key={type.id} value={type.id}>
                           {type.name}
                         </SelectItem>
