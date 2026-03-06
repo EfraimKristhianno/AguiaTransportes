@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    OneSignalDeferred?: Array<(OneSignal: any) => Promise<void>>;
+  }
+}
+
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
