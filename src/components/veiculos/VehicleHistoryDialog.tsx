@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { VehicleLog, OilChangeRecord, MaintenanceRecord, useUpdateVehicleLog, useUpdateOilChange, useUpdateMaintenanceRecord } from '@/hooks/useVehicleLogs';
 import { format } from 'date-fns';
 import { parseDateString } from '@/lib/utils';
+import { KmInput, formatKmDisplay } from '@/components/ui/km-input';
 import { Fuel, Droplets, Wrench, Eye, Paperclip, Loader2, Download, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
@@ -141,7 +142,7 @@ const FuelDetailDialog = ({ record, open, onClose }: { record: VehicleLog | null
           <div><Label>Veículo</Label><Input readOnly value={record.vehicle?.type || '-'} className="bg-muted" /></div>
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div><Label>Data</Label>{editing ? <Input type="date" value={form.log_date} onChange={e => setForm((p: any) => ({ ...p, log_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.log_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
-          <div><Label>Km Atual</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.km_atual : (record.km_final?.toLocaleString('pt-BR') || '-')} onChange={e => setForm((p: any) => ({ ...p, km_atual: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
+          <div><Label>Km Atual</Label>{editing ? <KmInput value={form.km_atual} onValueChange={v => setForm((p: any) => ({ ...p, km_atual: v }))} /> : <Input readOnly value={formatKmDisplay(record.km_final)} className="bg-muted" />}</div>
           <div>
             <Label>Tipo de Combustível</Label>
             {editing ? (
@@ -215,8 +216,8 @@ const OilDetailDialog = ({ record, open, onClose }: { record: OilChangeRecord | 
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div><Label>Data da Troca</Label>{editing ? <Input type="date" value={form.change_date} onChange={e => setForm((p: any) => ({ ...p, change_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.change_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Km na Troca</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.km_at_change : record.km_at_change.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, km_at_change: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
-            <div><Label>Próx. Troca (Km)</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.next_change_km : record.next_change_km.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, next_change_km: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
+            <div><Label>Km na Troca</Label>{editing ? <KmInput value={form.km_at_change} onValueChange={v => setForm((p: any) => ({ ...p, km_at_change: v }))} /> : <Input readOnly value={formatKmDisplay(record.km_at_change)} className="bg-muted" />}</div>
+            <div><Label>Próx. Troca (Km)</Label>{editing ? <KmInput value={form.next_change_km} onValueChange={v => setForm((p: any) => ({ ...p, next_change_km: v }))} /> : <Input readOnly value={formatKmDisplay(record.next_change_km)} className="bg-muted" />}</div>
           </div>
           <div><Label>Tipo de Óleo</Label><Input readOnly={!editing} value={editing ? form.oil_type : (record.oil_type || '-')} onChange={e => setForm((p: any) => ({ ...p, oil_type: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div><Label>Custo do Serviço (R$)</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} step="0.01" value={editing ? form.service_cost : (record.service_cost ? `R$ ${record.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-')} onChange={e => setForm((p: any) => ({ ...p, service_cost: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
@@ -286,7 +287,7 @@ const MaintDetailDialog = ({ record, open, onClose }: { record: MaintenanceRecor
           <div><Label>Veículo</Label><Input readOnly value={record.vehicle?.type || '-'} className="bg-muted" /></div>
           <div><Label>Placa</Label><Input readOnly={!editing} value={form.vehicle_plate} onChange={e => setForm((p: any) => ({ ...p, vehicle_plate: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div><Label>Data</Label>{editing ? <Input type="date" value={form.maintenance_date} onChange={e => setForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /> : <Input readOnly value={format(parseDateString(record.maintenance_date), 'dd/MM/yyyy')} className="bg-muted" />}</div>
-          <div><Label>Km Atual</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} value={editing ? form.current_km : record.current_km.toLocaleString('pt-BR')} onChange={e => setForm((p: any) => ({ ...p, current_km: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
+          <div><Label>Km Atual</Label>{editing ? <KmInput value={form.current_km} onValueChange={v => setForm((p: any) => ({ ...p, current_km: v }))} /> : <Input readOnly value={formatKmDisplay(record.current_km)} className="bg-muted" />}</div>
           <div><Label>Custo do Serviço (R$)</Label><Input readOnly={!editing} type={editing ? 'number' : 'text'} step="0.01" value={editing ? form.service_cost : (record.service_cost ? `R$ ${record.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-')} onChange={e => setForm((p: any) => ({ ...p, service_cost: e.target.value }))} className={!editing ? 'bg-muted' : ''} /></div>
           <div><Label>Observações</Label><Textarea readOnly={!editing} value={form.notes || (editing ? '' : 'Sem observações')} onChange={e => setForm((p: any) => ({ ...p, notes: e.target.value }))} className={!editing ? 'bg-muted resize-none' : ''} /></div>
           {atts.length > 0 && (
@@ -356,7 +357,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                           <TableCell>{format(parseDateString(log.log_date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{log.driver?.name || '-'}</TableCell>
                           <TableCell>{log.vehicle_plate || vehiclePlate}</TableCell>
-                          <TableCell className="font-medium">{log.km_final?.toLocaleString('pt-BR')}</TableCell>
+                          <TableCell className="font-medium">{formatKmDisplay(log.km_final)}</TableCell>
                           <TableCell><Badge variant="outline" className="capitalize">{log.fuel_type}</Badge></TableCell>
                           <TableCell>{log.liters?.toLocaleString('pt-BR', { minimumFractionDigits: 1 }) || '-'}</TableCell>
                           <TableCell className="font-medium">{log.total_cost ? `R$ ${log.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
@@ -394,8 +395,8 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                           <TableCell>{format(parseDateString(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{oil.driver?.name || '-'}</TableCell>
                           <TableCell>{oil.vehicle_plate || vehiclePlate}</TableCell>
-                          <TableCell>{oil.km_at_change.toLocaleString('pt-BR')}</TableCell>
-                          <TableCell>{oil.next_change_km.toLocaleString('pt-BR')}</TableCell>
+                          <TableCell>{formatKmDisplay(oil.km_at_change)}</TableCell>
+                          <TableCell>{formatKmDisplay(oil.next_change_km)}</TableCell>
                           <TableCell>{oil.oil_type || '-'}</TableCell>
                           <TableCell>
                             <Button variant="ghost" size="sm" onClick={() => setViewingOil(oil)}><Eye className="h-4 w-4" /></Button>
@@ -436,7 +437,7 @@ const VehicleHistoryDialog = ({ open, onOpenChange, vehiclePlate, vehicleId, log
                             </Badge>
                           </TableCell>
                           <TableCell>{m.driver?.name || '-'}</TableCell>
-                          <TableCell>{m.current_km.toLocaleString('pt-BR')}</TableCell>
+                          <TableCell>{formatKmDisplay(m.current_km)}</TableCell>
                           <TableCell className="font-medium">{m.service_cost ? `R$ ${m.service_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
                           <TableCell>
                             <Button variant="ghost" size="sm" onClick={() => setViewingMaint(m)}><Eye className="h-4 w-4" /></Button>
