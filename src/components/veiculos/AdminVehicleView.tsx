@@ -347,7 +347,7 @@ const AdminVehicleView = () => {
         </CardContent></Card>
         <Card><CardContent className="flex items-center gap-3 pt-6">
           <div className="rounded-lg bg-cyan-500/10 p-2"><TrendingUp className="h-5 w-5 text-cyan-500" /></div>
-          <div><p className="text-xs text-muted-foreground">Média Km/L</p><p className="text-xl font-bold">{avgKmPerLiter.toFixed(1)}</p></div>
+          <div><p className="text-xs text-muted-foreground">Média Km/L</p><p className="text-xl font-bold">{avgKmPerLiter.toFixed(2)}</p></div>
         </CardContent></Card>
         <Card className={vehiclesWithWarning > 0 ? 'border-destructive' : ''}>
           <CardContent className="flex items-center gap-3 pt-6">
