@@ -171,14 +171,15 @@ const AdminVehicleView = () => {
   const oilCostTotal = filteredOilRecords.reduce((a, o) => a + (o.service_cost || 0), 0);
   const maintCostTotal = filteredMaintenanceRecords.reduce((a, m) => a + (m.service_cost || 0), 0);
   const totalCost = fuelCost + oilCostTotal + maintCostTotal;
-  // Média Km/L: (max km_final - min km_initial) / total liters no período
-  const logsWithKm = filteredLogs.filter(l => (l.km_initial || 0) > 0 && (l.km_final || 0) > 0);
+  // Média Km/L: (Km Atual mais recente - Km Atual mais antigo) / total litros no período
+  // "Km Atual" = km_final no registro de combustível
+  const logsWithKm = filteredLogs.filter(l => (l.km_final || 0) > 0).sort((a, b) => a.log_date.localeCompare(b.log_date));
   const fuelLiters = filteredLogs.reduce((a, l) => a + (l.liters || 0), 0);
   const avgKmPerLiter = (() => {
-    if (logsWithKm.length === 0 || fuelLiters <= 0) return 0;
-    const minKmInitial = Math.min(...logsWithKm.map(l => l.km_initial));
-    const maxKmFinal = Math.max(...logsWithKm.map(l => l.km_final));
-    const totalDistance = maxKmFinal - minKmInitial;
+    if (logsWithKm.length < 2 || fuelLiters <= 0) return 0;
+    const oldestKmAtual = logsWithKm[0].km_final;
+    const newestKmAtual = logsWithKm[logsWithKm.length - 1].km_final;
+    const totalDistance = newestKmAtual - oldestKmAtual;
     return totalDistance > 0 ? totalDistance / fuelLiters : 0;
   })();
   const activeVehicles = filteredVehicles.filter((v: any) => v.status === 'active').length;
