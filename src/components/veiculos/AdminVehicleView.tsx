@@ -181,7 +181,7 @@ const AdminVehicleView = () => {
     const kmMaisRecente = Math.max(...allKmValues);
     const kmMaisAntigo = Math.min(...allKmValues);
     const totalDistance = kmMaisRecente - kmMaisAntigo;
-    return totalDistance > 0 ? totalDistance / fuelLiters : 0;
+    return totalDistance > 0 ? (totalDistance / fuelLiters) * 100 : 0;
   })();
   const activeVehicles = filteredVehicles.filter((v: any) => v.status === 'active').length;
   const inactiveVehicles = filteredVehicles.length - activeVehicles;
