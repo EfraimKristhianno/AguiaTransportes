@@ -17,10 +17,14 @@ if ('caches' in window) {
   });
 }
 
-// Unregister old service workers
+// Unregister old service workers (but keep OneSignal's)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((registration) => {
+      // Keep OneSignal service worker alive
+      if (registration.active?.scriptURL?.includes('OneSignalSDK')) {
+        return;
+      }
       registration.unregister();
     });
   });
