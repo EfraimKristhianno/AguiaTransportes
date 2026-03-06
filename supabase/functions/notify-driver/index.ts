@@ -2,12 +2,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -20,17 +20,12 @@ serve(async (req) => {
       throw new Error("ONESIGNAL_REST_API_KEY not configured");
     }
 
-    // Build filters: target users with role=motorista AND matching transport_type
+    const requestNum = String(request_number || 0).padStart(6, '0');
+
+    // Send to ALL users tagged as motorista
     const filters: any[] = [
       { field: "tag", key: "role", relation: "=", value: "motorista" },
     ];
-
-    if (transport_type) {
-      filters.push({ operator: "AND" });
-      filters.push({ field: "tag", key: `transport_${transport_type}`, relation: "=", value: "true" });
-    }
-
-    const requestNum = String(request_number || 0).padStart(6, '0');
 
     const payload = {
       app_id: ONESIGNAL_APP_ID,
@@ -40,7 +35,13 @@ serve(async (req) => {
         en: `Coleta: ${origin_address || 'N/A'} → ${destination_address || 'N/A'} (${transport_type || 'N/A'})`,
       },
       url: "https://grupoaguiatransportes.lovable.app/motoristas",
+      // Enable background delivery on mobile
+      content_available: true,
+      priority: 10,
+      android_channel_id: undefined,
     };
+
+    console.log("Sending OneSignal notification:", JSON.stringify(payload));
 
     const response = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
@@ -53,6 +54,14 @@ serve(async (req) => {
 
     const result = await response.json();
     console.log("OneSignal response:", JSON.stringify(result));
+
+    if (!response.ok) {
+      console.error("OneSignal error status:", response.status);
+      return new Response(JSON.stringify({ success: false, error: result }), {
+        status: response.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ success: true, result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
