@@ -60,27 +60,13 @@
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "bde63d28-81f0-4d42-a195-99ed3b24a541",
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          allowLocalhostAsSecureOrigin: true,
           notifyButton: {
             enable: true,
           },
           promptOptions: {
-            slidedown: {
-              prompts: [
-                {
-                  type: "push",
-                  autoPrompt: true,
-                  text: {
-                    actionMessage: "Deseja receber notificações de novas solicitações?",
-                    acceptButton: "Permitir",
-                    cancelButton: "Agora não",
-                  },
-                  delay: {
-                    pageViews: 1,
-                    timeDelay: 3,
-                  },
-                }
-              ]
-            }
+            autoPrompt: false,
           }
         });
       });

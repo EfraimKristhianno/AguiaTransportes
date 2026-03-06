@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin, Bell, BellOff } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -58,6 +58,30 @@ const Motoristas = () => {
   };
 
   // Driver view - show available requests matching their transport types
+  // Notification permission state for driver
+  const [notifPermission, setNotifPermission] = useState<string>('default');
+
+  useEffect(() => {
+    if (isDriver && 'Notification' in window) {
+      setNotifPermission(Notification.permission);
+    }
+  }, [isDriver]);
+
+  const handleEnableNotifications = async () => {
+    try {
+      const OneSignal = (window as any).OneSignal;
+      if (OneSignal) {
+        await OneSignal.Notifications.requestPermission();
+        setNotifPermission(Notification.permission);
+      } else {
+        const result = await Notification.requestPermission();
+        setNotifPermission(result);
+      }
+    } catch (e) {
+      console.error('Error requesting notification permission:', e);
+    }
+  };
+
   if (isDriver) {
     const availableRequests = driverRequests.length;
 
@@ -68,6 +92,40 @@ const Motoristas = () => {
         icon={<TruckIcon className="h-5 w-5" />}
       >
         <div className="space-y-6">
+          {/* Notification Permission Banner */}
+          {notifPermission !== 'granted' && (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="flex items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                    {notifPermission === 'denied' ? (
+                      <BellOff className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Bell className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {notifPermission === 'denied'
+                        ? 'Notificações bloqueadas'
+                        : 'Ative as notificações'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {notifPermission === 'denied'
+                        ? 'Desbloqueie nas configurações do navegador para receber alertas de novas corridas.'
+                        : 'Receba alertas quando novas solicitações de coleta forem criadas.'}
+                    </p>
+                  </div>
+                </div>
+                {notifPermission !== 'denied' && (
+                  <Button size="sm" onClick={handleEnableNotifications}>
+                    <Bell className="h-4 w-4 mr-1" />
+                    Ativar
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
           {/* Stats Cards for Driver */}
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
