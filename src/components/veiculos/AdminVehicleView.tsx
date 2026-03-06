@@ -174,13 +174,13 @@ const AdminVehicleView = () => {
   // Média Km/L: (max km_final - min km_initial) / total liters no período
   const logsWithKm = filteredLogs.filter(l => (l.km_initial || 0) > 0 && (l.km_final || 0) > 0);
   const fuelLiters = filteredLogs.reduce((a, l) => a + (l.liters || 0), 0);
-  const avgKmPerLiter = useMemo(() => {
+  const avgKmPerLiter = (() => {
     if (logsWithKm.length === 0 || fuelLiters <= 0) return 0;
     const minKmInitial = Math.min(...logsWithKm.map(l => l.km_initial));
     const maxKmFinal = Math.max(...logsWithKm.map(l => l.km_final));
     const totalDistance = maxKmFinal - minKmInitial;
     return totalDistance > 0 ? totalDistance / fuelLiters : 0;
-  }, [filteredLogs]);
+  })();
   const activeVehicles = filteredVehicles.filter((v: any) => v.status === 'active').length;
   const inactiveVehicles = filteredVehicles.length - activeVehicles;
 
