@@ -205,7 +205,7 @@ const Dashboard = () => {
   const stats = useMemo(() => {
     const total = deliveryRequests.length;
     const today = deliveryRequests.filter(r => r.created_at && isToday(new Date(r.created_at))).length;
-    const inProgress = deliveryRequests.filter(r => r.status === 'solicitada' || r.status === 'aceita' || r.status === 'pendente_coleta' || r.status === 'coletada' || r.status === 'em_rota' || r.status === 'pendente_entrega' || r.status === 'enviada').length;
+    const inProgress = deliveryRequests.filter(r => r.status === 'agendada' || r.status === 'solicitada' || r.status === 'aceita' || r.status === 'pendente_coleta' || r.status === 'coletada' || r.status === 'em_rota' || r.status === 'pendente_entrega' || r.status === 'enviada').length;
     const delivered = deliveryRequests.filter(r => r.status === 'entregue').length;
 
     // Calculate yesterday's total for comparison
