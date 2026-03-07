@@ -61,31 +61,73 @@ const Motoristas = () => {
 
   // Driver view - show available requests matching their transport types
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!isDriver) return;
-    if ('Notification' in window && Notification.permission === 'granted') {
+    // Check if already subscribed via push or notification permission
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.getRegistration('/sw-push.js').then((reg) => {
+        if (reg) {
+          reg.pushManager.getSubscription().then((sub) => {
+            if (sub) setIsSubscribed(true);
+          });
+        }
+      });
+    } else if ('Notification' in window && Notification.permission === 'granted') {
       setIsSubscribed(true);
     }
   }, [isDriver]);
 
-  const handleEnableNotifications = () => {
-    if (!('Notification' in window)) {
-      // iOS Safari without PWA - can't do native notifications
-      alert('Para receber notificações, instale o app na tela inicial do seu dispositivo.');
-      return;
-    }
+  const handleEnableNotifications = async () => {
+    setIsSubscribed(true); // Instant UI feedback
 
-    Notification.requestPermission().then((permission) => {
-      if (permission === 'granted') {
-        setIsSubscribed(true);
-        // Show a test notification
-        new Notification('Notificações Ativadas! ✅', {
-          body: 'Você receberá alertas de novas solicitações de coleta.',
-          icon: '/logo-192.png',
-        });
+    try {
+      // 1. Get VAPID public key from edge function
+      const { data: vapidData, error: vapidError } = await supabase.functions.invoke('get-vapid-key');
+      if (vapidError || !vapidData?.publicKey) {
+        console.error('Failed to get VAPID key:', vapidError);
+        return;
       }
-    });
+
+      // 2. Register push service worker
+      const registration = await navigator.serviceWorker.register('/sw-push.js');
+      await navigator.serviceWorker.ready;
+
+      // 3. Request notification permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setIsSubscribed(false);
+        return;
+      }
+
+      // 4. Subscribe to push
+      const publicKeyBytes = Uint8Array.from(
+        atob(vapidData.publicKey.replace(/-/g, '+').replace(/_/g, '/')),
+        (c) => c.charCodeAt(0)
+      );
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibility: true,
+        applicationServerKey: publicKeyBytes,
+      });
+
+      const subJson = subscription.toJSON();
+
+      // 5. Save subscription to Supabase
+      if (user) {
+        await supabase.from('push_subscriptions').upsert({
+          user_id: user.id,
+          endpoint: subJson.endpoint!,
+          p256dh: subJson.keys!.p256dh!,
+          auth: subJson.keys!.auth!,
+        }, { onConflict: 'user_id,endpoint' });
+      }
+
+      console.log('[Push] Subscription saved successfully');
+    } catch (err) {
+      console.error('[Push] Error setting up push notifications:', err);
+    }
   };
 
   if (isDriver) {
