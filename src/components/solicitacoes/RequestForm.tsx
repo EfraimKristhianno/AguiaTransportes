@@ -310,6 +310,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       }
       setAttachments([]);
       setSchedulingDate(undefined);
+      setSchedulingTime('');
       setSchedulingStatus('');
       onSuccess?.();
     } catch (error) {
@@ -343,6 +344,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
     }
     setAttachments([]);
     setSchedulingDate(undefined);
+    setSchedulingTime('');
     setSchedulingStatus('');
   };
 
