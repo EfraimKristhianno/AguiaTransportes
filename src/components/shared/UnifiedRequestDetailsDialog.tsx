@@ -79,6 +79,7 @@ const STATUS_FLOW = [
 
 const getStatusClassName = (status: string | null) => {
   switch (status) {
+    case 'agendada': return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'solicitada': case 'enviada': return 'bg-amber-50 text-amber-700 border-amber-200';
     case 'aceita': return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'pendente_coleta': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
@@ -92,6 +93,7 @@ const getStatusClassName = (status: string | null) => {
 
 const getStatusLabel = (status: string | null) => {
   switch (status) {
+    case 'agendada': return 'Agendada';
     case 'solicitada': case 'enviada': return 'Solicitada';
     case 'aceita': return 'Aceita';
     case 'pendente_coleta': return 'Coleta Pendente';
@@ -485,10 +487,19 @@ export const UnifiedRequestDetailsDialog = ({
                 </div>
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Calendar className="h-4 w-4" /> Data
+                    <Calendar className="h-4 w-4" /> {request.status === 'agendada' ? 'Agendamento' : 'Data'}
                   </h4>
                   <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="font-medium text-sm">{formatDate(request.scheduled_date || request.created_at)}</p>
+                    {request.status === 'agendada' && request.scheduled_date ? (
+                      <>
+                        <p className="font-medium text-sm">{formatDate(request.scheduled_date)}</p>
+                        <Badge variant="outline" className="mt-1 bg-blue-50 text-blue-700 border-blue-200">
+                          Agendada
+                        </Badge>
+                      </>
+                    ) : (
+                      <p className="font-medium text-sm">{formatDate(request.scheduled_date || request.created_at)}</p>
+                    )}
                   </div>
                 </div>
               </div>
