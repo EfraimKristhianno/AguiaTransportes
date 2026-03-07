@@ -55,6 +55,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const [attachments, setAttachments] = useState<UploadedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [schedulingDate, setSchedulingDate] = useState<Date | undefined>(undefined);
+  const [schedulingStatus, setSchedulingStatus] = useState<string>('');
 
   const { data: materialTypes = [] } = useMaterialTypes();
   const { data: transportTypes = [] } = useTransportTypes();
@@ -305,6 +307,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         form.reset();
       }
       setAttachments([]);
+      setSchedulingDate(undefined);
+      setSchedulingStatus('');
       onSuccess?.();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -336,6 +340,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       form.reset();
     }
     setAttachments([]);
+    setSchedulingDate(undefined);
+    setSchedulingStatus('');
   };
 
   return (
@@ -480,7 +486,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             />
           </div>
 
-          {/* Date and Requester */}
+          {/* Date, Scheduling Date and Status */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
@@ -589,6 +595,53 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               }}
             />
 
+            {/* Data do agendamento */}
+            <FormItem className="flex flex-col">
+              <FormLabel>Data do agendamento</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full pl-3 text-left font-normal",
+                      !schedulingDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {schedulingDate
+                      ? format(schedulingDate, "dd/MM/yyyy", { locale: ptBR })
+                      : "Selecione a data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={schedulingDate}
+                    onSelect={(day) => setSchedulingDate(day)}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </FormItem>
+
+            {/* Status agendada */}
+            <FormItem className="flex flex-col">
+              <FormLabel>Status agendamento</FormLabel>
+              <Select value={schedulingStatus} onValueChange={setSchedulingStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="agendada">Agendada</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          </div>
+
+          {/* Requester Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="requester"
@@ -628,8 +681,19 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 control={form.control}
                 name="originAddress"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço de coleta <span className="text-red-500">*</span></FormLabel>
+                <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Endereço de coleta <span className="text-red-500">*</span></FormLabel>
+                      {field.value && (() => {
+                        const destAddr = form.getValues('destinationAddress');
+                        const originRegion = resolveFreightRegion(field.value, destAddr);
+                        return (
+                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                            {originRegion ? `Região: ${originRegion}` : 'A combinar'}
+                          </Badge>
+                        );
+                      })()}
+                    </div>
                     <FormControl>
                       <AddressAutocomplete
                         value={field.value}
