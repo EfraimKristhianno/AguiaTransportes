@@ -38,7 +38,9 @@ serve(async (req) => {
       // Enable background delivery on mobile
       content_available: true,
       priority: 10,
-      android_channel_id: undefined,
+      // Sound for Android and iOS
+      android_sound: "default",
+      ios_sound: "default",
     };
 
     console.log("Sending OneSignal notification:", JSON.stringify(payload));
