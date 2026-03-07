@@ -210,9 +210,21 @@ export const UnifiedRequestDetailsDialog = ({
 
   if (!request) return null;
 
+  const parseAsLocal = (dateString: string): Date => {
+    // Strip timezone info to treat stored time as local time
+    const clean = dateString.replace(/[Z+].*$/, '').replace(/T/, 'T');
+    const [datePart, timePart] = clean.split('T');
+    const [y, mo, d] = datePart.split('-').map(Number);
+    if (timePart) {
+      const [h, mi, s] = timePart.split(':').map(Number);
+      return new Date(y, mo - 1, d, h, mi, s || 0);
+    }
+    return new Date(y, mo - 1, d);
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
-    return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    return format(parseAsLocal(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   };
 
   const currentStatusIndex = STATUS_FLOW.findIndex(s => s.value === request.status);
