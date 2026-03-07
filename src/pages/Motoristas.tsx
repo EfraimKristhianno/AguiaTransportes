@@ -60,59 +60,32 @@ const Motoristas = () => {
   };
 
   // Driver view - show available requests matching their transport types
-  // Check OneSignal subscription status instead of just native permission
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     if (!isDriver) return;
-
-    const checkSubscription = async () => {
-      try {
-        const OneSignal = (window as any).OneSignal;
-        if (OneSignal) {
-          // Check if user has an active push subscription with external ID
-          const subId = OneSignal.User?.PushSubscription?.id;
-          const externalId = OneSignal.User?.externalId;
-          const optedIn = OneSignal.User?.PushSubscription?.optedIn;
-          console.log('[OneSignal] Subscription check:', { subId, externalId, optedIn });
-          if (subId && externalId && optedIn) {
-            setIsSubscribed(true);
-          }
-        }
-      } catch (e) {
-        console.error('[OneSignal] Error checking subscription:', e);
-      }
-    };
-
-    // Delay check to allow OneSignal SDK to initialize
-    const timer = setTimeout(checkSubscription, 2000);
-    return () => clearTimeout(timer);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      setIsSubscribed(true);
+    }
   }, [isDriver]);
 
   const handleEnableNotifications = () => {
-    // Immediately update UI
-    setIsSubscribed(true);
+    if (!('Notification' in window)) {
+      // iOS Safari without PWA - can't do native notifications
+      alert('Para receber notificações, instale o app na tela inicial do seu dispositivo.');
+      return;
+    }
 
-    // Do OneSignal work in background
-    (async () => {
-      try {
-        const OneSignal = (window as any).OneSignal;
-        if (OneSignal) {
-          OneSignal.Notifications.requestPermission().catch(() => {});
-          const { supabase } = await import('@/integrations/supabase/client');
-          const userResponse = await supabase.auth.getUser();
-          if (userResponse.data?.user) {
-            await OneSignal.login(userResponse.data.user.id);
-            await OneSignal.User.addTags({ role: 'motorista' });
-            console.log('[OneSignal] Driver subscribed and tagged');
-          }
-        } else if ('Notification' in window) {
-          Notification.requestPermission();
-        }
-      } catch (e) {
-        console.error('Error enabling notifications:', e);
+    Notification.requestPermission().then((permission) => {
+      if (permission === 'granted') {
+        setIsSubscribed(true);
+        // Show a test notification
+        new Notification('Notificações Ativadas! ✅', {
+          body: 'Você receberá alertas de novas solicitações de coleta.',
+          icon: '/logo-192.png',
+        });
       }
-    })();
+    });
   };
 
   if (isDriver) {
