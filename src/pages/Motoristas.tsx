@@ -80,9 +80,9 @@ const Motoristas = () => {
           await OneSignal.Notifications.requestPermission();
           
           // Re-login and tag to ensure subscription is linked
-          const { user } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
-          if (user?.data?.user) {
-            const userId = user.data.user.id;
+          const userResponse = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+          if (userResponse.data?.user) {
+            const userId = userResponse.data.user.id;
             await OneSignal.login(userId);
             await OneSignal.User.addTags({ role: 'motorista' });
             console.log('[OneSignal] Driver subscribed and tagged successfully');
