@@ -34,14 +34,15 @@ export const useDriverNotifications = (isDriver: boolean) => {
           console.log('[DriverNotifications] New request detected:', requestNum);
 
           try {
-            const notification = new Notification(`Nova Solicitação #${requestNum}`, {
+            const notifOptions: NotificationOptions & { renotify?: boolean } = {
               body: `Coleta: ${origin} → ${destination}${transportType ? ` (${transportType})` : ''}`,
               icon: '/logo-192.png',
               badge: '/logo-192.png',
               tag: `request-${newRequest.id}`,
-              renotify: true,
               requireInteraction: true,
-            });
+            };
+
+            const notification = new Notification(`Nova Solicitação #${requestNum}`, notifOptions);
 
             notification.onclick = () => {
               window.focus();
