@@ -60,10 +60,17 @@ const Motoristas = () => {
   // Driver view - show available requests matching their transport types
   // Notification permission state for driver
   const [notifPermission, setNotifPermission] = useState<string>('default');
+  const [showNotifBanner, setShowNotifBanner] = useState(true);
 
   useEffect(() => {
-    if (isDriver && 'Notification' in window) {
-      setNotifPermission(Notification.permission);
+    if (isDriver) {
+      if ('Notification' in window) {
+        setNotifPermission(Notification.permission);
+        if (Notification.permission === 'granted') {
+          setShowNotifBanner(false);
+        }
+      }
+      // On iOS Safari (non-PWA), Notification may not exist — still show banner
     }
   }, [isDriver]);
 
@@ -71,28 +78,31 @@ const Motoristas = () => {
     try {
       const OneSignal = (window as any).OneSignal;
       if (OneSignal) {
-        // Request native permission first
-        const nativeResult = await Notification.requestPermission();
-        console.log('[OneSignal] Native permission result:', nativeResult);
+        // Use OneSignal's permission request (works on all platforms)
+        await OneSignal.Notifications.requestPermission();
         
-        if (nativeResult === 'granted') {
-          // Ensure OneSignal registers the subscription
-          await OneSignal.Notifications.requestPermission();
-          
+        const granted = 'Notification' in window ? Notification.permission === 'granted' : true;
+        console.log('[OneSignal] Permission after request:', granted);
+        
+        if (granted) {
           // Re-login and tag to ensure subscription is linked
-          const userResponse = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+          const { supabase } = await import('@/integrations/supabase/client');
+          const userResponse = await supabase.auth.getUser();
           if (userResponse.data?.user) {
             const userId = userResponse.data.user.id;
             await OneSignal.login(userId);
             await OneSignal.User.addTags({ role: 'motorista' });
             console.log('[OneSignal] Driver subscribed and tagged successfully');
           }
+          setNotifPermission('granted');
+          setShowNotifBanner(false);
+        } else {
+          setNotifPermission('Notification' in window ? Notification.permission : 'denied');
         }
-        
-        setNotifPermission(nativeResult);
-      } else {
+      } else if ('Notification' in window) {
         const result = await Notification.requestPermission();
         setNotifPermission(result);
+        if (result === 'granted') setShowNotifBanner(false);
       }
     } catch (e) {
       console.error('Error requesting notification permission:', e);
@@ -110,36 +120,38 @@ const Motoristas = () => {
       >
         <div className="space-y-6">
           {/* Notification Permission Banner */}
-          {notifPermission !== 'granted' && (
+          {showNotifBanner && notifPermission !== 'granted' && (
             <Card className="border-primary/30 bg-primary/5">
-              <CardContent className="flex items-center justify-between gap-4 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    {notifPermission === 'denied' ? (
-                      <BellOff className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Bell className="h-5 w-5 text-primary" />
-                    )}
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      {notifPermission === 'denied' ? (
+                        <BellOff className="h-5 w-5 text-primary" />
+                      ) : (
+                        <Bell className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">
+                        {notifPermission === 'denied'
+                          ? 'Notificações bloqueadas'
+                          : 'Ative as notificações'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {notifPermission === 'denied'
+                          ? 'Desbloqueie nas configurações do navegador para receber alertas de novas corridas.'
+                          : 'Receba alertas quando novas solicitações de coleta forem criadas.'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">
-                      {notifPermission === 'denied'
-                        ? 'Notificações bloqueadas'
-                        : 'Ative as notificações'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {notifPermission === 'denied'
-                        ? 'Desbloqueie nas configurações do navegador para receber alertas de novas corridas.'
-                        : 'Receba alertas quando novas solicitações de coleta forem criadas.'}
-                    </p>
-                  </div>
+                  {notifPermission !== 'denied' && (
+                    <Button size="sm" onClick={handleEnableNotifications} className="w-full sm:w-auto shrink-0">
+                      <Bell className="h-4 w-4 mr-1" />
+                      Ativar
+                    </Button>
+                  )}
                 </div>
-                {notifPermission !== 'denied' && (
-                  <Button size="sm" onClick={handleEnableNotifications}>
-                    <Bell className="h-4 w-4 mr-1" />
-                    Ativar
-                  </Button>
-                )}
               </CardContent>
             </Card>
           )}
