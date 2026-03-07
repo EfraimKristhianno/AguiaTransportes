@@ -68,11 +68,17 @@ export const AddressAutocomplete = ({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [userNumber, setUserNumber] = useState<string | undefined>();
+
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
       setSuggestions([]);
       return;
     }
+
+    // Extract number typed by user to append if API doesn't return one
+    const number = extractNumber(query);
+    setUserNumber(number);
 
     try {
       // Use Nominatim as primary - better support for house numbers
@@ -104,9 +110,9 @@ export const AddressAutocomplete = ({
           const photonData = await photonRes.json();
           const photonFeatures: PhotonFeature[] = photonData.features || [];
 
-          const existingAddresses = new Set(features.map(f => formatAddress(f)));
+          const existingAddresses = new Set(features.map(f => formatAddress(f, number)));
           for (const pf of photonFeatures) {
-            const addr = formatAddress(pf);
+            const addr = formatAddress(pf, number);
             if (!existingAddresses.has(addr) && addr.length > 5) {
               features.push(pf);
               existingAddresses.add(addr);
@@ -117,7 +123,7 @@ export const AddressAutocomplete = ({
         }
       }
 
-      features = features.filter(f => formatAddress(f).length > 5).slice(0, 7);
+      features = features.filter(f => formatAddress(f, number).length > 5).slice(0, 7);
 
       setSuggestions(features);
       setIsOpen(features.length > 0);
