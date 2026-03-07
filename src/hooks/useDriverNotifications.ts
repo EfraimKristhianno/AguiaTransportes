@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Hook that listens for new delivery_requests via Supabase Realtime
- * and shows a native browser Notification to the driver.
+ * and shows a native browser Notification to the driver (fallback when tab is open).
+ * The primary push mechanism is Web Push via Service Worker + notify-driver edge function.
  */
 export const useDriverNotifications = (isDriver: boolean) => {
   const lastNotifiedId = useRef<string | null>(null);
@@ -12,7 +13,7 @@ export const useDriverNotifications = (isDriver: boolean) => {
     if (!isDriver) return;
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
-    console.log('[DriverNotifications] Setting up Realtime notification listener');
+    console.log('[DriverNotifications] Setting up Realtime notification listener (fallback)');
 
     const channel = supabase
       .channel('driver-push-notifications')
@@ -22,9 +23,11 @@ export const useDriverNotifications = (isDriver: boolean) => {
         (payload) => {
           const newRequest = payload.new as any;
           
-          // Avoid duplicate notifications
           if (lastNotifiedId.current === newRequest.id) return;
           lastNotifiedId.current = newRequest.id;
+
+          // Only show in-browser notification if document is visible (push SW handles background)
+          if (document.visibilityState !== 'visible') return;
 
           const requestNum = String(newRequest.request_number || 0).padStart(6, '0');
           const origin = newRequest.origin_address || 'N/A';
@@ -34,20 +37,11 @@ export const useDriverNotifications = (isDriver: boolean) => {
           console.log('[DriverNotifications] New request detected:', requestNum);
 
           try {
-            const notifOptions: NotificationOptions & { renotify?: boolean } = {
+            new Notification(`Nova Solicitação #${requestNum}`, {
               body: `Coleta: ${origin} → ${destination}${transportType ? ` (${transportType})` : ''}`,
               icon: '/logo-192.png',
-              badge: '/logo-192.png',
               tag: `request-${newRequest.id}`,
-              requireInteraction: true,
-            };
-
-            const notification = new Notification(`Nova Solicitação #${requestNum}`, notifOptions);
-
-            notification.onclick = () => {
-              window.focus();
-              notification.close();
-            };
+            });
           } catch (e) {
             console.error('[DriverNotifications] Error showing notification:', e);
           }
@@ -58,7 +52,6 @@ export const useDriverNotifications = (isDriver: boolean) => {
       });
 
     return () => {
-      console.log('[DriverNotifications] Removing channel');
       supabase.removeChannel(channel);
     };
   }, [isDriver]);
