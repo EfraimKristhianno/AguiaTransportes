@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, User, Phone, CalendarIcon, FileText, Send, Hash, Clock, Check } from 'lucide-react';
+import { Plus, User, Phone, CalendarIcon, FileText, Send, Hash, Clock, Check, CalendarPlus, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const [schedulingTime, setSchedulingTime] = useState<string>('');
   const [schedulingCalendarOpen, setSchedulingCalendarOpen] = useState(false);
   const [schedulingStatus, setSchedulingStatus] = useState<string>('');
+  const [showScheduling, setShowScheduling] = useState(false);
 
   const { data: materialTypes = [] } = useMaterialTypes();
   const { data: transportTypes = [] } = useTransportTypes();
@@ -312,6 +313,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       setSchedulingDate(undefined);
       setSchedulingTime('');
       setSchedulingStatus('');
+      setShowScheduling(false);
       onSuccess?.();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -346,6 +348,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
     setSchedulingDate(undefined);
     setSchedulingTime('');
     setSchedulingStatus('');
+    setShowScheduling(false);
   };
 
   return (
@@ -599,76 +602,114 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               }}
             />
 
-            {/* Data do agendamento */}
-            <FormItem className="flex flex-col">
-              <FormLabel>Data do agendamento</FormLabel>
-              <Popover open={schedulingCalendarOpen} onOpenChange={setSchedulingCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full pl-3 text-left font-normal",
-                      !schedulingDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {schedulingDate
-                      ? `${format(schedulingDate, "dd/MM/yyyy", { locale: ptBR })}${schedulingTime ? ` às ${schedulingTime}` : ''}`
-                      : "Selecione a data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={schedulingDate}
-                    onSelect={(day) => setSchedulingDate(day)}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                    locale={ptBR}
-                  />
-                  <div className="border-t px-3 py-2 flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="time"
-                      value={schedulingTime}
-                      onChange={(e) => setSchedulingTime(e.target.value)}
-                      className="w-auto"
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-primary hover:text-primary/80"
-                      onClick={() => {
-                        if (!schedulingDate) setSchedulingDate(new Date());
-                        setSchedulingCalendarOpen(false);
-                      }}
-                      title="Confirmar data e hora"
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </FormItem>
-
-            {/* Status agendada */}
-            <FormItem className="flex flex-col">
-              <FormLabel>Status agendamento</FormLabel>
-              <Select
-                value={schedulingStatus || undefined}
-                onValueChange={(val) => setSchedulingStatus(val === '__clear__' ? '' : val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="agendada">Agendada</SelectItem>
-                  <SelectItem value="__clear__" className="text-muted-foreground">Limpar seleção</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
+            {/* Botão Agendar Coleta */}
+            {!showScheduling && (
+              <FormItem className="flex flex-col">
+                <FormLabel className="invisible">Agendar</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/5"
+                  onClick={() => setShowScheduling(true)}
+                >
+                  <CalendarPlus className="h-4 w-4" />
+                  Agendar coleta
+                </Button>
+              </FormItem>
+            )}
           </div>
+
+          {/* Campos de agendamento (visíveis apenas ao clicar) */}
+          {showScheduling && (
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 items-end rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4">
+              {/* Data do agendamento */}
+              <FormItem className="flex flex-col">
+                <FormLabel>Data do agendamento</FormLabel>
+                <Popover open={schedulingCalendarOpen} onOpenChange={setSchedulingCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !schedulingDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {schedulingDate
+                        ? `${format(schedulingDate, "dd/MM/yyyy", { locale: ptBR })}${schedulingTime ? ` às ${schedulingTime}` : ''}`
+                        : "Selecione a data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={schedulingDate}
+                      onSelect={(day) => setSchedulingDate(day)}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                      locale={ptBR}
+                    />
+                    <div className="border-t px-3 py-2 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="time"
+                        value={schedulingTime}
+                        onChange={(e) => setSchedulingTime(e.target.value)}
+                        className="w-auto"
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-primary hover:text-primary/80"
+                        onClick={() => {
+                          if (!schedulingDate) setSchedulingDate(new Date());
+                          setSchedulingCalendarOpen(false);
+                        }}
+                        title="Confirmar data e hora"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </FormItem>
+
+              {/* Status agendada */}
+              <FormItem className="flex flex-col">
+                <FormLabel>Status agendamento</FormLabel>
+                <Select
+                  value={schedulingStatus || undefined}
+                  onValueChange={(val) => setSchedulingStatus(val === '__clear__' ? '' : val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agendada">Agendada</SelectItem>
+                    <SelectItem value="__clear__" className="text-muted-foreground">Limpar seleção</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+
+              {/* Fechar agendamento */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                onClick={() => {
+                  setShowScheduling(false);
+                  setSchedulingDate(undefined);
+                  setSchedulingTime('');
+                  setSchedulingStatus('');
+                }}
+                title="Remover agendamento"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           {/* Requester Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
