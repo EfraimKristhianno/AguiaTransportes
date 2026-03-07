@@ -25,14 +25,15 @@ interface PhotonFeature {
   };
 }
 
-function formatAddress(feature: PhotonFeature): string {
+function formatAddress(feature: PhotonFeature, userNumber?: string): string {
   const p = feature.properties;
   const parts: string[] = [];
 
-  // Street + number
+  // Street + number (prefer API number, fallback to user-typed number)
   const street = p.street || p.name;
   if (street) {
-    parts.push(p.housenumber ? `${street}, ${p.housenumber}` : street);
+    const number = p.housenumber || userNumber;
+    parts.push(number ? `${street}, ${number}` : street);
   }
 
   // Neighborhood
@@ -46,6 +47,12 @@ function formatAddress(feature: PhotonFeature): string {
   if (p.state) parts.push(p.state);
 
   return parts.join(' - ');
+}
+
+function extractNumber(query: string): string | undefined {
+  // Match numbers like "123", "1500" etc. in the query (common patterns: "Rua X, 123" or "Rua X 123")
+  const match = query.match(/[,\s]\s*(\d{1,6})\b/);
+  return match ? match[1] : undefined;
 }
 
 export const AddressAutocomplete = ({
