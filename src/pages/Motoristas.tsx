@@ -87,33 +87,30 @@ const Motoristas = () => {
     return () => clearTimeout(timer);
   }, [isDriver]);
 
-  const [isActivating, setIsActivating] = useState(false);
+  const handleEnableNotifications = () => {
+    // Immediately update UI
+    setIsSubscribed(true);
 
-  const handleEnableNotifications = async () => {
-    setIsActivating(true);
-    try {
-      const OneSignal = (window as any).OneSignal;
-      if (OneSignal) {
-        await OneSignal.Notifications.requestPermission();
-        
-        const { supabase } = await import('@/integrations/supabase/client');
-        const userResponse = await supabase.auth.getUser();
-        if (userResponse.data?.user) {
-          const userId = userResponse.data.user.id;
-          await OneSignal.login(userId);
-          await OneSignal.User.addTags({ role: 'motorista' });
-          console.log('[OneSignal] Driver subscribed and tagged successfully');
+    // Do OneSignal work in background
+    (async () => {
+      try {
+        const OneSignal = (window as any).OneSignal;
+        if (OneSignal) {
+          OneSignal.Notifications.requestPermission().catch(() => {});
+          const { supabase } = await import('@/integrations/supabase/client');
+          const userResponse = await supabase.auth.getUser();
+          if (userResponse.data?.user) {
+            await OneSignal.login(userResponse.data.user.id);
+            await OneSignal.User.addTags({ role: 'motorista' });
+            console.log('[OneSignal] Driver subscribed and tagged');
+          }
+        } else if ('Notification' in window) {
+          Notification.requestPermission();
         }
-        setIsSubscribed(true);
-      } else if ('Notification' in window) {
-        await Notification.requestPermission();
-        setIsSubscribed(true);
+      } catch (e) {
+        console.error('Error enabling notifications:', e);
       }
-    } catch (e) {
-      console.error('Error requesting notification permission:', e);
-    } finally {
-      setIsActivating(false);
-    }
+    })();
   };
 
   if (isDriver) {
@@ -126,9 +123,9 @@ const Motoristas = () => {
         icon={<TruckIcon className="h-5 w-5" />}
         headerAction={
           !isSubscribed ? (
-            <Button size="sm" onClick={handleEnableNotifications} disabled={isActivating} className="shrink-0">
+            <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
               <Bell className="h-4 w-4 mr-1" />
-              {isActivating ? 'Ativando...' : 'Ativar'}
+              Ativar
             </Button>
           ) : (
             <Button size="sm" disabled className="shrink-0 bg-muted text-muted-foreground cursor-default hover:bg-muted">
