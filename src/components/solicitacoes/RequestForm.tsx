@@ -281,6 +281,10 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           .eq('id', createdRequest.id);
       }
 
+      // Save addresses to history for future autocomplete
+      saveAddressToHistory(data.originAddress);
+      saveAddressToHistory(data.destinationAddress);
+
       // Push notification is now handled automatically by database trigger
       // Reset form (keep client data for clients)
       if (isClient) {
