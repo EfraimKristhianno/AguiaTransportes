@@ -60,10 +60,17 @@ const Motoristas = () => {
   // Driver view - show available requests matching their transport types
   // Notification permission state for driver
   const [notifPermission, setNotifPermission] = useState<string>('default');
+  const [showNotifBanner, setShowNotifBanner] = useState(true);
 
   useEffect(() => {
-    if (isDriver && 'Notification' in window) {
-      setNotifPermission(Notification.permission);
+    if (isDriver) {
+      if ('Notification' in window) {
+        setNotifPermission(Notification.permission);
+        if (Notification.permission === 'granted') {
+          setShowNotifBanner(false);
+        }
+      }
+      // On iOS Safari (non-PWA), Notification may not exist — still show banner
     }
   }, [isDriver]);
 
