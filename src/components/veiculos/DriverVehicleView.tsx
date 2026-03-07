@@ -72,7 +72,7 @@ const DriverVehicleView = () => {
   const [editMaintForm, setEditMaintForm] = useState<any>(null);
 
   // Delete confirmation
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'log' | 'oil' | 'maint'; id: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{type: 'log' | 'oil' | 'maint';id: string;} | null>(null);
 
   // Edit attachment states
   const [editLogAttachments, setEditLogAttachments] = useState<string[]>([]);
@@ -118,22 +118,22 @@ const DriverVehicleView = () => {
     queryKey: ['driver_vehicles', currentDriver?.id],
     enabled: !!currentDriver?.id,
     queryFn: async () => {
-      const { data: dvt } = await supabase
-        .from('driver_vehicle_types')
-        .select('vehicle_type')
-        .eq('driver_id', currentDriver!.id);
+      const { data: dvt } = await supabase.
+      from('driver_vehicle_types').
+      select('vehicle_type').
+      eq('driver_id', currentDriver!.id);
 
       if (!dvt?.length) return [];
 
-      const types = dvt.map(d => d.vehicle_type);
-      const { data: vehicles } = await supabase
-        .from('vehicles')
-        .select('*')
-        .in('type', types)
-        .eq('status', 'active');
+      const types = dvt.map((d) => d.vehicle_type);
+      const { data: vehicles } = await supabase.
+      from('vehicles').
+      select('*').
+      in('type', types).
+      eq('status', 'active');
 
       return vehicles || [];
-    },
+    }
   });
 
   // Form states
@@ -145,7 +145,7 @@ const DriverVehicleView = () => {
     liters: '',
     fuel_price: '',
     fuel_type: 'diesel',
-    notes: '',
+    notes: ''
   });
 
   const [oilForm, setOilForm] = useState({
@@ -156,7 +156,7 @@ const DriverVehicleView = () => {
     next_change_km: '',
     oil_type: '',
     service_cost: '',
-    notes: '',
+    notes: ''
   });
 
   const [maintForm, setMaintForm] = useState({
@@ -166,12 +166,12 @@ const DriverVehicleView = () => {
     current_km: '',
     service_cost: '',
     notes: '',
-    maintenance_date: formatLocalDate(new Date()),
+    maintenance_date: formatLocalDate(new Date())
   });
 
-  const totalCost = logForm.liters && logForm.fuel_price
-    ? (parseFloat(logForm.liters) * parseFloat(logForm.fuel_price)).toFixed(2)
-    : '0.00';
+  const totalCost = logForm.liters && logForm.fuel_price ?
+  (parseFloat(logForm.liters) * parseFloat(logForm.fuel_price)).toFixed(2) :
+  '0.00';
 
   const selectedMaintVehicle = driverVehicles.find((v: any) => v.id === maintForm.vehicle_id);
 
@@ -189,13 +189,13 @@ const DriverVehicleView = () => {
       total_cost: parseFloat(totalCost) || undefined,
       fuel_type: logForm.fuel_type,
       vehicle_plate: logForm.plate || undefined,
-      notes: logForm.notes ? `${logForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : (attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined),
+      notes: logForm.notes ? `${logForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined
     }, {
       onSuccess: () => {
         setLogDialogOpen(false);
         setLogForm({ vehicle_id: '', plate: '', log_date: formatLocalDate(new Date()), km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
         setLogFiles([]);
-      },
+      }
     });
   };
 
@@ -211,13 +211,13 @@ const DriverVehicleView = () => {
       oil_type: oilForm.oil_type || undefined,
       service_cost: oilForm.service_cost ? parseFloat(oilForm.service_cost) : undefined,
       vehicle_plate: oilForm.plate || undefined,
-      notes: oilForm.notes ? `${oilForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : (attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined),
+      notes: oilForm.notes ? `${oilForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined
     }, {
       onSuccess: () => {
         setOilDialogOpen(false);
         setOilForm({ vehicle_id: '', plate: '', change_date: formatLocalDate(new Date()), km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
         setOilFiles([]);
-      },
+      }
     });
   };
 
@@ -231,14 +231,14 @@ const DriverVehicleView = () => {
       vehicle_plate: maintForm.plate || '',
       current_km: parseFloat(maintForm.current_km) || 0,
       service_cost: maintForm.service_cost ? parseFloat(maintForm.service_cost) : undefined,
-      notes: maintForm.notes ? `${maintForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : (attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined),
-      maintenance_date: maintForm.maintenance_date,
+      notes: maintForm.notes ? `${maintForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined,
+      maintenance_date: maintForm.maintenance_date
     }, {
       onSuccess: () => {
         setMaintDialogOpen(false);
         setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: formatLocalDate(new Date()) });
         setMaintFiles([]);
-      },
+      }
     });
   };
 
@@ -252,7 +252,7 @@ const DriverVehicleView = () => {
       liters: String(log.liters || ''),
       fuel_price: String(log.fuel_price || ''),
       fuel_type: log.fuel_type || 'diesel',
-      notes: (log.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
+      notes: (log.notes || '').replace(/\n?\[anexos:[^\]]*\]/, '')
     });
     setEditLogAttachments(extractAttachments(log.notes));
     setEditLogNewFiles([]);
@@ -263,9 +263,9 @@ const DriverVehicleView = () => {
     if (!editingLog || !editLogForm || !currentDriver?.id) return;
     const newPaths = await uploadFiles(editLogNewFiles, `logs/${currentDriver.id}`);
     const allPaths = [...editLogAttachments, ...newPaths];
-    const totalCostVal = editLogForm.liters && editLogForm.fuel_price
-      ? parseFloat(editLogForm.liters) * parseFloat(editLogForm.fuel_price)
-      : undefined;
+    const totalCostVal = editLogForm.liters && editLogForm.fuel_price ?
+    parseFloat(editLogForm.liters) * parseFloat(editLogForm.fuel_price) :
+    undefined;
     updateLog.mutate({
       id: editingLog.id,
       vehicle_id: editLogForm.vehicle_id,
@@ -276,7 +276,7 @@ const DriverVehicleView = () => {
       total_cost: totalCostVal || null,
       fuel_type: editLogForm.fuel_type,
       vehicle_plate: editLogForm.plate || null,
-      notes: buildNotesWithAttachments(editLogForm.notes || '', allPaths),
+      notes: buildNotesWithAttachments(editLogForm.notes || '', allPaths)
     }, { onSuccess: () => setEditingLog(null) });
   };
 
@@ -289,7 +289,7 @@ const DriverVehicleView = () => {
       next_change_km: String(oil.next_change_km),
       oil_type: oil.oil_type || '',
       service_cost: String(oil.service_cost || ''),
-      notes: (oil.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
+      notes: (oil.notes || '').replace(/\n?\[anexos:[^\]]*\]/, '')
     });
     setEditOilAttachments(extractAttachments(oil.notes));
     setEditOilNewFiles([]);
@@ -309,7 +309,7 @@ const DriverVehicleView = () => {
       oil_type: editOilForm.oil_type || null,
       service_cost: editOilForm.service_cost ? parseFloat(editOilForm.service_cost) : null,
       vehicle_plate: editOilForm.plate || null,
-      notes: buildNotesWithAttachments(editOilForm.notes || '', allPaths),
+      notes: buildNotesWithAttachments(editOilForm.notes || '', allPaths)
     }, { onSuccess: () => setEditingOil(null) });
   };
 
@@ -321,7 +321,7 @@ const DriverVehicleView = () => {
       current_km: String(m.current_km),
       service_cost: String(m.service_cost || ''),
       notes: (m.notes || '').replace(/\n?\[anexos:[^\]]*\]/, ''),
-      maintenance_date: m.maintenance_date,
+      maintenance_date: m.maintenance_date
     });
     setEditMaintAttachments(extractAttachments(m.notes));
     setEditMaintNewFiles([]);
@@ -340,7 +340,7 @@ const DriverVehicleView = () => {
       current_km: parseFloat(editMaintForm.current_km) || 0,
       service_cost: editMaintForm.service_cost ? parseFloat(editMaintForm.service_cost) : null,
       notes: buildNotesWithAttachments(editMaintForm.notes || '', allPaths),
-      maintenance_date: editMaintForm.maintenance_date,
+      maintenance_date: editMaintForm.maintenance_date
     }, { onSuccess: () => setEditingMaint(null) });
   };
 
@@ -354,21 +354,21 @@ const DriverVehicleView = () => {
 
 
   const vehicleTypes = [...new Set(driverVehicles.map((v: any) => v.type))];
-  
+
   // Get unique plates from operational records (fuel logs, oil changes, maintenance)
   const filteredPlates = (() => {
-    const typeFilteredIds = filterType === 'all'
-      ? null
-      : new Set(driverVehicles.filter((v: any) => v.type === filterType).map((v: any) => v.id));
-    
+    const typeFilteredIds = filterType === 'all' ?
+    null :
+    new Set(driverVehicles.filter((v: any) => v.type === filterType).map((v: any) => v.id));
+
     const plates = new Set<string>();
-    logs.forEach(l => {
+    logs.forEach((l) => {
       if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(l.vehicle_plate);
     });
-    oilRecords.forEach(o => {
+    oilRecords.forEach((o) => {
       if (o.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(o.vehicle_id))) plates.add(o.vehicle_plate);
     });
-    maintenanceRecords.forEach(m => {
+    maintenanceRecords.forEach((m) => {
       if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(m.vehicle_plate);
     });
     return Array.from(plates).sort();
@@ -395,15 +395,15 @@ const DriverVehicleView = () => {
   };
 
   // Filtered data
-  const filteredLogs = logs.filter(l => matchesVehicle(l.vehicle_id, l.vehicle_plate) && inDateRange(l.log_date));
-  const filteredOilRecords = oilRecords.filter(o => matchesVehicle(o.vehicle_id, o.vehicle_plate) && inDateRange(o.change_date));
-  const filteredMaintenanceRecords = maintenanceRecords.filter(m => matchesVehicle(m.vehicle_id, m.vehicle_plate) && inDateRange(m.maintenance_date));
+  const filteredLogs = logs.filter((l) => matchesVehicle(l.vehicle_id, l.vehicle_plate) && inDateRange(l.log_date));
+  const filteredOilRecords = oilRecords.filter((o) => matchesVehicle(o.vehicle_id, o.vehicle_plate) && inDateRange(o.change_date));
+  const filteredMaintenanceRecords = maintenanceRecords.filter((m) => matchesVehicle(m.vehicle_id, m.vehicle_plate) && inDateRange(m.maintenance_date));
 
   // Stats (use filtered data)
   // Km Atual: último km informado (maior valor entre abastecimento, óleo e manutenção)
-  const lastKmFromLogs = filteredLogs.length > 0 ? Math.max(...filteredLogs.map(l => l.km_final || 0)) : 0;
-  const lastKmFromOil = filteredOilRecords.length > 0 ? Math.max(...filteredOilRecords.map(o => o.km_at_change || 0)) : 0;
-  const lastKmFromMaint = filteredMaintenanceRecords.length > 0 ? Math.max(...filteredMaintenanceRecords.map(m => m.current_km || 0)) : 0;
+  const lastKmFromLogs = filteredLogs.length > 0 ? Math.max(...filteredLogs.map((l) => l.km_final || 0)) : 0;
+  const lastKmFromOil = filteredOilRecords.length > 0 ? Math.max(...filteredOilRecords.map((o) => o.km_at_change || 0)) : 0;
+  const lastKmFromMaint = filteredMaintenanceRecords.length > 0 ? Math.max(...filteredMaintenanceRecords.map((m) => m.current_km || 0)) : 0;
   const currentKm = Math.max(lastKmFromLogs, lastKmFromOil, lastKmFromMaint);
   const totalLiters = filteredLogs.reduce((acc, l) => acc + (l.liters || 0), 0);
   const fuelCost = filteredLogs.reduce((acc, l) => acc + (l.total_cost || 0), 0);
@@ -411,16 +411,16 @@ const DriverVehicleView = () => {
   const maintCost = filteredMaintenanceRecords.reduce((acc, m) => acc + (m.service_cost || 0), 0);
   const totalSpent = fuelCost + oilCost + maintCost;
   // Get latest oil record by change_date - respects active filters, falls back to all records only when no filters are active
-  const oilSourceForCard = filteredOilRecords.length > 0
-    ? filteredOilRecords
-    : (filterType === 'all' && filterPlate === 'all' && !filterStartDate && !filterEndDate)
-      ? oilRecords
-      : [];
-  const latestOil = oilSourceForCard.length > 0
-    ? oilSourceForCard.reduce((latest, record) => 
-        parseDateString(record.change_date) > parseDateString(latest.change_date) ? record : latest
-      , oilSourceForCard[0])
-    : null;
+  const oilSourceForCard = filteredOilRecords.length > 0 ?
+  filteredOilRecords :
+  filterType === 'all' && filterPlate === 'all' && !filterStartDate && !filterEndDate ?
+  oilRecords :
+  [];
+  const latestOil = oilSourceForCard.length > 0 ?
+  oilSourceForCard.reduce((latest, record) =>
+  parseDateString(record.change_date) > parseDateString(latest.change_date) ? record : latest,
+  oilSourceForCard[0]) :
+  null;
   const oilChangeWarning = latestOil && currentKm >= latestOil.next_change_km;
 
   if (driverLoading || logsLoading) {
@@ -435,11 +435,11 @@ const DriverVehicleView = () => {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <Select value={filterType} onValueChange={v => { setFilterType(v); setFilterPlate('all'); }}>
+        <Select value={filterType} onValueChange={(v) => {setFilterType(v);setFilterPlate('all');}}>
           <SelectTrigger className="w-[180px]"><SelectValue placeholder="Todos os tipos" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os tipos</SelectItem>
-            {vehicleTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            {vehicleTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterPlate} onValueChange={setFilterPlate}>
@@ -449,8 +449,8 @@ const DriverVehicleView = () => {
             {filteredPlates.map((plate: string) => <SelectItem key={plate} value={plate}>{plate}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Input type="date" className="w-[160px]" placeholder="Data inicial" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
-        <Input type="date" className="w-[160px]" placeholder="Data final" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
+        <Input type="date" className="w-[160px]" placeholder="Data inicial" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} />
+        <Input type="date" className="w-[160px]" placeholder="Data final" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} />
       </div>
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -488,25 +488,25 @@ const DriverVehicleView = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Próx. Troca Óleo</p>
-              {latestOil ? (
-                <>
+              {latestOil ?
+              <>
                   <p className="text-xl font-bold">{formatKmDisplay(latestOil.next_change_km)} km</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Km atual: {formatKmDisplay(currentKm)}</p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sem registro</p>
-              )}
+                </> :
+
+              <p className="text-sm text-muted-foreground">Sem registro</p>
+              }
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {oilChangeWarning && (
-        <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-4 flex items-center gap-3 animate-pulse">
-          <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
-          <p className="text-sm text-destructive font-bold">⚠️ Atenção: Km atual ({formatKmDisplay(currentKm)}) excedeu a previsão de troca de óleo ({formatKmDisplay(latestOil!.next_change_km)} km).</p>
+      {oilChangeWarning &&
+      <div className="rounded-lg border border-destructive bg-destructive/5 p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 text-destructive shrink-0 h-[25px] border-0 mx-0" />
+          <p className="text-destructive font-extrabold text-xl">Atenção: Km atual ({formatKmDisplay(currentKm)}) excedeu a previsão de troca de óleo ({formatKmDisplay(latestOil!.next_change_km)} km).</p>
         </div>
-      )}
+      }
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
@@ -519,30 +519,30 @@ const DriverVehicleView = () => {
             <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={logForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setLogForm(p => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                <Select value={logForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setLogForm((p) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {driverVehicles.map((v: any) => (
-                      <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
-                    ))}
+                    {driverVehicles.map((v: any) =>
+                    <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Placa</Label>
-                <Input value={logForm.plate} onChange={e => setLogForm(p => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
+                <Input value={logForm.plate} onChange={(e) => setLogForm((p) => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
               </div>
               <div>
                 <Label>Data</Label>
-                <Input type="date" value={logForm.log_date} onChange={e => setLogForm(p => ({ ...p, log_date: e.target.value }))} />
+                <Input type="date" value={logForm.log_date} onChange={(e) => setLogForm((p) => ({ ...p, log_date: e.target.value }))} />
               </div>
               <div>
                 <Label>Km Atual</Label>
-                <KmInput value={logForm.km_atual} onValueChange={v => setLogForm(p => ({ ...p, km_atual: v }))} placeholder="Quilometragem atual" />
+                <KmInput value={logForm.km_atual} onValueChange={(v) => setLogForm((p) => ({ ...p, km_atual: v }))} placeholder="Quilometragem atual" />
               </div>
               <div>
                 <Label>Tipo de Combustível</Label>
-                <Select value={logForm.fuel_type} onValueChange={v => setLogForm(p => ({ ...p, fuel_type: v }))}>
+                <Select value={logForm.fuel_type} onValueChange={(v) => setLogForm((p) => ({ ...p, fuel_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="diesel">Diesel</SelectItem>
@@ -552,14 +552,14 @@ const DriverVehicleView = () => {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Litros</Label><Input type="number" step="0.01" value={logForm.liters} onChange={e => setLogForm(p => ({ ...p, liters: e.target.value }))} /></div>
-                <div><Label>Preço/Litro (R$)</Label><Input type="number" step="0.01" value={logForm.fuel_price} onChange={e => setLogForm(p => ({ ...p, fuel_price: e.target.value }))} /></div>
+                <div><Label>Litros</Label><Input type="number" step="0.01" value={logForm.liters} onChange={(e) => setLogForm((p) => ({ ...p, liters: e.target.value }))} /></div>
+                <div><Label>Preço/Litro (R$)</Label><Input type="number" step="0.01" value={logForm.fuel_price} onChange={(e) => setLogForm((p) => ({ ...p, fuel_price: e.target.value }))} /></div>
               </div>
               <div className="rounded-lg bg-muted p-3 text-center">
                 <p className="text-xs text-muted-foreground">Valor Total</p>
                 <p className="text-lg font-bold">R$ {totalCost}</p>
               </div>
-              <div><Label>Observações</Label><Textarea value={logForm.notes} onChange={e => setLogForm(p => ({ ...p, notes: e.target.value }))} /></div>
+              <div><Label>Observações</Label><Textarea value={logForm.notes} onChange={(e) => setLogForm((p) => ({ ...p, notes: e.target.value }))} /></div>
               <FileUploadArea files={logFiles} onFilesChange={setLogFiles} />
               <Button className="w-full" onClick={handleSubmitLog} disabled={createLog.isPending}>
                 {createLog.isPending ? 'Salvando...' : 'Salvar Registro'}
@@ -577,27 +577,27 @@ const DriverVehicleView = () => {
             <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={oilForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setOilForm(p => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                <Select value={oilForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setOilForm((p) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {driverVehicles.map((v: any) => (
-                      <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
-                    ))}
+                    {driverVehicles.map((v: any) =>
+                    <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Placa</Label>
-                <Input value={oilForm.plate} onChange={e => setOilForm(p => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
+                <Input value={oilForm.plate} onChange={(e) => setOilForm((p) => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
               </div>
-              <div><Label>Data da Troca</Label><Input type="date" value={oilForm.change_date} onChange={e => setOilForm(p => ({ ...p, change_date: e.target.value }))} /></div>
+              <div><Label>Data da Troca</Label><Input type="date" value={oilForm.change_date} onChange={(e) => setOilForm((p) => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Km na Troca</Label><KmInput value={oilForm.km_at_change} onValueChange={v => setOilForm(p => ({ ...p, km_at_change: v }))} /></div>
-                <div><Label>Próx. Troca (Km)</Label><KmInput value={oilForm.next_change_km} onValueChange={v => setOilForm(p => ({ ...p, next_change_km: v }))} /></div>
+                <div><Label>Km na Troca</Label><KmInput value={oilForm.km_at_change} onValueChange={(v) => setOilForm((p) => ({ ...p, km_at_change: v }))} /></div>
+                <div><Label>Próx. Troca (Km)</Label><KmInput value={oilForm.next_change_km} onValueChange={(v) => setOilForm((p) => ({ ...p, next_change_km: v }))} /></div>
               </div>
-              <div><Label>Tipo de Óleo</Label><Input value={oilForm.oil_type} onChange={e => setOilForm(p => ({ ...p, oil_type: e.target.value }))} /></div>
-              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" min="0" placeholder="0.00" value={oilForm.service_cost} onChange={e => setOilForm(p => ({ ...p, service_cost: e.target.value }))} /></div>
-              <div><Label>Observações</Label><Textarea value={oilForm.notes} onChange={e => setOilForm(p => ({ ...p, notes: e.target.value }))} /></div>
+              <div><Label>Tipo de Óleo</Label><Input value={oilForm.oil_type} onChange={(e) => setOilForm((p) => ({ ...p, oil_type: e.target.value }))} /></div>
+              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" min="0" placeholder="0.00" value={oilForm.service_cost} onChange={(e) => setOilForm((p) => ({ ...p, service_cost: e.target.value }))} /></div>
+              <div><Label>Observações</Label><Textarea value={oilForm.notes} onChange={(e) => setOilForm((p) => ({ ...p, notes: e.target.value }))} /></div>
               <FileUploadArea files={oilFiles} onFilesChange={setOilFiles} />
               <Button className="w-full" onClick={handleSubmitOilChange} disabled={createOilChange.isPending}>
                 {createOilChange.isPending ? 'Salvando...' : 'Registrar Troca'}
@@ -615,7 +615,7 @@ const DriverVehicleView = () => {
             <div className="space-y-4">
               <div>
                 <Label>Tipo de Manutenção</Label>
-                <Select value={maintForm.maintenance_type} onValueChange={v => setMaintForm(p => ({ ...p, maintenance_type: v }))}>
+                <Select value={maintForm.maintenance_type} onValueChange={(v) => setMaintForm((p) => ({ ...p, maintenance_type: v }))}>
                   <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="preventiva">Preventiva</SelectItem>
@@ -626,34 +626,34 @@ const DriverVehicleView = () => {
               </div>
               <div>
                 <Label>Veículo</Label>
-                <Select value={maintForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setMaintForm(p => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                <Select value={maintForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setMaintForm((p) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                   <SelectContent>
-                    {driverVehicles.map((v: any) => (
-                      <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
-                    ))}
+                    {driverVehicles.map((v: any) =>
+                    <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Placa</Label>
-                <Input value={maintForm.plate} onChange={e => setMaintForm(p => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
+                <Input value={maintForm.plate} onChange={(e) => setMaintForm((p) => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
               </div>
               <div>
                 <Label>Data</Label>
-                <Input type="date" value={maintForm.maintenance_date} onChange={e => setMaintForm(p => ({ ...p, maintenance_date: e.target.value }))} />
+                <Input type="date" value={maintForm.maintenance_date} onChange={(e) => setMaintForm((p) => ({ ...p, maintenance_date: e.target.value }))} />
               </div>
               <div>
                 <Label>Km Atual</Label>
-                <KmInput value={maintForm.current_km} onValueChange={v => setMaintForm(p => ({ ...p, current_km: v }))} placeholder="Quilometragem atual" />
+                <KmInput value={maintForm.current_km} onValueChange={(v) => setMaintForm((p) => ({ ...p, current_km: v }))} placeholder="Quilometragem atual" />
               </div>
               <div>
                 <Label>Custo do Serviço (R$)</Label>
-                <Input type="number" step="0.01" value={maintForm.service_cost} onChange={e => setMaintForm(p => ({ ...p, service_cost: e.target.value }))} placeholder="0.00" />
+                <Input type="number" step="0.01" value={maintForm.service_cost} onChange={(e) => setMaintForm((p) => ({ ...p, service_cost: e.target.value }))} placeholder="0.00" />
               </div>
               <div>
                 <Label>Observações</Label>
-                <Textarea value={maintForm.notes} onChange={e => setMaintForm(p => ({ ...p, notes: e.target.value }))} placeholder="Descreva o serviço realizado..." />
+                <Textarea value={maintForm.notes} onChange={(e) => setMaintForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Descreva o serviço realizado..." />
               </div>
               <FileUploadArea files={maintFiles} onFilesChange={setMaintFiles} />
               <Button className="w-full" onClick={handleSubmitMaintenance} disabled={createMaintenance.isPending}>
@@ -668,10 +668,10 @@ const DriverVehicleView = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de Registros</CardTitle></CardHeader>
         <CardContent>
-          {filteredLogs.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Nenhum registro encontrado.</p>
-          ) : (
-            <div className="overflow-x-auto">
+          {filteredLogs.length === 0 ?
+          <p className="py-8 text-center text-muted-foreground">Nenhum registro encontrado.</p> :
+
+          <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -687,8 +687,8 @@ const DriverVehicleView = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLogs.map((log) => (
-                    <TableRow key={log.id}>
+                  {filteredLogs.map((log) =>
+                <TableRow key={log.id}>
                       <TableCell>{format(parseDateString(log.log_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{log.vehicle?.type || '-'}</TableCell>
                       <TableCell>{log.vehicle_plate || log.vehicle?.plate || '-'}</TableCell>
@@ -706,11 +706,11 @@ const DriverVehicleView = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                )}
                 </TableBody>
               </Table>
             </div>
-          )}
+          }
         </CardContent>
       </Card>
 
@@ -718,10 +718,10 @@ const DriverVehicleView = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de Troca de Óleo</CardTitle></CardHeader>
         <CardContent>
-          {filteredOilRecords.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Nenhum registro de troca de óleo encontrado.</p>
-          ) : (
-            <div className="overflow-x-auto">
+          {filteredOilRecords.length === 0 ?
+          <p className="py-8 text-center text-muted-foreground">Nenhum registro de troca de óleo encontrado.</p> :
+
+          <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -736,8 +736,8 @@ const DriverVehicleView = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOilRecords.map((oil) => (
-                    <TableRow key={oil.id}>
+                  {filteredOilRecords.map((oil) =>
+                <TableRow key={oil.id}>
                       <TableCell>{format(parseDateString(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{oil.vehicle?.type || '-'}</TableCell>
                       <TableCell>{oil.vehicle_plate || oil.vehicle?.plate || '-'}</TableCell>
@@ -752,11 +752,11 @@ const DriverVehicleView = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                )}
                 </TableBody>
               </Table>
             </div>
-          )}
+          }
         </CardContent>
       </Card>
 
@@ -764,10 +764,10 @@ const DriverVehicleView = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de Manutenção</CardTitle></CardHeader>
         <CardContent>
-          {filteredMaintenanceRecords.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Nenhum registro de manutenção encontrado.</p>
-          ) : (
-            <div className="overflow-x-auto">
+          {filteredMaintenanceRecords.length === 0 ?
+          <p className="py-8 text-center text-muted-foreground">Nenhum registro de manutenção encontrado.</p> :
+
+          <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -781,8 +781,8 @@ const DriverVehicleView = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMaintenanceRecords.map((m) => (
-                    <TableRow key={m.id}>
+                  {filteredMaintenanceRecords.map((m) =>
+                <TableRow key={m.id}>
                       <TableCell>{format(parseDateString(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{m.vehicle?.type || '-'}</TableCell>
                       <TableCell>{m.vehicle_plate || m.vehicle?.plate || '-'}</TableCell>
@@ -800,11 +800,11 @@ const DriverVehicleView = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                )}
                 </TableBody>
               </Table>
             </div>
-          )}
+          }
         </CardContent>
       </Card>
 
@@ -812,23 +812,23 @@ const DriverVehicleView = () => {
       <Dialog open={!!editingLog} onOpenChange={(open) => !open && setEditingLog(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Editar Registro</DialogTitle></DialogHeader>
-          {editLogForm && (
-            <div className="space-y-4">
+          {editLogForm &&
+          <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={editLogForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setEditLogForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                <Select value={editLogForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setEditLogForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {driverVehicles.map((v: any) => (<SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>))}
+                    {driverVehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Placa</Label><Input value={editLogForm.plate} onChange={e => setEditLogForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
-              <div><Label>Data</Label><Input type="date" value={editLogForm.log_date} onChange={e => setEditLogForm((p: any) => ({ ...p, log_date: e.target.value }))} /></div>
-              <div><Label>Km Atual</Label><KmInput value={editLogForm.km_atual} onValueChange={v => setEditLogForm((p: any) => ({ ...p, km_atual: v }))} /></div>
+              <div><Label>Placa</Label><Input value={editLogForm.plate} onChange={(e) => setEditLogForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <div><Label>Data</Label><Input type="date" value={editLogForm.log_date} onChange={(e) => setEditLogForm((p: any) => ({ ...p, log_date: e.target.value }))} /></div>
+              <div><Label>Km Atual</Label><KmInput value={editLogForm.km_atual} onValueChange={(v) => setEditLogForm((p: any) => ({ ...p, km_atual: v }))} /></div>
               <div>
                 <Label>Tipo de Combustível</Label>
-                <Select value={editLogForm.fuel_type} onValueChange={v => setEditLogForm((p: any) => ({ ...p, fuel_type: v }))}>
+                <Select value={editLogForm.fuel_type} onValueChange={(v) => setEditLogForm((p: any) => ({ ...p, fuel_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="diesel">Diesel</SelectItem>
@@ -838,24 +838,24 @@ const DriverVehicleView = () => {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Litros</Label><Input type="number" step="0.01" value={editLogForm.liters} onChange={e => setEditLogForm((p: any) => ({ ...p, liters: e.target.value }))} /></div>
-                <div><Label>Preço/Litro (R$)</Label><Input type="number" step="0.01" value={editLogForm.fuel_price} onChange={e => setEditLogForm((p: any) => ({ ...p, fuel_price: e.target.value }))} /></div>
+                <div><Label>Litros</Label><Input type="number" step="0.01" value={editLogForm.liters} onChange={(e) => setEditLogForm((p: any) => ({ ...p, liters: e.target.value }))} /></div>
+                <div><Label>Preço/Litro (R$)</Label><Input type="number" step="0.01" value={editLogForm.fuel_price} onChange={(e) => setEditLogForm((p: any) => ({ ...p, fuel_price: e.target.value }))} /></div>
               </div>
-              <div><Label>Observações</Label><Textarea value={editLogForm.notes} onChange={e => setEditLogForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
-              {editLogAttachments.length > 0 && (
-                <div>
+              <div><Label>Observações</Label><Textarea value={editLogForm.notes} onChange={(e) => setEditLogForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              {editLogAttachments.length > 0 &&
+            <div>
                   <Label>Anexos existentes</Label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {editLogAttachments.map((path, i) => (
-                      <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditLogAttachments(prev => prev.filter((_, idx) => idx !== i))} />
-                    ))}
+                    {editLogAttachments.map((path, i) =>
+                <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditLogAttachments((prev) => prev.filter((_, idx) => idx !== i))} />
+                )}
                   </div>
                 </div>
-              )}
+            }
               <FileUploadArea files={editLogNewFiles} onFilesChange={setEditLogNewFiles} />
               <Button className="w-full" onClick={handleUpdateLog} disabled={updateLog.isPending}>{updateLog.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
-          )}
+          }
         </DialogContent>
       </Dialog>
 
@@ -863,40 +863,40 @@ const DriverVehicleView = () => {
       <Dialog open={!!editingOil} onOpenChange={(open) => !open && setEditingOil(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Editar Troca de Óleo</DialogTitle></DialogHeader>
-          {editOilForm && (
-            <div className="space-y-4">
+          {editOilForm &&
+          <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={editOilForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setEditOilForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                <Select value={editOilForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setEditOilForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {driverVehicles.map((v: any) => (<SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>))}
+                    {driverVehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Placa</Label><Input value={editOilForm.plate} onChange={e => setEditOilForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
-              <div><Label>Data da Troca</Label><Input type="date" value={editOilForm.change_date} onChange={e => setEditOilForm((p: any) => ({ ...p, change_date: e.target.value }))} /></div>
+              <div><Label>Placa</Label><Input value={editOilForm.plate} onChange={(e) => setEditOilForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <div><Label>Data da Troca</Label><Input type="date" value={editOilForm.change_date} onChange={(e) => setEditOilForm((p: any) => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Km na Troca</Label><KmInput value={editOilForm.km_at_change} onValueChange={v => setEditOilForm((p: any) => ({ ...p, km_at_change: v }))} /></div>
-                <div><Label>Próx. Troca (Km)</Label><KmInput value={editOilForm.next_change_km} onValueChange={v => setEditOilForm((p: any) => ({ ...p, next_change_km: v }))} /></div>
+                <div><Label>Km na Troca</Label><KmInput value={editOilForm.km_at_change} onValueChange={(v) => setEditOilForm((p: any) => ({ ...p, km_at_change: v }))} /></div>
+                <div><Label>Próx. Troca (Km)</Label><KmInput value={editOilForm.next_change_km} onValueChange={(v) => setEditOilForm((p: any) => ({ ...p, next_change_km: v }))} /></div>
               </div>
-              <div><Label>Tipo de Óleo</Label><Input value={editOilForm.oil_type} onChange={e => setEditOilForm((p: any) => ({ ...p, oil_type: e.target.value }))} /></div>
-              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editOilForm.service_cost} onChange={e => setEditOilForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
-              <div><Label>Observações</Label><Textarea value={editOilForm.notes} onChange={e => setEditOilForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
-              {editOilAttachments.length > 0 && (
-                <div>
+              <div><Label>Tipo de Óleo</Label><Input value={editOilForm.oil_type} onChange={(e) => setEditOilForm((p: any) => ({ ...p, oil_type: e.target.value }))} /></div>
+              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editOilForm.service_cost} onChange={(e) => setEditOilForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
+              <div><Label>Observações</Label><Textarea value={editOilForm.notes} onChange={(e) => setEditOilForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              {editOilAttachments.length > 0 &&
+            <div>
                   <Label>Anexos existentes</Label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {editOilAttachments.map((path, i) => (
-                      <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditOilAttachments(prev => prev.filter((_, idx) => idx !== i))} />
-                    ))}
+                    {editOilAttachments.map((path, i) =>
+                <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditOilAttachments((prev) => prev.filter((_, idx) => idx !== i))} />
+                )}
                   </div>
                 </div>
-              )}
+            }
               <FileUploadArea files={editOilNewFiles} onFilesChange={setEditOilNewFiles} />
               <Button className="w-full" onClick={handleUpdateOil} disabled={updateOil.isPending}>{updateOil.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
-          )}
+          }
         </DialogContent>
       </Dialog>
 
@@ -904,11 +904,11 @@ const DriverVehicleView = () => {
       <Dialog open={!!editingMaint} onOpenChange={(open) => !open && setEditingMaint(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Editar Manutenção</DialogTitle></DialogHeader>
-          {editMaintForm && (
-            <div className="space-y-4">
+          {editMaintForm &&
+          <div className="space-y-4">
               <div>
                 <Label>Tipo de Manutenção</Label>
-                <Select value={editMaintForm.maintenance_type} onValueChange={v => setEditMaintForm((p: any) => ({ ...p, maintenance_type: v }))}>
+                <Select value={editMaintForm.maintenance_type} onValueChange={(v) => setEditMaintForm((p: any) => ({ ...p, maintenance_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="preventiva">Preventiva</SelectItem>
@@ -919,32 +919,32 @@ const DriverVehicleView = () => {
               </div>
               <div>
                 <Label>Veículo</Label>
-                <Select value={editMaintForm.vehicle_id} onValueChange={v => { const veh = driverVehicles.find((x: any) => x.id === v); setEditMaintForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' })); }}>
+                <Select value={editMaintForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setEditMaintForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {driverVehicles.map((v: any) => (<SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>))}
+                    {driverVehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Placa</Label><Input value={editMaintForm.plate} onChange={e => setEditMaintForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
-              <div><Label>Data</Label><Input type="date" value={editMaintForm.maintenance_date} onChange={e => setEditMaintForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /></div>
-              <div><Label>Km Atual</Label><KmInput value={editMaintForm.current_km} onValueChange={v => setEditMaintForm((p: any) => ({ ...p, current_km: v }))} /></div>
-              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editMaintForm.service_cost} onChange={e => setEditMaintForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
-              <div><Label>Observações</Label><Textarea value={editMaintForm.notes} onChange={e => setEditMaintForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
-              {editMaintAttachments.length > 0 && (
-                <div>
+              <div><Label>Placa</Label><Input value={editMaintForm.plate} onChange={(e) => setEditMaintForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <div><Label>Data</Label><Input type="date" value={editMaintForm.maintenance_date} onChange={(e) => setEditMaintForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /></div>
+              <div><Label>Km Atual</Label><KmInput value={editMaintForm.current_km} onValueChange={(v) => setEditMaintForm((p: any) => ({ ...p, current_km: v }))} /></div>
+              <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editMaintForm.service_cost} onChange={(e) => setEditMaintForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
+              <div><Label>Observações</Label><Textarea value={editMaintForm.notes} onChange={(e) => setEditMaintForm((p: any) => ({ ...p, notes: e.target.value }))} /></div>
+              {editMaintAttachments.length > 0 &&
+            <div>
                   <Label>Anexos existentes</Label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {editMaintAttachments.map((path, i) => (
-                      <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditMaintAttachments(prev => prev.filter((_, idx) => idx !== i))} />
-                    ))}
+                    {editMaintAttachments.map((path, i) =>
+                <AttachmentItem key={path} path={path} index={i} bucket="vehicle-attachments" onRemove={() => setEditMaintAttachments((prev) => prev.filter((_, idx) => idx !== i))} />
+                )}
                   </div>
                 </div>
-              )}
+            }
               <FileUploadArea files={editMaintNewFiles} onFilesChange={setEditMaintNewFiles} />
               <Button className="w-full" onClick={handleUpdateMaint} disabled={updateMaint.isPending}>{updateMaint.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
-          )}
+          }
         </DialogContent>
       </Dialog>
 
@@ -961,8 +961,8 @@ const DriverVehicleView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>);
+
 };
 
 export default DriverVehicleView;
