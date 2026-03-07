@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, FileText, Users, Truck as TruckIcon, Car, LogOut, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -76,7 +77,22 @@ const DashboardLayout = ({
     await signOut();
     navigate('/');
   };
-  const userName = user?.user_metadata?.full_name || 'Usuário';
+  const [dbUserName, setDbUserName] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchName = async () => {
+      const { data } = await supabase
+        .from('users')
+        .select('name')
+        .eq('auth_id', user.id)
+        .single();
+      if (data?.name) setDbUserName(data.name);
+    };
+    fetchName();
+  }, [user?.id]);
+
+  const userName = dbUserName || user?.user_metadata?.full_name || 'Usuário';
   const userInitial = userName.charAt(0).toUpperCase();
   return <div className="flex min-h-screen bg-muted/30">
       {/* Mobile menu button */}
