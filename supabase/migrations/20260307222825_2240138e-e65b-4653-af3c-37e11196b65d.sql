@@ -1,0 +1,1 @@
+UPDATE freight_prices SET transport_type = 'Caminhão (Truck)' WHERE transport_type = 'Caminhão';
