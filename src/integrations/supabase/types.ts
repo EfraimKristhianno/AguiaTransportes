@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      address_history: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          last_used_at: string
+          used_count: number
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          id?: string
+          last_used_at?: string
+          used_count?: number
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          last_used_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
