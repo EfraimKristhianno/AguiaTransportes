@@ -87,7 +87,10 @@ const Motoristas = () => {
     return () => clearTimeout(timer);
   }, [isDriver]);
 
+  const [isActivating, setIsActivating] = useState(false);
+
   const handleEnableNotifications = async () => {
+    setIsActivating(true);
     try {
       const OneSignal = (window as any).OneSignal;
       if (OneSignal) {
@@ -108,6 +111,8 @@ const Motoristas = () => {
       }
     } catch (e) {
       console.error('Error requesting notification permission:', e);
+    } finally {
+      setIsActivating(false);
     }
   };
 
