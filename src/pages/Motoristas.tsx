@@ -21,7 +21,7 @@ const Motoristas = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [trackingDriver, setTrackingDriver] = useState<{ id: string; name: string; activeDeliveries: number } | null>(null);
   useRealtimeDeliveryRequests();
-  const { data: drivers, isLoading } = useDrivers();
+  useDriverNotifications(isDriver);
   
   const isDriver = role === 'motorista';
   
