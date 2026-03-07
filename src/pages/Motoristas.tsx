@@ -123,9 +123,9 @@ const Motoristas = () => {
         icon={<TruckIcon className="h-5 w-5" />}
         headerAction={
           !isSubscribed ? (
-            <Button size="sm" onClick={handleEnableNotifications} disabled={isActivating} className="shrink-0">
+            <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
               <Bell className="h-4 w-4 mr-1" />
-              {isActivating ? 'Ativando...' : 'Ativar'}
+              Ativar
             </Button>
           ) : (
             <Button size="sm" disabled className="shrink-0 bg-muted text-muted-foreground cursor-default hover:bg-muted">
