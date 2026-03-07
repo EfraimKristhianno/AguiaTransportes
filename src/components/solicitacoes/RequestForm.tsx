@@ -715,8 +715,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                     <div className="flex items-center gap-2">
                       <FormLabel>Endereço de coleta <span className="text-red-500">*</span></FormLabel>
                       {field.value && (() => {
-                        const destAddr = form.getValues('destinationAddress');
-                        const originRegion = resolveFreightRegion(field.value, destAddr);
+                        const originRegion = detectRegionFromAddress(field.value);
                         return (
                           <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                             {originRegion ? `Região: ${originRegion}` : 'A combinar'}
