@@ -600,7 +600,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             {/* Data do agendamento */}
             <FormItem className="flex flex-col">
               <FormLabel>Data do agendamento</FormLabel>
-              <Popover>
+              <Popover open={schedulingCalendarOpen} onOpenChange={setSchedulingCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -611,7 +611,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {schedulingDate
-                      ? format(schedulingDate, "dd/MM/yyyy", { locale: ptBR })
+                      ? `${format(schedulingDate, "dd/MM/yyyy", { locale: ptBR })}${schedulingTime ? ` às ${schedulingTime}` : ''}`
                       : "Selecione a data"}
                   </Button>
                 </PopoverTrigger>
@@ -624,6 +624,28 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                     className="p-3 pointer-events-auto"
                     locale={ptBR}
                   />
+                  <div className="border-t px-3 py-2 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="time"
+                      value={schedulingTime}
+                      onChange={(e) => setSchedulingTime(e.target.value)}
+                      className="w-auto"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-primary hover:text-primary/80"
+                      onClick={() => {
+                        if (!schedulingDate) setSchedulingDate(new Date());
+                        setSchedulingCalendarOpen(false);
+                      }}
+                      title="Confirmar data e hora"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </PopoverContent>
               </Popover>
             </FormItem>
@@ -631,12 +653,16 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             {/* Status agendada */}
             <FormItem className="flex flex-col">
               <FormLabel>Status agendamento</FormLabel>
-              <Select value={schedulingStatus} onValueChange={setSchedulingStatus}>
+              <Select
+                value={schedulingStatus}
+                onValueChange={(val) => setSchedulingStatus(val === schedulingStatus ? '' : val)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="agendada">Agendada</SelectItem>
+                  <SelectItem value="">Nenhum</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
