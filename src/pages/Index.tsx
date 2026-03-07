@@ -55,11 +55,6 @@ const Index = () => {
     <div className="flex min-h-screen">
       {/* Left Panel - Hero */}
       <div className="hidden lg:flex lg:w-1/2 hero-gradient flex-col justify-center px-12 xl:px-20">
-        {/* Decorative circles */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-white/5" />
-          <div className="absolute -bottom-10 -left-10 h-60 w-60 rounded-full bg-white/5" />
-        </div>
 
         <div className="relative z-10 flex flex-col items-center text-center">
           {/* Logo */}
