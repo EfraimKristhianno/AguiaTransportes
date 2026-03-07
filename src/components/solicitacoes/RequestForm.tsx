@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import VehicleDetailsPopover from '@/components/VehicleDetailsPopover';
 import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
-import { resolveFreightRegion } from '@/lib/regionDetection';
+import { resolveFreightRegion, detectRegionFromAddress } from '@/lib/regionDetection';
 import { Badge } from '@/components/ui/badge';
 
 const requestSchema = z.object({
@@ -715,8 +715,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                     <div className="flex items-center gap-2">
                       <FormLabel>Endereço de coleta <span className="text-red-500">*</span></FormLabel>
                       {field.value && (() => {
-                        const destAddr = form.getValues('destinationAddress');
-                        const originRegion = resolveFreightRegion(field.value, destAddr);
+                        const originRegion = detectRegionFromAddress(field.value);
                         return (
                           <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                             {originRegion ? `Região: ${originRegion}` : 'A combinar'}
@@ -758,15 +757,14 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 control={form.control}
                 name="destinationAddress"
                 render={({ field }) => {
-                  const originAddr = form.getValues('originAddress');
-                  const freightRegion = resolveFreightRegion(originAddr, field.value);
+                  const destRegion = detectRegionFromAddress(field.value);
                   return (
                     <FormItem>
                       <div className="flex items-center gap-2">
                         <FormLabel>Endereço de entrega <span className="text-red-500">*</span></FormLabel>
                         {field.value && (
                           <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                            {freightRegion ? `Região: ${freightRegion}` : 'A combinar'}
+                            {destRegion ? `Região: ${destRegion}` : 'A combinar'}
                           </Badge>
                         )}
                       </div>
