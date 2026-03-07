@@ -392,9 +392,10 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
     if (filteredLogs.length > 0) {
       autoTable(doc, {
         startY: y,
-        head: [['Data', 'Veículo', 'Placa', 'Km Atual', 'Combustível', 'Litros', 'R$/L', 'Total']],
+        head: [['Data', 'Motorista', 'Veículo', 'Placa', 'Km Atual', 'Combustível', 'Litros', 'R$/L', 'Total']],
         body: filteredLogs.map(l => [
           format(parseDateString(l.log_date), 'dd/MM/yyyy'),
+          l.driver?.name || '-',
           getVehicleType(l.vehicle_id),
           l.vehicle_plate || '-',
           formatKmDisplay(l.km_final) || '-',
@@ -425,9 +426,10 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
     if (filteredOilRecords.length > 0) {
       autoTable(doc, {
         startY: y,
-        head: [['Data', 'Veículo', 'Placa', 'Km na Troca', 'Próx. Troca', 'Tipo Óleo', 'Custo']],
+        head: [['Data', 'Motorista', 'Veículo', 'Placa', 'Km na Troca', 'Próx. Troca', 'Tipo Óleo', 'Custo']],
         body: filteredOilRecords.map(o => [
           format(parseDateString(o.change_date), 'dd/MM/yyyy'),
+          o.driver?.name || '-',
           getVehicleType(o.vehicle_id),
           o.vehicle_plate || '-',
           formatKmDisplay(o.km_at_change),
@@ -457,9 +459,10 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
     if (filteredMaintenanceRecords.length > 0) {
       autoTable(doc, {
         startY: y,
-        head: [['Data', 'Veículo', 'Placa', 'Tipo', 'Km Atual', 'Custo']],
+        head: [['Data', 'Motorista', 'Veículo', 'Placa', 'Tipo', 'Km Atual', 'Custo']],
         body: filteredMaintenanceRecords.map(m => [
           format(parseDateString(m.maintenance_date), 'dd/MM/yyyy'),
+          m.driver?.name || '-',
           getVehicleType(m.vehicle_id),
           m.vehicle_plate || '-',
           maintenanceTypeLabel[m.maintenance_type] || m.maintenance_type,
@@ -475,6 +478,35 @@ const VehicleHistoryGrids = ({ filteredLogs, filteredOilRecords, filteredMainten
       doc.setFontSize(8); doc.setFont('helvetica', 'normal');
       doc.text('Nenhum registro.', 14, y + 4);
     }
+
+    // Total Geral de Gastos
+    const totalFuelCost = filteredLogs.reduce((a, l) => a + (l.total_cost || 0), 0);
+    const totalOilCost = filteredOilRecords.reduce((a, o) => a + (o.service_cost || 0), 0);
+    const totalMaintCost = filteredMaintenanceRecords.reduce((a, m) => a + (m.service_cost || 0), 0);
+    const totalGeral = totalFuelCost + totalOilCost + totalMaintCost;
+
+    y = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 12 : y + 12;
+    if (y > doc.internal.pageSize.getHeight() - 50) { doc.addPage(); y = 20; }
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Geral de Gastos', 14, y);
+    y += 5;
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Gasto Combustível', 'Gasto Troca de Óleo', 'Gasto Manutenção', 'Total Geral']],
+      body: [[
+        `R$ ${totalFuelCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        `R$ ${totalOilCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        `R$ ${totalMaintCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        `R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [211, 33, 39], fontSize: 8 },
+      bodyStyles: { fontSize: 9, fontStyle: 'bold' },
+      margin: { left: 14 },
+    });
 
     doc.save(`registros-veiculos-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     toast.success('PDF exportado com sucesso!');
