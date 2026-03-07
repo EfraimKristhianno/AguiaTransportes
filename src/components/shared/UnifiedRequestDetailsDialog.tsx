@@ -485,10 +485,19 @@ export const UnifiedRequestDetailsDialog = ({
                 </div>
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Calendar className="h-4 w-4" /> Data
+                    <Calendar className="h-4 w-4" /> {request.status === 'agendada' ? 'Agendamento' : 'Data'}
                   </h4>
                   <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="font-medium text-sm">{formatDate(request.scheduled_date || request.created_at)}</p>
+                    {request.status === 'agendada' && request.scheduled_date ? (
+                      <>
+                        <p className="font-medium text-sm">{formatDate(request.scheduled_date)}</p>
+                        <Badge variant="outline" className="mt-1 bg-blue-50 text-blue-700 border-blue-200">
+                          Agendada
+                        </Badge>
+                      </>
+                    ) : (
+                      <p className="font-medium text-sm">{formatDate(request.scheduled_date || request.created_at)}</p>
+                    )}
                   </div>
                 </div>
               </div>
