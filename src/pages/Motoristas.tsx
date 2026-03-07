@@ -117,7 +117,7 @@ const Motoristas = () => {
 
       // 5. Save subscription to Supabase
       if (user) {
-        await supabase.from('push_subscriptions').upsert({
+        await (supabase as any).from('push_subscriptions').upsert({
           user_id: user.id,
           endpoint: subJson.endpoint!,
           p256dh: subJson.keys!.p256dh!,
