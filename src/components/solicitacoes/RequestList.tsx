@@ -118,15 +118,10 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge variant={getStatusBadgeVariant(request.status)} className={cn("text-xs", getStatusClassName(request.status))}>
-                      {getStatusLabel(request.status)}
+                    <Badge variant={getStatusBadgeVariant(request.status === 'agendada' ? 'solicitada' : request.status)} className={cn("text-xs", getStatusClassName(request.status === 'agendada' ? 'solicitada' : request.status))}>
+                      {getStatusLabel(request.status === 'agendada' ? 'solicitada' : request.status)}
                     </Badge>
-                    {request.scheduled_date && request.status !== 'agendada' && (
-                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        Agendada
-                      </Badge>
-                    )}
-                    {request.status === 'agendada' && (
+                    {request.scheduled_date && (
                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                         Agendada
                       </Badge>
