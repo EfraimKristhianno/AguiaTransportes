@@ -117,9 +117,21 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                       #{String(request.request_number || '').padStart(6, '0')}
                     </span>
                   </div>
-                  <Badge variant={getStatusBadgeVariant(request.status)} className={cn("shrink-0 text-xs", getStatusClassName(request.status))}>
-                    {getStatusLabel(request.status)}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant={getStatusBadgeVariant(request.status)} className={cn("text-xs", getStatusClassName(request.status))}>
+                      {getStatusLabel(request.status)}
+                    </Badge>
+                    {request.scheduled_date && request.status !== 'agendada' && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        Agendada
+                      </Badge>
+                    )}
+                    {request.status === 'agendada' && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        Agendada
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
