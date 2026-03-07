@@ -281,19 +281,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           .eq('id', createdRequest.id);
       }
 
-      // Send push notification to drivers
-      try {
-        await supabase.functions.invoke('notify-driver', {
-          body: {
-            request_number: createdRequest?.request_number,
-            origin_address: data.originAddress,
-            destination_address: data.destinationAddress,
-            transport_type: data.transportType,
-          },
-        });
-      } catch (notifError) {
-        console.error('Error sending notification:', notifError);
-      }
+      // Push notification is now handled automatically by database trigger
       // Reset form (keep client data for clients)
       if (isClient) {
         form.reset({
