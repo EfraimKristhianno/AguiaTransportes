@@ -25,14 +25,15 @@ interface PhotonFeature {
   };
 }
 
-function formatAddress(feature: PhotonFeature): string {
+function formatAddress(feature: PhotonFeature, userNumber?: string): string {
   const p = feature.properties;
   const parts: string[] = [];
 
-  // Street + number
+  // Street + number (prefer API number, fallback to user-typed number)
   const street = p.street || p.name;
   if (street) {
-    parts.push(p.housenumber ? `${street}, ${p.housenumber}` : street);
+    const number = p.housenumber || userNumber;
+    parts.push(number ? `${street}, ${number}` : street);
   }
 
   // Neighborhood
@@ -48,6 +49,12 @@ function formatAddress(feature: PhotonFeature): string {
   return parts.join(' - ');
 }
 
+function extractNumber(query: string): string | undefined {
+  // Match numbers like "123", "1500" etc. in the query (common patterns: "Rua X, 123" or "Rua X 123")
+  const match = query.match(/[,\s]\s*(\d{1,6})\b/);
+  return match ? match[1] : undefined;
+}
+
 export const AddressAutocomplete = ({
   value,
   onChange,
@@ -61,11 +68,17 @@ export const AddressAutocomplete = ({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [userNumber, setUserNumber] = useState<string | undefined>();
+
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
       setSuggestions([]);
       return;
     }
+
+    // Extract number typed by user to append if API doesn't return one
+    const number = extractNumber(query);
+    setUserNumber(number);
 
     try {
       // Use Nominatim as primary - better support for house numbers
@@ -97,9 +110,9 @@ export const AddressAutocomplete = ({
           const photonData = await photonRes.json();
           const photonFeatures: PhotonFeature[] = photonData.features || [];
 
-          const existingAddresses = new Set(features.map(f => formatAddress(f)));
+          const existingAddresses = new Set(features.map(f => formatAddress(f, number)));
           for (const pf of photonFeatures) {
-            const addr = formatAddress(pf);
+            const addr = formatAddress(pf, number);
             if (!existingAddresses.has(addr) && addr.length > 5) {
               features.push(pf);
               existingAddresses.add(addr);
@@ -110,7 +123,7 @@ export const AddressAutocomplete = ({
         }
       }
 
-      features = features.filter(f => formatAddress(f).length > 5).slice(0, 7);
+      features = features.filter(f => formatAddress(f, number).length > 5).slice(0, 7);
 
       setSuggestions(features);
       setIsOpen(features.length > 0);
@@ -129,7 +142,7 @@ export const AddressAutocomplete = ({
   };
 
   const selectSuggestion = (feature: PhotonFeature) => {
-    const formatted = formatAddress(feature);
+    const formatted = formatAddress(feature, userNumber);
     onChange(formatted);
     setIsOpen(false);
     setSuggestions([]);
@@ -198,7 +211,7 @@ export const AddressAutocomplete = ({
             >
               <div className="flex items-start gap-2">
                 <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                <span>{formatAddress(result)}</span>
+                <span>{formatAddress(result, userNumber)}</span>
               </div>
             </li>
           ))}
