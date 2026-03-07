@@ -54,12 +54,14 @@ interface DashboardLayoutProps {
   title: string;
   subtitle: string;
   icon?: React.ReactNode;
+  headerAction?: React.ReactNode;
 }
 const DashboardLayout = ({
   children,
   title,
   subtitle,
-  icon
+  icon,
+  headerAction
 }: DashboardLayoutProps) => {
   const {
     user,
