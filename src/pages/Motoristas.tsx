@@ -117,10 +117,10 @@ const Motoristas = () => {
     return (
       <DashboardLayout 
         title="Minhas Corridas" 
-        subtitle={showNotifBanner && notifPermission !== 'granted' ? 'Ativar notificações' : 'Visualize e aceite solicitações de coleta'}
+        subtitle={!isSubscribed ? 'Ativar notificações' : 'Visualize e aceite solicitações de coleta'}
         icon={<TruckIcon className="h-5 w-5" />}
         headerAction={
-          showNotifBanner && notifPermission !== 'granted' && notifPermission !== 'denied' ? (
+          !isSubscribed ? (
             <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
               <Bell className="h-4 w-4 mr-1" />
               Ativar
