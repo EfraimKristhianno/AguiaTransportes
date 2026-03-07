@@ -313,6 +313,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       setSchedulingDate(undefined);
       setSchedulingTime('');
       setSchedulingStatus('');
+      setShowScheduling(false);
       onSuccess?.();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -347,6 +348,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
     setSchedulingDate(undefined);
     setSchedulingTime('');
     setSchedulingStatus('');
+    setShowScheduling(false);
   };
 
   return (
