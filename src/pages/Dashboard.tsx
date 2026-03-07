@@ -555,7 +555,16 @@ const Dashboard = () => {
                     <TableCell>{role === 'gestor' ? (item.driver?.name || 'Sem motorista') : ((item as any).requester || '-')}</TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
-                    <TableCell>{getStatusBadge(item.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        {getStatusBadge(item.status === 'agendada' ? 'solicitada' : item.status)}
+                        {item.scheduled_date && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            Agendada
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -606,7 +615,14 @@ const Dashboard = () => {
                   <span className="font-mono font-bold text-primary">
                     #{String(item.request_number || '').padStart(6, '0')}
                   </span>
-                  {getStatusBadge(item.status)}
+                  <div className="flex items-center gap-1.5">
+                    {getStatusBadge(item.status === 'agendada' ? 'solicitada' : item.status)}
+                    {item.scheduled_date && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        Agendada
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="mb-2">
                   <span className="font-medium text-foreground">
