@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin, Bell, BellOff } from 'lucide-react';
+import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin, Bell } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver, useDriverRequests } from '@/hooks/useDriverRequests';
 import { DriverRequestsTable } from '@/components/motoristas/DriverRequestsTable';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
+import { useDriverNotifications } from '@/hooks/useDriverNotifications';
 import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
 
 const Motoristas = () => {
