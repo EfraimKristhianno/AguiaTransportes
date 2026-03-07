@@ -1,0 +1,2 @@
+ALTER TABLE public.delivery_requests DROP CONSTRAINT delivery_requests_status_check;
+ALTER TABLE public.delivery_requests ADD CONSTRAINT delivery_requests_status_check CHECK (status = ANY (ARRAY['solicitada','aceita','pendente_coleta','coletada','em_rota','pendente_entrega','entregue','cancelada','enviada','agendada']));
