@@ -58,51 +58,53 @@ const Motoristas = () => {
   };
 
   // Driver view - show available requests matching their transport types
-  // Notification permission state for driver
-  const [notifPermission, setNotifPermission] = useState<string>('default');
-  const [showNotifBanner, setShowNotifBanner] = useState(true);
+  // Check OneSignal subscription status instead of just native permission
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    if (isDriver) {
-      if ('Notification' in window) {
-        setNotifPermission(Notification.permission);
-        if (Notification.permission === 'granted') {
-          setShowNotifBanner(false);
+    if (!isDriver) return;
+
+    const checkSubscription = async () => {
+      try {
+        const OneSignal = (window as any).OneSignal;
+        if (OneSignal) {
+          // Check if user has an active push subscription with external ID
+          const subId = OneSignal.User?.PushSubscription?.id;
+          const externalId = OneSignal.User?.externalId;
+          const optedIn = OneSignal.User?.PushSubscription?.optedIn;
+          console.log('[OneSignal] Subscription check:', { subId, externalId, optedIn });
+          if (subId && externalId && optedIn) {
+            setIsSubscribed(true);
+          }
         }
+      } catch (e) {
+        console.error('[OneSignal] Error checking subscription:', e);
       }
-      // On iOS Safari (non-PWA), Notification may not exist — still show banner
-    }
+    };
+
+    // Delay check to allow OneSignal SDK to initialize
+    const timer = setTimeout(checkSubscription, 2000);
+    return () => clearTimeout(timer);
   }, [isDriver]);
 
   const handleEnableNotifications = async () => {
     try {
       const OneSignal = (window as any).OneSignal;
       if (OneSignal) {
-        // Use OneSignal's permission request (works on all platforms)
         await OneSignal.Notifications.requestPermission();
         
-        const granted = 'Notification' in window ? Notification.permission === 'granted' : true;
-        console.log('[OneSignal] Permission after request:', granted);
-        
-        if (granted) {
-          // Re-login and tag to ensure subscription is linked
-          const { supabase } = await import('@/integrations/supabase/client');
-          const userResponse = await supabase.auth.getUser();
-          if (userResponse.data?.user) {
-            const userId = userResponse.data.user.id;
-            await OneSignal.login(userId);
-            await OneSignal.User.addTags({ role: 'motorista' });
-            console.log('[OneSignal] Driver subscribed and tagged successfully');
-          }
-          setNotifPermission('granted');
-          setShowNotifBanner(false);
-        } else {
-          setNotifPermission('Notification' in window ? Notification.permission : 'denied');
+        const { supabase } = await import('@/integrations/supabase/client');
+        const userResponse = await supabase.auth.getUser();
+        if (userResponse.data?.user) {
+          const userId = userResponse.data.user.id;
+          await OneSignal.login(userId);
+          await OneSignal.User.addTags({ role: 'motorista' });
+          console.log('[OneSignal] Driver subscribed and tagged successfully');
         }
+        setIsSubscribed(true);
       } else if ('Notification' in window) {
-        const result = await Notification.requestPermission();
-        setNotifPermission(result);
-        if (result === 'granted') setShowNotifBanner(false);
+        await Notification.requestPermission();
+        setIsSubscribed(true);
       }
     } catch (e) {
       console.error('Error requesting notification permission:', e);
@@ -115,10 +117,10 @@ const Motoristas = () => {
     return (
       <DashboardLayout 
         title="Minhas Corridas" 
-        subtitle={showNotifBanner && notifPermission !== 'granted' ? 'Ativar notificações' : 'Visualize e aceite solicitações de coleta'}
+        subtitle={!isSubscribed ? 'Ativar notificações' : 'Visualize e aceite solicitações de coleta'}
         icon={<TruckIcon className="h-5 w-5" />}
         headerAction={
-          showNotifBanner && notifPermission !== 'granted' && notifPermission !== 'denied' ? (
+          !isSubscribed ? (
             <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
               <Bell className="h-4 w-4 mr-1" />
               Ativar
