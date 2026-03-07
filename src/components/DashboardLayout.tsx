@@ -54,12 +54,14 @@ interface DashboardLayoutProps {
   title: string;
   subtitle: string;
   icon?: React.ReactNode;
+  headerAction?: React.ReactNode;
 }
 const DashboardLayout = ({
   children,
   title,
   subtitle,
-  icon
+  icon,
+  headerAction
 }: DashboardLayoutProps) => {
   const {
     user,
@@ -156,10 +158,11 @@ const DashboardLayout = ({
           {icon && <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
               {icon}
             </div>}
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-foreground lg:text-2xl">{title}</h1>
             <p className="text-sm text-muted-foreground lg:text-base">{subtitle}</p>
           </div>
+          {headerAction && <div className="shrink-0">{headerAction}</div>}
         </div>
 
         {children}
