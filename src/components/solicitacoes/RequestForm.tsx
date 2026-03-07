@@ -757,15 +757,14 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                 control={form.control}
                 name="destinationAddress"
                 render={({ field }) => {
-                  const originAddr = form.getValues('originAddress');
-                  const freightRegion = resolveFreightRegion(originAddr, field.value);
+                  const destRegion = detectRegionFromAddress(field.value);
                   return (
                     <FormItem>
                       <div className="flex items-center gap-2">
                         <FormLabel>Endereço de entrega <span className="text-red-500">*</span></FormLabel>
                         {field.value && (
                           <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                            {freightRegion ? `Região: ${freightRegion}` : 'A combinar'}
+                            {destRegion ? `Região: ${destRegion}` : 'A combinar'}
                           </Badge>
                         )}
                       </div>
