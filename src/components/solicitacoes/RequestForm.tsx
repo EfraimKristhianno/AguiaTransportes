@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import VehicleDetailsPopover from '@/components/VehicleDetailsPopover';
 import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
-import { resolveFreightRegion } from '@/lib/regionDetection';
+import { resolveFreightRegion, detectRegionFromAddress } from '@/lib/regionDetection';
 import { Badge } from '@/components/ui/badge';
 
 const requestSchema = z.object({
