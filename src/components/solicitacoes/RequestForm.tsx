@@ -238,7 +238,14 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         origin_company: data.originCompany || null,
         destination_address: data.destinationAddress,
         destination_company: data.destinationCompany || null,
-        scheduled_date: data.scheduledDate || null,
+        scheduled_date: schedulingDate && schedulingTime
+          ? (() => {
+              const [h, m] = schedulingTime.split(':').map(Number);
+              const d = new Date(schedulingDate);
+              d.setHours(h, m, 0, 0);
+              return d.toISOString();
+            })()
+          : data.scheduledDate || null,
         material_type_id: data.materialTypeId,
         transport_type: data.transportType,
         notes: data.notes || null,
@@ -247,7 +254,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         invoice_number: data.invoiceNumber || null,
         op_number: data.opNumber || null,
         attachments: [],
-        status: 'solicitada',
+        status: schedulingStatus === 'agendada' ? 'agendada' : 'solicitada',
         region: detectedRegion,
       } as any);
 
