@@ -14,6 +14,7 @@ import { useCurrentDriver, useDriverRequests } from '@/hooks/useDriverRequests';
 import { DriverRequestsTable } from '@/components/motoristas/DriverRequestsTable';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
 import { useDriverNotifications } from '@/hooks/useDriverNotifications';
+import { supabase } from '@/integrations/supabase/client';
 import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
 
 const Motoristas = () => {
@@ -108,7 +109,7 @@ const Motoristas = () => {
       );
 
       const subscription = await registration.pushManager.subscribe({
-        userVisibility: true,
+        userVisibleOnly: true,
         applicationServerKey: publicKeyBytes,
       });
 
