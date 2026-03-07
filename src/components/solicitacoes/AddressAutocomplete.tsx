@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AddressAutocompleteProps {
   value: string;
@@ -25,34 +26,66 @@ interface PhotonFeature {
   };
 }
 
+interface SavedAddress {
+  id: string;
+  address: string;
+  used_count: number;
+}
+
+type SuggestionItem = 
+  | { type: 'saved'; address: string }
+  | { type: 'api'; feature: PhotonFeature };
+
 function formatAddress(feature: PhotonFeature, userNumber?: string): string {
   const p = feature.properties;
   const parts: string[] = [];
 
-  // Street + number (prefer API number, fallback to user-typed number)
   const street = p.street || p.name;
   if (street) {
     const number = p.housenumber || userNumber;
     parts.push(number ? `${street}, ${number}` : street);
   }
 
-  // Neighborhood
   const bairro = p.district || p.locality;
   if (bairro) parts.push(bairro);
 
-  // City
   if (p.city) parts.push(p.city);
-
-  // State
   if (p.state) parts.push(p.state);
 
   return parts.join(' - ');
 }
 
 function extractNumber(query: string): string | undefined {
-  // Match numbers like "123", "1500" etc. in the query (common patterns: "Rua X, 123" or "Rua X 123")
   const match = query.match(/[,\s]\s*(\d{1,6})\b/);
   return match ? match[1] : undefined;
+}
+
+// Save address to history (upsert: increment count if exists)
+export async function saveAddressToHistory(address: string) {
+  if (!address || address.length < 5) return;
+  
+  const trimmed = address.trim();
+  
+  // Try to find existing
+  const { data: existing } = await supabase
+    .from('address_history')
+    .select('id, used_count')
+    .ilike('address', trimmed)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from('address_history')
+      .update({ 
+        used_count: existing.used_count + 1, 
+        last_used_at: new Date().toISOString() 
+      })
+      .eq('id', existing.id);
+  } else {
+    await supabase
+      .from('address_history')
+      .insert({ address: trimmed });
+  }
 }
 
 export const AddressAutocomplete = ({
@@ -62,13 +95,50 @@ export const AddressAutocomplete = ({
   className,
   disabled,
 }: AddressAutocompleteProps) => {
-  const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [skipNextSearch, setSkipNextSearch] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch saved addresses matching query
+  const fetchSavedAddresses = useCallback(async (query: string): Promise<SavedAddress[]> => {
+    if (query.length < 2) return [];
+    try {
+      const { data } = await supabase
+        .from('address_history')
+        .select('id, address, used_count')
+        .ilike('address', `%${query}%`)
+        .order('used_count', { ascending: false })
+        .order('last_used_at', { ascending: false })
+        .limit(5);
+      return (data || []) as SavedAddress[];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // Show saved addresses on focus (most used)
+  const fetchTopAddresses = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('address_history')
+        .select('id, address, used_count')
+        .order('used_count', { ascending: false })
+        .order('last_used_at', { ascending: false })
+        .limit(5);
+      if (data && data.length > 0) {
+        const items: SuggestionItem[] = data.map(d => ({ type: 'saved', address: d.address }));
+        setSuggestions(items);
+        setIsOpen(true);
+        setHighlightedIndex(-1);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
@@ -78,56 +148,73 @@ export const AddressAutocomplete = ({
 
     const number = extractNumber(query);
 
-    try {
-      const nominatimRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=7&countrycodes=br&viewbox=-54.6,-27.0,-48.0,-22.5&bounded=0`,
+    // Fetch saved and API results in parallel
+    const [savedAddresses, nominatimData] = await Promise.all([
+      fetchSavedAddresses(query),
+      fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=br&viewbox=-54.6,-27.0,-48.0,-22.5&bounded=0`,
         { headers: { 'Accept-Language': 'pt-BR' } }
-      );
-      const nominatimData = await nominatimRes.json();
-      
-      let features: PhotonFeature[] = (nominatimData || []).map((item: any) => ({
-        properties: {
-          name: item.address?.road || item.name,
-          street: item.address?.road,
-          housenumber: item.address?.house_number,
-          district: item.address?.suburb || item.address?.neighbourhood,
-          locality: item.address?.village || item.address?.town,
-          city: item.address?.city || item.address?.town || item.address?.village,
-          state: item.address?.state,
-          country: item.address?.country,
-        }
-      }));
+      ).then(r => r.json()).catch(() => [])
+    ]);
 
-      if (features.length < 3) {
-        try {
-          const photonRes = await fetch(
-            `https://photon.komoot.io/api?q=${encodeURIComponent(query)}&lang=default&limit=5&lat=-25.4&lon=-49.3`
-          );
-          const photonData = await photonRes.json();
-          const photonFeatures: PhotonFeature[] = photonData.features || [];
+    const items: SuggestionItem[] = [];
+    const addedAddresses = new Set<string>();
 
-          const existingAddresses = new Set(features.map(f => formatAddress(f, number)));
-          for (const pf of photonFeatures) {
-            const addr = formatAddress(pf, number);
-            if (!existingAddresses.has(addr) && addr.length > 5) {
-              features.push(pf);
-              existingAddresses.add(addr);
-            }
-          }
-        } catch {
-          // Photon fallback failed
-        }
+    // Add saved addresses first (priority)
+    for (const saved of savedAddresses) {
+      const lower = saved.address.toLowerCase();
+      if (!addedAddresses.has(lower)) {
+        items.push({ type: 'saved', address: saved.address });
+        addedAddresses.add(lower);
       }
-
-      features = features.filter(f => formatAddress(f, number).length > 5).slice(0, 7);
-
-      setSuggestions(features);
-      setIsOpen(features.length > 0);
-      setHighlightedIndex(-1);
-    } catch {
-      setSuggestions([]);
     }
-  }, []);
+
+    // Add API results
+    let features: PhotonFeature[] = (nominatimData || []).map((item: any) => ({
+      properties: {
+        name: item.address?.road || item.name,
+        street: item.address?.road,
+        housenumber: item.address?.house_number,
+        district: item.address?.suburb || item.address?.neighbourhood,
+        locality: item.address?.village || item.address?.town,
+        city: item.address?.city || item.address?.town || item.address?.village,
+        state: item.address?.state,
+        country: item.address?.country,
+      }
+    }));
+
+    // Supplement with Photon if few results
+    if (features.length < 3) {
+      try {
+        const photonRes = await fetch(
+          `https://photon.komoot.io/api?q=${encodeURIComponent(query)}&lang=default&limit=5&lat=-25.4&lon=-49.3`
+        );
+        const photonData = await photonRes.json();
+        const photonFeatures: PhotonFeature[] = photonData.features || [];
+        for (const pf of photonFeatures) {
+          const addr = formatAddress(pf, number);
+          if (!addedAddresses.has(addr.toLowerCase()) && addr.length > 5) {
+            features.push(pf);
+          }
+        }
+      } catch {
+        // Photon fallback failed
+      }
+    }
+
+    for (const f of features) {
+      const addr = formatAddress(f, number);
+      const lower = addr.toLowerCase();
+      if (!addedAddresses.has(lower) && addr.length > 5) {
+        items.push({ type: 'api', feature: f });
+        addedAddresses.add(lower);
+      }
+    }
+
+    setSuggestions(items.slice(0, 8));
+    setIsOpen(items.length > 0);
+    setHighlightedIndex(-1);
+  }, [fetchSavedAddresses]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -142,31 +229,39 @@ export const AddressAutocomplete = ({
     debounceRef.current = setTimeout(() => fetchSuggestions(val), 400);
   };
 
-  const selectSuggestion = (feature: PhotonFeature) => {
+  const getSuggestionText = (item: SuggestionItem): string => {
+    if (item.type === 'saved') return item.address;
+    return formatAddress(item.feature, extractNumber(value));
+  };
+
+  const selectSuggestion = (item: SuggestionItem) => {
+    if (item.type === 'saved') {
+      onChange(item.address);
+      setIsOpen(false);
+      setSuggestions([]);
+      return;
+    }
+
+    const feature = item.feature;
     const hasNumber = !!feature.properties.housenumber;
     const number = extractNumber(value);
     const formatted = formatAddress(feature, number);
     
     if (hasNumber || number) {
-      // Address already has a number, just set it
       onChange(formatted);
       setIsOpen(false);
       setSuggestions([]);
     } else {
-      // No number - add ", " after street name so user can type the number
       const street = feature.properties.street || feature.properties.name || '';
-      const rest = formatted.replace(street, '').replace(/^\s*-\s*/, '');
-      // Store the rest to append after user types number
       const withComma = `${street}, `;
       onChange(withComma);
       setIsOpen(false);
       setSuggestions([]);
       setSkipNextSearch(true);
       
-      // Store the remaining address parts to append later
+      const rest = formatted.replace(street, '').replace(/^\s*-\s*/, '');
       containerRef.current?.setAttribute('data-rest', rest ? ` - ${rest}` : '');
       
-      // Focus input and place cursor at end
       setTimeout(() => {
         inputRef.current?.focus();
         inputRef.current?.setSelectionRange(withComma.length, withComma.length);
@@ -191,7 +286,15 @@ export const AddressAutocomplete = ({
     }
   };
 
-  // Close on outside click
+  const handleFocus = () => {
+    if (suggestions.length > 0) {
+      setIsOpen(true);
+    } else if (!value || value.length < 3) {
+      // Show top saved addresses on focus when field is empty
+      fetchTopAddresses();
+    }
+  };
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -212,10 +315,11 @@ export const AddressAutocomplete = ({
     <div ref={containerRef} className="relative">
       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
       <Input
+        ref={inputRef}
         value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => suggestions.length > 0 && setIsOpen(true)}
+        onFocus={handleFocus}
         placeholder={placeholder}
         className={cn('pl-9', className)}
         disabled={disabled}
@@ -223,7 +327,7 @@ export const AddressAutocomplete = ({
       />
       {isOpen && suggestions.length > 0 && (
         <ul className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
-          {suggestions.map((result, index) => (
+          {suggestions.map((item, index) => (
             <li
               key={index}
               className={cn(
@@ -232,12 +336,16 @@ export const AddressAutocomplete = ({
                   ? 'bg-accent text-accent-foreground'
                   : 'hover:bg-accent/50'
               )}
-              onMouseDown={() => selectSuggestion(result)}
+              onMouseDown={() => selectSuggestion(item)}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="flex items-start gap-2">
-                <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                <span>{formatAddress(result, extractNumber(value))}</span>
+                {item.type === 'saved' ? (
+                  <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+                ) : (
+                  <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+                )}
+                <span>{getSuggestionText(item)}</span>
               </div>
             </li>
           ))}

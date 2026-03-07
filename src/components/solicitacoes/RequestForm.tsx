@@ -22,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import VehicleDetailsPopover from '@/components/VehicleDetailsPopover';
-import { AddressAutocomplete } from '@/components/solicitacoes/AddressAutocomplete';
+import { AddressAutocomplete, saveAddressToHistory } from '@/components/solicitacoes/AddressAutocomplete';
 import { resolveFreightRegion, detectRegionFromAddress } from '@/lib/regionDetection';
 import { Badge } from '@/components/ui/badge';
 
@@ -280,6 +280,10 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
           .update({ attachments: uploadedPaths })
           .eq('id', createdRequest.id);
       }
+
+      // Save addresses to history for future autocomplete
+      saveAddressToHistory(data.originAddress);
+      saveAddressToHistory(data.destinationAddress);
 
       // Push notification is now handled automatically by database trigger
       // Reset form (keep client data for clients)
