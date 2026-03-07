@@ -502,9 +502,9 @@ const DriverVehicleView = () => {
       </div>
 
       {oilChangeWarning && (
-        <div className="rounded-lg border border-destructive bg-destructive/5 p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-          <p className="text-sm text-destructive font-medium">Atenção: Km atual ({formatKmDisplay(currentKm)}) excedeu a previsão de troca de óleo ({formatKmDisplay(latestOil!.next_change_km)} km).</p>
+        <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-4 flex items-center gap-3 animate-pulse">
+          <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
+          <p className="text-sm text-destructive font-bold">⚠️ Atenção: Km atual ({formatKmDisplay(currentKm)}) excedeu a previsão de troca de óleo ({formatKmDisplay(latestOil!.next_change_km)} km).</p>
         </div>
       )}
 
