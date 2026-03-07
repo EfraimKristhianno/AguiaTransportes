@@ -644,7 +644,12 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
                     <Calendar
                       mode="single"
                       selected={schedulingDate}
-                      onSelect={(day) => setSchedulingDate(day)}
+                    onSelect={(day) => {
+                      setSchedulingDate(day);
+                      if (day && !schedulingTime) {
+                        setSchedulingTime(format(new Date(), 'HH:mm'));
+                      }
+                    }}
                       initialFocus
                       className="p-3 pointer-events-auto"
                       locale={ptBR}
