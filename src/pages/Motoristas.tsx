@@ -115,46 +115,18 @@ const Motoristas = () => {
     return (
       <DashboardLayout 
         title="Minhas Corridas" 
-        subtitle="Visualize e aceite solicitações de coleta"
+        subtitle={showNotifBanner && notifPermission !== 'granted' ? 'Ativar notificações' : 'Visualize e aceite solicitações de coleta'}
         icon={<TruckIcon className="h-5 w-5" />}
+        headerAction={
+          showNotifBanner && notifPermission !== 'granted' && notifPermission !== 'denied' ? (
+            <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
+              <Bell className="h-4 w-4 mr-1" />
+              Ativar
+            </Button>
+          ) : undefined
+        }
       >
         <div className="space-y-6">
-          {/* Notification Permission Banner */}
-          {showNotifBanner && notifPermission !== 'granted' && (
-            <Card className="border-primary/30 bg-primary/5">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      {notifPermission === 'denied' ? (
-                        <BellOff className="h-5 w-5 text-primary" />
-                      ) : (
-                        <Bell className="h-5 w-5 text-primary" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm">
-                        {notifPermission === 'denied'
-                          ? 'Notificações bloqueadas'
-                          : 'Ative as notificações'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {notifPermission === 'denied'
-                          ? 'Desbloqueie nas configurações do navegador para receber alertas de novas corridas.'
-                          : 'Receba alertas quando novas solicitações de coleta forem criadas.'}
-                      </p>
-                    </div>
-                  </div>
-                  {notifPermission !== 'denied' && (
-                    <Button size="sm" onClick={handleEnableNotifications} className="w-full sm:w-auto shrink-0">
-                      <Bell className="h-4 w-4 mr-1" />
-                      Ativar
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
           {/* Stats Cards for Driver */}
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
