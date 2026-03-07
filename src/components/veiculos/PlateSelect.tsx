@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,11 @@ const PlateSelect = ({ vehicleType, value, onChange }: PlateSelectProps) => {
   const hasPredefined = predefinedPlates.length > 0;
   const isCustom = hasPredefined && value !== '' && !predefinedPlates.includes(value);
   const [showCustomInput, setShowCustomInput] = useState(isCustom);
+
+  // Reset when vehicle type changes
+  useEffect(() => {
+    setShowCustomInput(false);
+  }, [vehicleType]);
 
   const handleSelectChange = (v: string) => {
     if (v === '__custom__') {
