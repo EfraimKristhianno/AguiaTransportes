@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { KmInput, formatKmDisplay } from '@/components/ui/km-input';
+import PlateSelect from '@/components/veiculos/PlateSelect';
 
 const formatLocalDate = (date: Date): string => {
   const year = date.getFullYear();
@@ -528,10 +529,11 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Placa</Label>
-                <Input value={logForm.plate} onChange={(e) => setLogForm((p) => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
-              </div>
+              <PlateSelect
+                vehicleType={driverVehicles.find((v: any) => v.id === logForm.vehicle_id)?.type || ''}
+                value={logForm.plate}
+                onChange={(plate) => setLogForm((p) => ({ ...p, plate }))}
+              />
               <div>
                 <Label>Data</Label>
                 <Input type="date" value={logForm.log_date} onChange={(e) => setLogForm((p) => ({ ...p, log_date: e.target.value }))} />
@@ -587,10 +589,11 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Placa</Label>
-                <Input value={oilForm.plate} onChange={(e) => setOilForm((p) => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
-              </div>
+              <PlateSelect
+                vehicleType={driverVehicles.find((v: any) => v.id === oilForm.vehicle_id)?.type || ''}
+                value={oilForm.plate}
+                onChange={(plate) => setOilForm((p) => ({ ...p, plate }))}
+              />
               <div><Label>Data da Troca</Label><Input type="date" value={oilForm.change_date} onChange={(e) => setOilForm((p) => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Km na Troca</Label><KmInput value={oilForm.km_at_change} onValueChange={(v) => setOilForm((p) => ({ ...p, km_at_change: v }))} /></div>
@@ -636,10 +639,11 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Placa</Label>
-                <Input value={maintForm.plate} onChange={(e) => setMaintForm((p) => ({ ...p, plate: e.target.value }))} placeholder="Digite a placa" />
-              </div>
+              <PlateSelect
+                vehicleType={driverVehicles.find((v: any) => v.id === maintForm.vehicle_id)?.type || ''}
+                value={maintForm.plate}
+                onChange={(plate) => setMaintForm((p) => ({ ...p, plate }))}
+              />
               <div>
                 <Label>Data</Label>
                 <Input type="date" value={maintForm.maintenance_date} onChange={(e) => setMaintForm((p) => ({ ...p, maintenance_date: e.target.value }))} />
@@ -821,7 +825,11 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Placa</Label><Input value={editLogForm.plate} onChange={(e) => setEditLogForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <PlateSelect
+                vehicleType={driverVehicles.find((v: any) => v.id === editLogForm.vehicle_id)?.type || ''}
+                value={editLogForm.plate}
+                onChange={(plate) => setEditLogForm((p: any) => ({ ...p, plate }))}
+              />
               <div><Label>Data</Label><Input type="date" value={editLogForm.log_date} onChange={(e) => setEditLogForm((p: any) => ({ ...p, log_date: e.target.value }))} /></div>
               <div><Label>Km Atual</Label><KmInput value={editLogForm.km_atual} onValueChange={(v) => setEditLogForm((p: any) => ({ ...p, km_atual: v }))} /></div>
               <div>
@@ -873,7 +881,11 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Placa</Label><Input value={editOilForm.plate} onChange={(e) => setEditOilForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <PlateSelect
+                vehicleType={driverVehicles.find((v: any) => v.id === editOilForm.vehicle_id)?.type || ''}
+                value={editOilForm.plate}
+                onChange={(plate) => setEditOilForm((p: any) => ({ ...p, plate }))}
+              />
               <div><Label>Data da Troca</Label><Input type="date" value={editOilForm.change_date} onChange={(e) => setEditOilForm((p: any) => ({ ...p, change_date: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Km na Troca</Label><KmInput value={editOilForm.km_at_change} onValueChange={(v) => setEditOilForm((p: any) => ({ ...p, km_at_change: v }))} /></div>
@@ -925,7 +937,11 @@ const DriverVehicleView = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Placa</Label><Input value={editMaintForm.plate} onChange={(e) => setEditMaintForm((p: any) => ({ ...p, plate: e.target.value }))} /></div>
+              <PlateSelect
+                vehicleType={driverVehicles.find((v: any) => v.id === editMaintForm.vehicle_id)?.type || ''}
+                value={editMaintForm.plate}
+                onChange={(plate) => setEditMaintForm((p: any) => ({ ...p, plate }))}
+              />
               <div><Label>Data</Label><Input type="date" value={editMaintForm.maintenance_date} onChange={(e) => setEditMaintForm((p: any) => ({ ...p, maintenance_date: e.target.value }))} /></div>
               <div><Label>Km Atual</Label><KmInput value={editMaintForm.current_km} onValueChange={(v) => setEditMaintForm((p: any) => ({ ...p, current_km: v }))} /></div>
               <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" value={editMaintForm.service_cost} onChange={(e) => setEditMaintForm((p: any) => ({ ...p, service_cost: e.target.value }))} /></div>
