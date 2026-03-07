@@ -58,20 +58,33 @@ const Motoristas = () => {
   };
 
   // Driver view - show available requests matching their transport types
-  // Notification permission state for driver
-  const [notifPermission, setNotifPermission] = useState<string>('default');
-  const [showNotifBanner, setShowNotifBanner] = useState(true);
+  // Check OneSignal subscription status instead of just native permission
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    if (isDriver) {
-      if ('Notification' in window) {
-        setNotifPermission(Notification.permission);
-        if (Notification.permission === 'granted') {
-          setShowNotifBanner(false);
+    if (!isDriver) return;
+
+    const checkSubscription = async () => {
+      try {
+        const OneSignal = (window as any).OneSignal;
+        if (OneSignal) {
+          // Check if user has an active push subscription with external ID
+          const subId = OneSignal.User?.PushSubscription?.id;
+          const externalId = OneSignal.User?.externalId;
+          const optedIn = OneSignal.User?.PushSubscription?.optedIn;
+          console.log('[OneSignal] Subscription check:', { subId, externalId, optedIn });
+          if (subId && externalId && optedIn) {
+            setIsSubscribed(true);
+          }
         }
+      } catch (e) {
+        console.error('[OneSignal] Error checking subscription:', e);
       }
-      // On iOS Safari (non-PWA), Notification may not exist — still show banner
-    }
+    };
+
+    // Delay check to allow OneSignal SDK to initialize
+    const timer = setTimeout(checkSubscription, 2000);
+    return () => clearTimeout(timer);
   }, [isDriver]);
 
   const handleEnableNotifications = async () => {
