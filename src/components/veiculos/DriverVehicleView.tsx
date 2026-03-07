@@ -818,7 +818,7 @@ const DriverVehicleView = () => {
           <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={editLogForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setEditLogForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
+                <Select value={editLogForm.vehicle_id} onValueChange={(v) => {setEditLogForm((p: any) => ({ ...p, vehicle_id: v, plate: '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>)}
@@ -874,7 +874,7 @@ const DriverVehicleView = () => {
           <div className="space-y-4">
               <div>
                 <Label>Veículo</Label>
-                <Select value={editOilForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setEditOilForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
+                <Select value={editOilForm.vehicle_id} onValueChange={(v) => {setEditOilForm((p: any) => ({ ...p, vehicle_id: v, plate: '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>)}
@@ -930,7 +930,7 @@ const DriverVehicleView = () => {
               </div>
               <div>
                 <Label>Veículo</Label>
-                <Select value={editMaintForm.vehicle_id} onValueChange={(v) => {const veh = driverVehicles.find((x: any) => x.id === v);setEditMaintForm((p: any) => ({ ...p, vehicle_id: v, plate: veh?.plate || '' }));}}>
+                <Select value={editMaintForm.vehicle_id} onValueChange={(v) => {setEditMaintForm((p: any) => ({ ...p, vehicle_id: v, plate: '' }));}}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {driverVehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.type}</SelectItem>)}
