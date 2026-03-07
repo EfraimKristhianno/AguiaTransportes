@@ -142,7 +142,7 @@ export const AddressAutocomplete = ({
   };
 
   const selectSuggestion = (feature: PhotonFeature) => {
-    const formatted = formatAddress(feature);
+    const formatted = formatAddress(feature, userNumber);
     onChange(formatted);
     setIsOpen(false);
     setSuggestions([]);
