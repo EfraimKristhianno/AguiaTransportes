@@ -547,6 +547,7 @@ const DriverVehicleView = () => {
                   <SelectContent>
                     <SelectItem value="diesel">Diesel</SelectItem>
                     <SelectItem value="gasolina">Gasolina</SelectItem>
+                    <SelectItem value="alcool">Álcool</SelectItem>
                     <SelectItem value="gnv">Gás (GNV)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -830,6 +831,7 @@ const DriverVehicleView = () => {
                   <SelectContent>
                     <SelectItem value="diesel">Diesel</SelectItem>
                     <SelectItem value="gasolina">Gasolina</SelectItem>
+                    <SelectItem value="alcool">Álcool</SelectItem>
                     <SelectItem value="gnv">Gás (GNV)</SelectItem>
                   </SelectContent>
                 </Select>
