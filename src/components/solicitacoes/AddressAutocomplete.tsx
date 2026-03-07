@@ -65,10 +65,10 @@ export const AddressAutocomplete = ({
   const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [skipNextSearch, setSkipNextSearch] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const [userNumber, setUserNumber] = useState<string | undefined>();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 3) {
@@ -76,12 +76,9 @@ export const AddressAutocomplete = ({
       return;
     }
 
-    // Extract number typed by user to append if API doesn't return one
     const number = extractNumber(query);
-    setUserNumber(number);
 
     try {
-      // Use Nominatim as primary - better support for house numbers
       const nominatimRes = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=7&countrycodes=br&viewbox=-54.6,-27.0,-48.0,-22.5&bounded=0`,
         { headers: { 'Accept-Language': 'pt-BR' } }
@@ -101,7 +98,6 @@ export const AddressAutocomplete = ({
         }
       }));
 
-      // If few Nominatim results, supplement with Photon
       if (features.length < 3) {
         try {
           const photonRes = await fetch(
@@ -137,15 +133,45 @@ export const AddressAutocomplete = ({
     const val = e.target.value;
     onChange(val);
 
+    if (skipNextSearch) {
+      setSkipNextSearch(false);
+      return;
+    }
+
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => fetchSuggestions(val), 400);
   };
 
   const selectSuggestion = (feature: PhotonFeature) => {
-    const formatted = formatAddress(feature, userNumber);
-    onChange(formatted);
-    setIsOpen(false);
-    setSuggestions([]);
+    const hasNumber = !!feature.properties.housenumber;
+    const number = extractNumber(value);
+    const formatted = formatAddress(feature, number);
+    
+    if (hasNumber || number) {
+      // Address already has a number, just set it
+      onChange(formatted);
+      setIsOpen(false);
+      setSuggestions([]);
+    } else {
+      // No number - add ", " after street name so user can type the number
+      const street = feature.properties.street || feature.properties.name || '';
+      const rest = formatted.replace(street, '').replace(/^\s*-\s*/, '');
+      // Store the rest to append after user types number
+      const withComma = `${street}, `;
+      onChange(withComma);
+      setIsOpen(false);
+      setSuggestions([]);
+      setSkipNextSearch(true);
+      
+      // Store the remaining address parts to append later
+      containerRef.current?.setAttribute('data-rest', rest ? ` - ${rest}` : '');
+      
+      // Focus input and place cursor at end
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.setSelectionRange(withComma.length, withComma.length);
+      }, 50);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -211,7 +237,7 @@ export const AddressAutocomplete = ({
             >
               <div className="flex items-start gap-2">
                 <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                <span>{formatAddress(result, userNumber)}</span>
+                <span>{formatAddress(result, extractNumber(value))}</span>
               </div>
             </li>
           ))}
