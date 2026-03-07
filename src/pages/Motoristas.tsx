@@ -78,28 +78,31 @@ const Motoristas = () => {
     try {
       const OneSignal = (window as any).OneSignal;
       if (OneSignal) {
-        // Request native permission first
-        const nativeResult = await Notification.requestPermission();
-        console.log('[OneSignal] Native permission result:', nativeResult);
+        // Use OneSignal's permission request (works on all platforms)
+        await OneSignal.Notifications.requestPermission();
         
-        if (nativeResult === 'granted') {
-          // Ensure OneSignal registers the subscription
-          await OneSignal.Notifications.requestPermission();
-          
+        const granted = 'Notification' in window ? Notification.permission === 'granted' : true;
+        console.log('[OneSignal] Permission after request:', granted);
+        
+        if (granted) {
           // Re-login and tag to ensure subscription is linked
-          const userResponse = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+          const { supabase } = await import('@/integrations/supabase/client');
+          const userResponse = await supabase.auth.getUser();
           if (userResponse.data?.user) {
             const userId = userResponse.data.user.id;
             await OneSignal.login(userId);
             await OneSignal.User.addTags({ role: 'motorista' });
             console.log('[OneSignal] Driver subscribed and tagged successfully');
           }
+          setNotifPermission('granted');
+          setShowNotifBanner(false);
+        } else {
+          setNotifPermission('Notification' in window ? Notification.permission : 'denied');
         }
-        
-        setNotifPermission(nativeResult);
-      } else {
+      } else if ('Notification' in window) {
         const result = await Notification.requestPermission();
         setNotifPermission(result);
+        if (result === 'granted') setShowNotifBanner(false);
       }
     } catch (e) {
       console.error('Error requesting notification permission:', e);
