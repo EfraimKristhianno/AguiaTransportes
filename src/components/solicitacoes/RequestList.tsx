@@ -15,6 +15,8 @@ import { resolveFreightRegion } from '@/lib/regionDetection';
 import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
+    case 'agendada':
+      return 'outline';
     case 'solicitada':
       return 'outline';
     case 'aceita':
@@ -35,6 +37,8 @@ const getStatusBadgeVariant = (status: string | null) => {
 };
 const getStatusLabel = (status: string | null) => {
   switch (status) {
+    case 'agendada':
+      return 'Agendada';
     case 'solicitada':
       return 'Solicitada';
     case 'aceita':
@@ -58,6 +62,8 @@ const getStatusLabel = (status: string | null) => {
 };
 const getStatusClassName = (status: string | null) => {
   switch (status) {
+    case 'agendada':
+      return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'solicitada':
     case 'enviada':
       return 'bg-amber-50 text-amber-700 border-amber-200';

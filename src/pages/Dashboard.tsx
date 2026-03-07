@@ -348,6 +348,11 @@ const Dashboard = () => {
       className: string;
       icon: React.ReactNode;
     }> = {
+      agendada: {
+        label: 'Agendada',
+        className: 'bg-blue-50 text-blue-700 border-blue-200',
+        icon: <Clock className="h-3 w-3 mr-1" />
+      },
       solicitada: {
         label: 'Solicitada',
         className: 'bg-amber-50 text-amber-700 border-amber-200',

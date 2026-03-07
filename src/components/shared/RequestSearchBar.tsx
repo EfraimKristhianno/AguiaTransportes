@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Todos' },
+  { value: 'agendada', label: 'Agendada' },
   { value: 'solicitada', label: 'Solicitada' },
   { value: 'aceita', label: 'Aceita' },
   { value: 'pendente_coleta', label: 'Coleta Pendente' },
