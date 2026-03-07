@@ -71,8 +71,25 @@ const Motoristas = () => {
     try {
       const OneSignal = (window as any).OneSignal;
       if (OneSignal) {
-        await OneSignal.Notifications.requestPermission();
-        setNotifPermission(Notification.permission);
+        // Request native permission first
+        const nativeResult = await Notification.requestPermission();
+        console.log('[OneSignal] Native permission result:', nativeResult);
+        
+        if (nativeResult === 'granted') {
+          // Ensure OneSignal registers the subscription
+          await OneSignal.Notifications.requestPermission();
+          
+          // Re-login and tag to ensure subscription is linked
+          const { user } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+          if (user?.data?.user) {
+            const userId = user.data.user.id;
+            await OneSignal.login(userId);
+            await OneSignal.User.addTags({ role: 'motorista' });
+            console.log('[OneSignal] Driver subscribed and tagged successfully');
+          }
+        }
+        
+        setNotifPermission(nativeResult);
       } else {
         const result = await Notification.requestPermission();
         setNotifPermission(result);

@@ -71,34 +71,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const tagOneSignalUser = async (userRole: string, userId: string) => {
     try {
-      // Wait for OneSignal to be ready
+      // Wait for OneSignal to be fully ready with a timeout
       const getOneSignal = (): Promise<any> => {
-        return new Promise((resolve) => {
-          if ((window as any).OneSignal) {
-            resolve((window as any).OneSignal);
-          } else {
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            window.OneSignalDeferred.push(async (OneSignal: any) => {
-              resolve(OneSignal);
-            });
-          }
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('OneSignal timeout')), 10000);
+          
+          const check = () => {
+            const os = (window as any).OneSignal;
+            if (os && typeof os.login === 'function') {
+              clearTimeout(timeout);
+              resolve(os);
+            } else {
+              // Also try via deferred queue
+              window.OneSignalDeferred = window.OneSignalDeferred || [];
+              window.OneSignalDeferred.push(async (OneSignal: any) => {
+                clearTimeout(timeout);
+                resolve(OneSignal);
+              });
+            }
+          };
+          
+          // Check immediately, then retry after a short delay
+          check();
         });
       };
 
       const OneSignal = await getOneSignal();
       
+      console.log('[OneSignal] Logging in user:', userId, 'role:', userRole);
       await OneSignal.login(userId);
       await OneSignal.User.addTags({ role: userRole });
+      console.log('[OneSignal] Tags set successfully');
 
       // If driver, request permission and tag transport types
       if (userRole === 'motorista') {
-        // Request push permission for drivers
-        const permission = OneSignal.Notifications?.permission;
-        if (!permission) {
+        // Check current permission state
+        const isPushSupported = OneSignal.Notifications?.isPushSupported?.() ?? true;
+        const currentPermission = Notification.permission;
+        console.log('[OneSignal] Driver - push supported:', isPushSupported, 'permission:', currentPermission);
+        
+        if (currentPermission === 'default' && isPushSupported) {
+          try {
+            // Request native permission first, then OneSignal
+            await Notification.requestPermission();
+            if (Notification.permission === 'granted') {
+              await OneSignal.Notifications.requestPermission();
+              console.log('[OneSignal] Driver push permission granted');
+            }
+          } catch (permErr) {
+            console.log('[OneSignal] Permission request failed, will show manual button:', permErr);
+          }
+        } else if (currentPermission === 'granted') {
+          // Permission already granted, ensure OneSignal knows about it
           try {
             await OneSignal.Notifications.requestPermission();
-          } catch (permErr) {
-            console.log('Permission request failed, will show manual button:', permErr);
+          } catch (e) {
+            console.log('[OneSignal] Re-registering permission:', e);
           }
         }
 
@@ -120,11 +148,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               tags[`transport_${vt.vehicle_type}`] = 'true';
             });
             await OneSignal.User.addTags(tags);
+            console.log('[OneSignal] Transport type tags set:', tags);
           }
         }
       }
     } catch (e) {
-      console.error('OneSignal tagging error:', e);
+      console.error('[OneSignal] Tagging error:', e);
     }
   };
 
