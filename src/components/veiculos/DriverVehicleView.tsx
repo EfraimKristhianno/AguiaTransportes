@@ -512,7 +512,7 @@ const DriverVehicleView = () => {
       <div className="flex flex-wrap gap-3">
         <Dialog open={logDialogOpen} onOpenChange={setLogDialogOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Novo Registro</Button>
+            <Button><Plus className="mr-2 h-4 w-4" /> Registrar Abastecimento</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Registro de Km / Abastecimento</DialogTitle></DialogHeader>
