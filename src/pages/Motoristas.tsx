@@ -87,7 +87,10 @@ const Motoristas = () => {
     return () => clearTimeout(timer);
   }, [isDriver]);
 
+  const [isActivating, setIsActivating] = useState(false);
+
   const handleEnableNotifications = async () => {
+    setIsActivating(true);
     try {
       const OneSignal = (window as any).OneSignal;
       if (OneSignal) {
@@ -108,6 +111,8 @@ const Motoristas = () => {
       }
     } catch (e) {
       console.error('Error requesting notification permission:', e);
+    } finally {
+      setIsActivating(false);
     }
   };
 
@@ -121,11 +126,16 @@ const Motoristas = () => {
         icon={<TruckIcon className="h-5 w-5" />}
         headerAction={
           !isSubscribed ? (
-            <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
+            <Button size="sm" onClick={handleEnableNotifications} disabled={isActivating} className="shrink-0">
               <Bell className="h-4 w-4 mr-1" />
-              Ativar
+              {isActivating ? 'Ativando...' : 'Ativar'}
             </Button>
-          ) : undefined
+          ) : (
+            <Button size="sm" disabled className="shrink-0 bg-muted text-muted-foreground cursor-default hover:bg-muted">
+              <Bell className="h-4 w-4 mr-1" />
+              Ativo
+            </Button>
+          )
         }
       >
         <div className="space-y-6">
