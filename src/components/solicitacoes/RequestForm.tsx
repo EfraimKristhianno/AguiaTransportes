@@ -307,6 +307,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         form.reset();
       }
       setAttachments([]);
+      setSchedulingDate(undefined);
+      setSchedulingStatus('');
       onSuccess?.();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -338,6 +340,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       form.reset();
     }
     setAttachments([]);
+    setSchedulingDate(undefined);
+    setSchedulingStatus('');
   };
 
   return (
