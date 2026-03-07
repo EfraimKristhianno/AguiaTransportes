@@ -656,15 +656,15 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
             <FormItem className="flex flex-col">
               <FormLabel>Status agendamento</FormLabel>
               <Select
-                value={schedulingStatus}
-                onValueChange={(val) => setSchedulingStatus(val === schedulingStatus ? '' : val)}
+                value={schedulingStatus || undefined}
+                onValueChange={(val) => setSchedulingStatus(val === '__clear__' ? '' : val)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="agendada">Agendada</SelectItem>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="__clear__" className="text-muted-foreground">Limpar seleção</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
