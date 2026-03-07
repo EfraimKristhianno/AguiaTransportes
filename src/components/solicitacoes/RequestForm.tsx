@@ -56,6 +56,8 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [schedulingDate, setSchedulingDate] = useState<Date | undefined>(undefined);
+  const [schedulingTime, setSchedulingTime] = useState<string>('');
+  const [schedulingCalendarOpen, setSchedulingCalendarOpen] = useState(false);
   const [schedulingStatus, setSchedulingStatus] = useState<string>('');
 
   const { data: materialTypes = [] } = useMaterialTypes();
