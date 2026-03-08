@@ -353,9 +353,9 @@ const AdminVehicleView = () => {
             <Calendar mode="single" selected={endDate} onSelect={setEndDate} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
           </PopoverContent>
         </Popover>
-        {(startDate || endDate) && (
-          <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); }}>
-            Limpar datas
+        {(startDate || endDate || fuelTypeFilter !== 'all') && (
+          <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); setFuelTypeFilter('all'); }}>
+            Limpar filtros
           </Button>
         )}
       </div>
