@@ -110,11 +110,14 @@ const AdminVehicleView = () => {
     return Array.from(types).sort();
   }, [allVehicles]);
 
-  // Unique fuel types from logs
-  const availableFuelTypes = useMemo(() => {
-    const types = new Set(logs.map(l => l.fuel_type));
-    return Array.from(types).sort();
-  }, [logs]);
+  // Fixed fuel types
+  const availableFuelTypes = ['diesel', 'gasolina', 'alcool', 'gnv'];
+  const fuelTypeLabels: Record<string, string> = {
+    diesel: 'Diesel',
+    gasolina: 'Gasolina',
+    alcool: 'Álcool',
+    gnv: 'Gás (GNV)',
+  };
 
   // Build a map of vehicle_id -> real plate from operational records
   const vehicleIdToPlateMap = useMemo(() => {
@@ -327,7 +330,7 @@ const AdminVehicleView = () => {
           <SelectContent>
             <SelectItem value="all">Todos combustíveis</SelectItem>
             {availableFuelTypes.map(ft => (
-              <SelectItem key={ft} value={ft}>{ft.charAt(0).toUpperCase() + ft.slice(1)}</SelectItem>
+              <SelectItem key={ft} value={ft}>{fuelTypeLabels[ft]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
