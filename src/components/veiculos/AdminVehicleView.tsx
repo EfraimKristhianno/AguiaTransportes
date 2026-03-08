@@ -159,8 +159,8 @@ const AdminVehicleView = () => {
 
   // Filtered logs based on filtered vehicles, date range AND plate filter
   const filteredLogs = useMemo(() => {
-    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || l.vehicle_plate === plateFilter));
-  }, [logs, filteredVehicleIdsSetAll, startDate, endDate, plateFilter]);
+    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || l.vehicle_plate === plateFilter) && (fuelTypeFilter === 'all' || l.fuel_type === fuelTypeFilter));
+  }, [logs, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeFilter]);
 
   // Filtered oil records based on filtered vehicles, date range AND plate filter
   const filteredOilRecords = useMemo(() => {
