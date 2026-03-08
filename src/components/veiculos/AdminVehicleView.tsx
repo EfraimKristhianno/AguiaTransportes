@@ -110,6 +110,12 @@ const AdminVehicleView = () => {
     return Array.from(types).sort();
   }, [allVehicles]);
 
+  // Unique fuel types from logs
+  const availableFuelTypes = useMemo(() => {
+    const types = new Set(logs.map(l => l.fuel_type));
+    return Array.from(types).sort();
+  }, [logs]);
+
   // Build a map of vehicle_id -> real plate from operational records
   const vehicleIdToPlateMap = useMemo(() => {
     const map = new Map<string, string>();
