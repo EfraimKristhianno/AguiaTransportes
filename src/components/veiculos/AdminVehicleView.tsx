@@ -330,7 +330,7 @@ const AdminVehicleView = () => {
           <SelectContent>
             <SelectItem value="all">Todos combustíveis</SelectItem>
             {availableFuelTypes.map(ft => (
-              <SelectItem key={ft} value={ft}>{ft.charAt(0).toUpperCase() + ft.slice(1)}</SelectItem>
+              <SelectItem key={ft} value={ft}>{fuelTypeLabels[ft]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
