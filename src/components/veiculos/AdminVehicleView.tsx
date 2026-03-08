@@ -35,6 +35,7 @@ const AdminVehicleView = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<{ id: string; plate: string } | null>(null);
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>('all');
   const [plateFilter, setPlateFilter] = useState<string>('all');
+  const [fuelTypeFilter, setFuelTypeFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
@@ -109,6 +110,12 @@ const AdminVehicleView = () => {
     return Array.from(types).sort();
   }, [allVehicles]);
 
+  // Unique fuel types from logs
+  const availableFuelTypes = useMemo(() => {
+    const types = new Set(logs.map(l => l.fuel_type));
+    return Array.from(types).sort();
+  }, [logs]);
+
   // Build a map of vehicle_id -> real plate from operational records
   const vehicleIdToPlateMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -152,8 +159,8 @@ const AdminVehicleView = () => {
 
   // Filtered logs based on filtered vehicles, date range AND plate filter
   const filteredLogs = useMemo(() => {
-    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || l.vehicle_plate === plateFilter));
-  }, [logs, filteredVehicleIdsSetAll, startDate, endDate, plateFilter]);
+    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || l.vehicle_plate === plateFilter) && (fuelTypeFilter === 'all' || l.fuel_type === fuelTypeFilter));
+  }, [logs, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeFilter]);
 
   // Filtered oil records based on filtered vehicles, date range AND plate filter
   const filteredOilRecords = useMemo(() => {
@@ -313,6 +320,17 @@ const AdminVehicleView = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select value={fuelTypeFilter} onValueChange={setFuelTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Tipo de combustível" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos combustíveis</SelectItem>
+            {availableFuelTypes.map(ft => (
+              <SelectItem key={ft} value={ft}>{ft.charAt(0).toUpperCase() + ft.slice(1)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn("w-full sm:w-[170px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
@@ -335,9 +353,9 @@ const AdminVehicleView = () => {
             <Calendar mode="single" selected={endDate} onSelect={setEndDate} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
           </PopoverContent>
         </Popover>
-        {(startDate || endDate) && (
-          <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); }}>
-            Limpar datas
+        {(startDate || endDate || fuelTypeFilter !== 'all') && (
+          <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); setFuelTypeFilter('all'); }}>
+            Limpar filtros
           </Button>
         )}
       </div>
