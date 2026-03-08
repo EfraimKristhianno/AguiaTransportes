@@ -35,6 +35,7 @@ const AdminVehicleView = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<{ id: string; plate: string } | null>(null);
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>('all');
   const [plateFilter, setPlateFilter] = useState<string>('all');
+  const [fuelTypeFilter, setFuelTypeFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
