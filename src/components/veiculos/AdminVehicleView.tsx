@@ -320,6 +320,17 @@ const AdminVehicleView = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select value={fuelTypeFilter} onValueChange={setFuelTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Tipo de combustível" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos combustíveis</SelectItem>
+            {availableFuelTypes.map(ft => (
+              <SelectItem key={ft} value={ft}>{ft.charAt(0).toUpperCase() + ft.slice(1)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn("w-full sm:w-[170px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
