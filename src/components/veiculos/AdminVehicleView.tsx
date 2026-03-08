@@ -165,15 +165,23 @@ const AdminVehicleView = () => {
     return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || l.vehicle_plate === plateFilter) && (fuelTypeFilter === 'all' || l.fuel_type === fuelTypeFilter));
   }, [logs, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeFilter]);
 
-  // Filtered oil records based on filtered vehicles, date range AND plate filter
-  const filteredOilRecords = useMemo(() => {
-    return oilRecords.filter(o => filteredVehicleIdsSetAll.has(o.vehicle_id) && isInDateRange(o.change_date) && (plateFilter === 'all' || o.vehicle_plate === plateFilter));
-  }, [oilRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter]);
+  // Vehicle IDs that have logs with the selected fuel type
+  const fuelTypeVehicleIds = useMemo(() => {
+    if (fuelTypeFilter === 'all') return null;
+    const ids = new Set<string>();
+    logs.forEach(l => { if (l.fuel_type === fuelTypeFilter) ids.add(l.vehicle_id); });
+    return ids;
+  }, [fuelTypeFilter, logs]);
 
-  // Filtered maintenance records based on filtered vehicles, date range AND plate filter
+  // Filtered oil records based on filtered vehicles, date range, plate filter AND fuel type vehicle restriction
+  const filteredOilRecords = useMemo(() => {
+    return oilRecords.filter(o => filteredVehicleIdsSetAll.has(o.vehicle_id) && isInDateRange(o.change_date) && (plateFilter === 'all' || o.vehicle_plate === plateFilter) && (!fuelTypeVehicleIds || fuelTypeVehicleIds.has(o.vehicle_id)));
+  }, [oilRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeVehicleIds]);
+
+  // Filtered maintenance records based on filtered vehicles, date range, plate filter AND fuel type vehicle restriction
   const filteredMaintenanceRecords = useMemo(() => {
-    return maintenanceRecords.filter(m => filteredVehicleIdsSetAll.has(m.vehicle_id) && isInDateRange(m.maintenance_date) && (plateFilter === 'all' || m.vehicle_plate === plateFilter));
-  }, [maintenanceRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter]);
+    return maintenanceRecords.filter(m => filteredVehicleIdsSetAll.has(m.vehicle_id) && isInDateRange(m.maintenance_date) && (plateFilter === 'all' || m.vehicle_plate === plateFilter) && (!fuelTypeVehicleIds || fuelTypeVehicleIds.has(m.vehicle_id)));
+  }, [maintenanceRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeVehicleIds]);
 
   // Global stats (filtered by vehicle + date)
   const totalKm = filteredLogs.reduce((a, l) => a + (l.km_total || 0), 0);
