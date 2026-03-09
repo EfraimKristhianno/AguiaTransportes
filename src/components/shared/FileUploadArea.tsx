@@ -65,7 +65,6 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
   const handleAreaClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isMobile) return; // On mobile, use dedicated buttons
     isSelectingFileRef.current = true;
     inputRef.current?.click();
   };
