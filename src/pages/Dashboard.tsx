@@ -174,23 +174,38 @@ const Dashboard = () => {
 
   const handleCancelRequest = async () => {
     if (!cancelRequestId || !cancelReason.trim()) {
-      toast.error('Informe o motivo do cancelamento');
+      toast.error('Informe o motivo');
       return;
     }
     try {
-      const { error } = await supabase
-        .from('delivery_requests')
-        .update({ status: 'cancelada', notes: cancelReason.trim(), updated_at: new Date().toISOString() })
-        .eq('id', cancelRequestId);
-      if (error) throw error;
-      toast.success('Solicitação cancelada com sucesso!');
+      if (role === 'admin' || role === 'gestor') {
+        // Delete status history first, then the request itself
+        await supabase
+          .from('delivery_request_status_history')
+          .delete()
+          .eq('delivery_request_id', cancelRequestId);
+
+        const { error } = await supabase
+          .from('delivery_requests')
+          .delete()
+          .eq('id', cancelRequestId);
+        if (error) throw error;
+        toast.success('Solicitação excluída com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('delivery_requests')
+          .update({ status: 'cancelada', notes: cancelReason.trim(), updated_at: new Date().toISOString() })
+          .eq('id', cancelRequestId);
+        if (error) throw error;
+        toast.success('Solicitação cancelada com sucesso!');
+      }
       queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
       queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
       setCancelDialogOpen(false);
       setCancelReason('');
       setCancelRequestId(null);
     } catch (error: any) {
-      toast.error(`Erro ao cancelar: ${error.message}`);
+      toast.error(`Erro: ${error.message}`);
     }
   };
 
