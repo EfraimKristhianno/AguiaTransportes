@@ -457,9 +457,13 @@ export const UnifiedRequestDetailsDialog = ({
 
               {/* Freight Value */}
               {showFreightValue && (() => {
+                const freightOverride = (request as any).freight_override;
                 const region = resolveFreightRegion(request.origin_address, request.destination_address);
                 const prices = getFreightPricesForRequest(allFreightPrices, request.client_id, request.transport_type, region);
-                const priceText = formatSingleFreightPrice(prices, region);
+                const calculatedText = formatSingleFreightPrice(prices, region);
+                const priceText = freightOverride != null
+                  ? `R$ ${Number(freightOverride).toFixed(2).replace('.', ',')}`
+                  : calculatedText;
                 return priceText !== '-' ? (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
