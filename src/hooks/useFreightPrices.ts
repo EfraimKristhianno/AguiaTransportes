@@ -51,13 +51,11 @@ export const getFreightPricesForRequest = (
   region?: string | null
 ): FreightPrice[] => {
   if (!clientId || !transportType) return [];
-  let filtered = prices.filter(
-    p => p.client_id === clientId && p.transport_type === transportType
+  // Always filter by region - if no region resolved, return empty (will show "A combinar")
+  if (!region) return [];
+  return prices.filter(
+    p => p.client_id === clientId && p.transport_type === transportType && p.region === region
   );
-  if (region) {
-    filtered = filtered.filter(p => p.region === region);
-  }
-  return filtered;
 };
 
 export const formatFreightPrices = (prices: FreightPrice[]): string => {
