@@ -112,6 +112,7 @@ const Dashboard = () => {
           client_id,
           region,
           requester,
+          freight_override,
           client:clients(name, phone, email),
           driver:drivers(name),
           material_type:material_types(name),
