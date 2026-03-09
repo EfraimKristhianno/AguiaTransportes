@@ -174,23 +174,38 @@ const Dashboard = () => {
 
   const handleCancelRequest = async () => {
     if (!cancelRequestId || !cancelReason.trim()) {
-      toast.error('Informe o motivo do cancelamento');
+      toast.error('Informe o motivo');
       return;
     }
     try {
-      const { error } = await supabase
-        .from('delivery_requests')
-        .update({ status: 'cancelada', notes: cancelReason.trim(), updated_at: new Date().toISOString() })
-        .eq('id', cancelRequestId);
-      if (error) throw error;
-      toast.success('Solicitação cancelada com sucesso!');
+      if (role === 'admin' || role === 'gestor') {
+        // Delete status history first, then the request itself
+        await supabase
+          .from('delivery_request_status_history')
+          .delete()
+          .eq('delivery_request_id', cancelRequestId);
+
+        const { error } = await supabase
+          .from('delivery_requests')
+          .delete()
+          .eq('id', cancelRequestId);
+        if (error) throw error;
+        toast.success('Solicitação excluída com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('delivery_requests')
+          .update({ status: 'cancelada', notes: cancelReason.trim(), updated_at: new Date().toISOString() })
+          .eq('id', cancelRequestId);
+        if (error) throw error;
+        toast.success('Solicitação cancelada com sucesso!');
+      }
       queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
       queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
       setCancelDialogOpen(false);
       setCancelReason('');
       setCancelRequestId(null);
     } catch (error: any) {
-      toast.error(`Erro ao cancelar: ${error.message}`);
+      toast.error(`Erro: ${error.message}`);
     }
   };
 
@@ -680,16 +695,22 @@ const Dashboard = () => {
       <AlertDialog open={cancelDialogOpen} onOpenChange={(open) => { setCancelDialogOpen(open); if (!open) setCancelReason(''); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar solicitação #{cancelRequestNumber}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {(role === 'admin' || role === 'gestor')
+                ? `Excluir solicitação #${cancelRequestNumber}?`
+                : `Cancelar solicitação #${cancelRequestNumber}?`}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta solicitação será marcada como cancelada. Informe o motivo abaixo.
+              {(role === 'admin' || role === 'gestor')
+                ? 'Esta solicitação será permanentemente excluída e o ID será resetado. Informe o motivo abaixo.'
+                : 'Esta solicitação será marcada como cancelada. Informe o motivo abaixo.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2 py-2">
-            <Label htmlFor="cancel-reason">Motivo do cancelamento *</Label>
+            <Label htmlFor="cancel-reason">Motivo *</Label>
             <Textarea
               id="cancel-reason"
-              placeholder="Descreva o motivo do cancelamento..."
+              placeholder="Descreva o motivo..."
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               rows={3}
@@ -702,7 +723,7 @@ const Dashboard = () => {
               disabled={!cancelReason.trim()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Confirmar Cancelamento
+              {(role === 'admin' || role === 'gestor') ? 'Confirmar Exclusão' : 'Confirmar Cancelamento'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
