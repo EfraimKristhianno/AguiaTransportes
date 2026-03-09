@@ -130,6 +130,7 @@ export type Database = {
           destination_address: string
           destination_company: string | null
           driver_id: string | null
+          freight_override: number | null
           id: string
           invoice_number: string | null
           material_type_id: string | null
@@ -155,6 +156,7 @@ export type Database = {
           destination_address: string
           destination_company?: string | null
           driver_id?: string | null
+          freight_override?: number | null
           id?: string
           invoice_number?: string | null
           material_type_id?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           destination_address?: string
           destination_company?: string | null
           driver_id?: string | null
+          freight_override?: number | null
           id?: string
           invoice_number?: string | null
           material_type_id?: string | null
