@@ -61,7 +61,7 @@ const AdminVehicleView = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('delivery_requests')
-        .select('id, vehicle_id, client_id, transport_type, region, status, created_at, scheduled_date');
+        .select('id, vehicle_id, client_id, transport_type, region, status, created_at, scheduled_date, freight_override');
       return data || [];
     },
   });
@@ -513,17 +513,24 @@ const AdminVehicleView = () => {
               });
 
               filteredDeliveryReqs.forEach((req: any) => {
-                let matchingPrices = freightPrices.filter((fp: any) => 
-                  fp.client_id === req.client_id && fp.transport_type === req.transport_type
-                );
-                if (req.region && matchingPrices.length > 0) {
-                  const regionMatch = matchingPrices.filter((fp: any) => fp.region === req.region);
-                  if (regionMatch.length > 0) matchingPrices = regionMatch;
+                let price = 0;
+                
+                if (req.freight_override != null) {
+                  price = Number(req.freight_override);
+                } else {
+                  let matchingPrices = freightPrices.filter((fp: any) => 
+                    fp.client_id === req.client_id && fp.transport_type === req.transport_type
+                  );
+                  if (req.region && matchingPrices.length > 0) {
+                    const regionMatch = matchingPrices.filter((fp: any) => fp.region === req.region);
+                    if (regionMatch.length > 0) matchingPrices = regionMatch;
+                  }
+                  if (matchingPrices.length > 0) {
+                    price = Number(matchingPrices[0].price);
+                  }
                 }
                 
-                if (matchingPrices.length > 0) {
-                  const price = Number(matchingPrices[0].price);
-                  // Group by vehicle plate instead of transport_type
+                if (price > 0) {
                   const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
                   const realPlate = vehicle ? (vehicleIdToPlateMap.get(vehicle.id) || vehicle.plate) : null;
                   const label = realPlate && !realPlate.startsWith('TIPO-') ? realPlate : (req.transport_type || 'Sem placa');
