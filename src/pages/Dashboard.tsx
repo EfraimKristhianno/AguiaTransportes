@@ -584,13 +584,9 @@ const Dashboard = () => {
                               title={
                                 isClient && item.status !== 'solicitada'
                                   ? 'Clientes só podem cancelar solicitações com status "Solicitada"'
-                                  : item.status === 'entregue' || item.status === 'cancelada' ? 'Não é possível cancelar' : 'Cancelar'
+                                  : 'Cancelar'
                               }
-                              disabled={
-                                isClient
-                                  ? item.status !== 'solicitada'
-                                  : item.status === 'entregue' || item.status === 'cancelada'
-                              }
+                              disabled={isClient && item.status !== 'solicitada'}
                               onClick={() => openCancelDialog(item.id, item.request_number)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
@@ -649,11 +645,7 @@ const Dashboard = () => {
                           variant="ghost"
                           size="icon"
                           className="h-10 w-10"
-                          disabled={
-                            isClient
-                              ? item.status !== 'solicitada'
-                              : item.status === 'entregue' || item.status === 'cancelada'
-                          }
+                          disabled={isClient && item.status !== 'solicitada'}
                           onClick={() => openCancelDialog(item.id, item.request_number)}
                         >
                           <Trash2 className="h-5 w-5 text-destructive" />
