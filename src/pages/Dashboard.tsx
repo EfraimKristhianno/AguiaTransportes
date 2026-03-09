@@ -695,16 +695,22 @@ const Dashboard = () => {
       <AlertDialog open={cancelDialogOpen} onOpenChange={(open) => { setCancelDialogOpen(open); if (!open) setCancelReason(''); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar solicitação #{cancelRequestNumber}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {(role === 'admin' || role === 'gestor')
+                ? `Excluir solicitação #${cancelRequestNumber}?`
+                : `Cancelar solicitação #${cancelRequestNumber}?`}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta solicitação será marcada como cancelada. Informe o motivo abaixo.
+              {(role === 'admin' || role === 'gestor')
+                ? 'Esta solicitação será permanentemente excluída e o ID será resetado. Informe o motivo abaixo.'
+                : 'Esta solicitação será marcada como cancelada. Informe o motivo abaixo.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2 py-2">
-            <Label htmlFor="cancel-reason">Motivo do cancelamento *</Label>
+            <Label htmlFor="cancel-reason">Motivo *</Label>
             <Textarea
               id="cancel-reason"
-              placeholder="Descreva o motivo do cancelamento..."
+              placeholder="Descreva o motivo..."
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               rows={3}
@@ -717,7 +723,7 @@ const Dashboard = () => {
               disabled={!cancelReason.trim()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Confirmar Cancelamento
+              {(role === 'admin' || role === 'gestor') ? 'Confirmar Exclusão' : 'Confirmar Cancelamento'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
