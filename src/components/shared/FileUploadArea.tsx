@@ -136,7 +136,7 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
         ref={inputRef}
         type="file"
         multiple
-        accept="*/*"
+        accept="image/*"
         style={{ opacity: 0, position: 'fixed', top: -9999, left: -9999, width: 1, height: 1, pointerEvents: 'none' }}
         tabIndex={-1}
         onChange={(e) => {
