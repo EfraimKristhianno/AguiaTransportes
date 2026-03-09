@@ -61,7 +61,7 @@ const AdminVehicleView = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('delivery_requests')
-        .select('id, vehicle_id, client_id, transport_type, region, status, created_at, scheduled_date');
+        .select('id, vehicle_id, client_id, transport_type, region, status, created_at, scheduled_date, freight_override');
       return data || [];
     },
   });
