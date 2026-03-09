@@ -261,6 +261,13 @@ const Dashboard = () => {
     }, 0);
   }, [filteredRequests, allFreightPrices, role]);
 
+  const getFreightDisplayValue = useCallback((item: any): string => {
+    if (item.freight_override != null) return `R$ ${Number(item.freight_override).toFixed(2).replace('.', ',')}`;
+    const region = resolveFreightRegion(item.origin_address, item.destination_address);
+    const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
+    return formatSingleFreightPrice(prices, region);
+  }, [allFreightPrices]);
+
   const handleDownloadPdf = useCallback(() => {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pageWidth = doc.internal.pageSize.getWidth();
