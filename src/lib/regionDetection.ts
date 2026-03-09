@@ -6,6 +6,27 @@
 const CURITIBA_PATTERN = /curitiba/i;
 const ARAUCARIA_PATTERN = /arauc[aá]ria/i;
 
+// Known cities in the metropolitan region of Curitiba
+const METROPOLITANA_CITIES = [
+  /s[aã]o\s*jos[eé]\s*dos\s*pinhais/i,
+  /colombo/i,
+  /pinhais/i,
+  /campo\s*largo/i,
+  /almirante\s*tamandar[eé]/i,
+  /fazenda\s*rio\s*grande/i,
+  /piraquara/i,
+  /quatro\s*barras/i,
+  /campina\s*grande\s*do\s*sul/i,
+  /bocai[uú]va\s*do\s*sul/i,
+  /itaperu[cç]u/i,
+  /rio\s*branco\s*do\s*sul/i,
+  /campo\s*magro/i,
+  /mandirituba/i,
+  /contenda/i,
+  /balsa\s*nova/i,
+  /lapa/i,
+];
+
 export type FreightRegion = 'Curitiba' | 'Araucária' | 'Metropolitana';
 
 export const detectRegionFromAddress = (address: string | null | undefined): FreightRegion | null => {
@@ -14,9 +35,12 @@ export const detectRegionFromAddress = (address: string | null | undefined): Fre
   if (CURITIBA_PATTERN.test(address)) return 'Curitiba';
   if (ARAUCARIA_PATTERN.test(address)) return 'Araucária';
   
-  // If address has content but doesn't match specific cities, assume Metropolitana
-  if (address.trim().length > 0) return 'Metropolitana';
+  // Check for known metropolitan cities
+  for (const pattern of METROPOLITANA_CITIES) {
+    if (pattern.test(address)) return 'Metropolitana';
+  }
   
+  // Address doesn't contain a recognized city — region is unknown
   return null;
 };
 
