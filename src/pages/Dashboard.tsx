@@ -557,16 +557,17 @@ const Dashboard = () => {
           <div className="hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] lg:block">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>{role === 'gestor' ? 'Motorista' : 'Solicitante'}</TableHead>
-                  <TableHead>Material</TableHead>
-                  <TableHead>Transporte</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
+                 <TableRow>
+                   <TableHead>ID</TableHead>
+                   <TableHead>Cliente</TableHead>
+                   <TableHead>{role === 'gestor' ? 'Motorista' : 'Solicitante'}</TableHead>
+                   <TableHead>Material</TableHead>
+                   <TableHead>Transporte</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Data</TableHead>
+                   {showPrices && <TableHead>Frete</TableHead>}
+                   <TableHead className="text-right">Ações</TableHead>
+                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRequests.map(item => <TableRow key={item.id}>
