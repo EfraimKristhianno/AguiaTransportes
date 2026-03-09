@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Package, Hash, MapPin, User, Phone, DollarSign, Navigation } from 'lucide-react';
+import { Clock, Package, Hash, MapPin, User, Phone, DollarSign, Navigation, Pencil, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
@@ -13,6 +13,11 @@ import { cn } from '@/lib/utils';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
 import { resolveFreightRegion } from '@/lib/regionDetection';
 import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
     case 'agendada':
@@ -53,7 +58,6 @@ const getStatusLabel = (status: string | null) => {
       return 'Entrega Pendente';
     case 'entregue':
       return 'Entregue';
-    // Legacy status support
     case 'enviada':
       return 'Solicitada';
     default:
@@ -91,24 +95,53 @@ interface RequestListProps {
 }
 
 export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, dateTo }: RequestListProps) => {
-  const {
-    role
-  } = useAuth();
+  const { role } = useAuth();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [trackingRequest, setTrackingRequest] = useState<any>(null);
-  const {
-    data: currentDriver
-  } = useCurrentDriver();
+  const [editingFreightId, setEditingFreightId] = useState<string | null>(null);
+  const [freightEditValue, setFreightEditValue] = useState('');
+  const queryClient = useQueryClient();
+  const { data: currentDriver } = useCurrentDriver();
   const driverId = role === 'motorista' ? currentDriver?.id : null;
-  const {
-    data: requests = [],
-    isLoading
-  } = useDeliveryRequests();
+  const { data: requests = [], isLoading } = useDeliveryRequests();
   const { data: allFreightPrices = [] } = useAllFreightPrices();
   const showFreightValue = role === 'admin' || role === 'gestor';
+
+  const handleFreightEdit = (e: React.MouseEvent, requestId: string, currentValue: string) => {
+    e.stopPropagation();
+    setEditingFreightId(requestId);
+    // Remove "R$ " prefix and convert comma to dot
+    const numericStr = currentValue.replace('R$', '').replace(/\s/g, '').replace(',', '.');
+    setFreightEditValue(numericStr === '-' || numericStr === 'A combinar' ? '' : numericStr);
+  };
+
+  const handleFreightSave = async (e: React.MouseEvent, requestId: string) => {
+    e.stopPropagation();
+    const value = parseFloat(freightEditValue.replace(',', '.'));
+    if (isNaN(value) || value < 0) {
+      toast.error('Valor inválido');
+      return;
+    }
+    const { error } = await supabase
+      .from('delivery_requests')
+      .update({ freight_override: value } as any)
+      .eq('id', requestId);
+    if (error) {
+      toast.error('Erro ao salvar frete');
+    } else {
+      toast.success('Frete atualizado');
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+    }
+    setEditingFreightId(null);
+  };
+
+  const handleFreightCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingFreightId(null);
+  };
+
   const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter, dateFrom, dateTo);
   return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
-      {/* Request List */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3">
           {isLoading ? <div className="text-center text-muted-foreground py-8">
@@ -161,15 +194,68 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                 </div>
 
                 {showFreightValue && (() => {
+                  const freightOverride = (request as any).freight_override;
                   const region = resolveFreightRegion(request.origin_address, request.destination_address);
                   const prices = getFreightPricesForRequest(allFreightPrices, request.client_id, request.transport_type, region);
-                  const priceText = formatSingleFreightPrice(prices, region);
-                  return priceText !== '-' ? (
+                  const calculatedText = formatSingleFreightPrice(prices, region);
+                  
+                  // Use override if set, otherwise use calculated
+                  const displayText = freightOverride != null
+                    ? `R$ ${Number(freightOverride).toFixed(2).replace('.', ',')}`
+                    : calculatedText;
+
+                  if (editingFreightId === request.id) {
+                    return (
+                      <div className="mt-2 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                        <DollarSign className="h-3 w-3 shrink-0 text-emerald-700" />
+                        <span className="text-sm font-semibold text-emerald-700">R$</span>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={freightEditValue}
+                          onChange={e => setFreightEditValue(e.target.value)}
+                          className="h-7 w-24 text-sm"
+                          autoFocus
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleFreightSave(e as any, request.id);
+                            if (e.key === 'Escape') setEditingFreightId(null);
+                          }}
+                        />
+                        <button onClick={e => handleFreightSave(e, request.id)} className="text-emerald-600 hover:text-emerald-800">
+                          <Check className="h-4 w-4" />
+                        </button>
+                        <button onClick={handleFreightCancel} className="text-destructive hover:text-destructive/80">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return displayText !== '-' ? (
                     <div className="mt-2 flex items-center gap-1 text-sm font-semibold text-emerald-700">
                       <DollarSign className="h-3 w-3 shrink-0" />
-                      <span>Frete: {priceText}</span>
+                      <span>Frete: {displayText}</span>
+                      <button
+                        onClick={e => handleFreightEdit(e, request.id, displayText)}
+                        className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                        title="Editar valor do frete"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
                     </div>
-                  ) : null;
+                  ) : (
+                    <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
+                      <DollarSign className="h-3 w-3 shrink-0" />
+                      <span>Frete: -</span>
+                      <button
+                        onClick={e => handleFreightEdit(e, request.id, '-')}
+                        className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                        title="Definir valor do frete"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
                 })()}
 
                 <div className="mt-2 flex items-center justify-between">

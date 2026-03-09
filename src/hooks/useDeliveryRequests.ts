@@ -23,6 +23,7 @@ export interface DeliveryRequest {
   invoice_number: string | null;
   op_number: string | null;
   attachments: string[] | null;
+  freight_override: number | null;
   clients?: { name: string; phone: string | null; email: string | null } | null;
   material_types?: { name: string } | null;
   drivers?: { name: string } | null;
