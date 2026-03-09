@@ -589,6 +589,7 @@ const Dashboard = () => {
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
+                    {showPrices && <TableCell className="font-medium text-emerald-700">{getFreightDisplayValue(item)}</TableCell>}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)} title="Visualizar">
