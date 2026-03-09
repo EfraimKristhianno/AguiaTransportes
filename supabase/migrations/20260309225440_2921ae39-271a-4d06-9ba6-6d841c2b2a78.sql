@@ -1,0 +1,1 @@
+ALTER TABLE public.delivery_requests ADD COLUMN freight_override numeric DEFAULT NULL;
