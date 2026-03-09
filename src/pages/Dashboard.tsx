@@ -261,6 +261,13 @@ const Dashboard = () => {
     }, 0);
   }, [filteredRequests, allFreightPrices, role]);
 
+  const getFreightDisplayValue = useCallback((item: any): string => {
+    if (item.freight_override != null) return `R$ ${Number(item.freight_override).toFixed(2).replace('.', ',')}`;
+    const region = resolveFreightRegion(item.origin_address, item.destination_address);
+    const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
+    return formatSingleFreightPrice(prices, region);
+  }, [allFreightPrices]);
+
   const handleDownloadPdf = useCallback(() => {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -550,16 +557,17 @@ const Dashboard = () => {
           <div className="hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] lg:block">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>{role === 'gestor' ? 'Motorista' : 'Solicitante'}</TableHead>
-                  <TableHead>Material</TableHead>
-                  <TableHead>Transporte</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
+                 <TableRow>
+                   <TableHead>ID</TableHead>
+                   <TableHead>Cliente</TableHead>
+                   <TableHead>{role === 'gestor' ? 'Motorista' : 'Solicitante'}</TableHead>
+                   <TableHead>Material</TableHead>
+                   <TableHead>Transporte</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Data</TableHead>
+                   {showPrices && <TableHead>Frete</TableHead>}
+                   <TableHead className="text-right">Ações</TableHead>
+                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRequests.map(item => <TableRow key={item.id}>
@@ -581,6 +589,7 @@ const Dashboard = () => {
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell>{formatDate(item.scheduled_date || item.created_at)}</TableCell>
+                    {showPrices && <TableCell className="font-medium text-emerald-700">{getFreightDisplayValue(item)}</TableCell>}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => handleViewDetails(item.id)} title="Visualizar">
@@ -650,8 +659,14 @@ const Dashboard = () => {
                   <div>
                     <p className="text-muted-foreground">Data</p>
                     <p className="font-medium">{formatDate(item.scheduled_date || item.created_at)}</p>
-                  </div>
-                   <div className="flex items-end justify-end gap-0.5">
+                   </div>
+                   {showPrices && (
+                     <div>
+                       <p className="text-muted-foreground">Frete</p>
+                       <p className="font-medium text-emerald-700">{getFreightDisplayValue(item)}</p>
+                     </div>
+                   )}
+                    <div className="flex items-end justify-end gap-0.5">
                     <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => handleViewDetails(item.id)}>
                       <Eye className="h-5 w-5" />
                     </Button>
