@@ -94,6 +94,7 @@ const Solicitacoes = () => {
     };
 
     const getFreightValue = (item: any): string => {
+      if (item.freight_override != null) return `R$ ${Number(item.freight_override).toFixed(2).replace('.', ',')}`;
       const region = resolveFreightRegion(item.origin_address, item.destination_address);
       const matched = getFreightPricesForRequest(allPrices, item.client_id, item.transport_type, region);
       return formatSingleFreightPrice(matched, region);
