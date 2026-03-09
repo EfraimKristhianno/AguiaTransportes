@@ -285,6 +285,7 @@ const Dashboard = () => {
     // Indicadores resumo
     const totalRequests = filteredRequests.length;
     const totalFreightValue = filteredRequests.reduce((sum: number, item: any) => {
+      if (item.freight_override != null) return sum + Number(item.freight_override);
       const region = resolveFreightRegion(item.origin_address, item.destination_address);
       const prices = getFreightPricesForRequest(allFreightPrices, item.client_id, item.transport_type, region);
       if (prices.length > 0) return sum + prices[0].price;
