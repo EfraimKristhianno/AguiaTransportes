@@ -65,7 +65,6 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
   const handleAreaClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isMobile) return; // On mobile, use dedicated buttons
     isSelectingFileRef.current = true;
     inputRef.current?.click();
   };
@@ -102,60 +101,35 @@ const FileUploadArea = ({ files, onFilesChange }: FileUploadAreaProps) => {
     <div className="space-y-3">
       <label className="text-sm font-medium text-foreground">Anexar arquivos</label>
 
-      {isMobile ? (
-        /* Mobile: two dedicated buttons for Camera and Gallery */
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={handleCameraClick}
-            className="flex-1 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-6 cursor-pointer transition-all duration-200 hover:border-primary/50 hover:bg-accent/50 active:bg-accent"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent">
-              <Camera className="h-5 w-5 text-accent-foreground" />
-            </div>
-            <p className="text-sm font-medium text-foreground">Câmera</p>
-          </button>
-          <button
-            type="button"
-            onClick={handleGalleryClick}
-            className="flex-1 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-6 cursor-pointer transition-all duration-200 hover:border-primary/50 hover:bg-accent/50 active:bg-accent"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent">
-              <ImageIcon className="h-5 w-5 text-accent-foreground" />
-            </div>
-            <p className="text-sm font-medium text-foreground">Galeria</p>
-          </button>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!isMobile) setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={!isMobile ? handleDrop : undefined}
+        onClick={handleAreaClick}
+        className={`
+          flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 
+          cursor-pointer transition-all duration-200
+          ${isDragging
+            ? "border-primary bg-accent"
+            : "border-border hover:border-primary/50 hover:bg-accent/50"
+          }
+        `}
+      >
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
+          <Paperclip className="h-5 w-5 text-accent-foreground" />
         </div>
-      ) : (
-        /* Desktop: drop zone */
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-          onClick={handleAreaClick}
-          className={`
-            flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 
-            cursor-pointer transition-all duration-200
-            ${isDragging
-              ? "border-primary bg-accent"
-              : "border-border hover:border-primary/50 hover:bg-accent/50"
-            }
-          `}
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
-            <Paperclip className="h-5 w-5 text-accent-foreground" />
-          </div>
-          <p className="text-sm font-medium text-foreground">
-            Toque para selecionar arquivos
-          </p>
+        <p className="text-sm font-medium text-foreground">
+          {isMobile ? "Toque para selecionar fotos" : "Toque para selecionar arquivos"}
+        </p>
+        {!isMobile && (
           <p className="text-xs text-muted-foreground">
             ou arraste e solte aqui
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Gallery / Desktop input - accept all to avoid Android media selector issues */}
       <input
