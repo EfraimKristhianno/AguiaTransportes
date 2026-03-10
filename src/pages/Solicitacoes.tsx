@@ -103,6 +103,7 @@ const Solicitacoes = () => {
     const tableData = filteredRequests.map((item: any) => [
       formatDate(item.scheduled_date || item.created_at),
       item.clients?.name || '-',
+      item.drivers?.name || 'Sem motorista',
       item.transport_type || '-',
       item.origin_address || '-',
       item.destination_address || '-',
@@ -111,15 +112,15 @@ const Solicitacoes = () => {
     ]);
 
     autoTable(doc, {
-      head: [['Data/Hora', 'Cliente', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
+      head: [['Data/Hora', 'Cliente', 'Motorista', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
       body: tableData,
       startY: y,
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [211, 33, 39], fontSize: 8 },
       bodyStyles: { fontSize: 7 },
       columnStyles: {
-        3: { cellWidth: 50 },
-        4: { cellWidth: 50 },
+        4: { cellWidth: 45 },
+        5: { cellWidth: 45 },
       },
       margin: { left: 14 },
     });

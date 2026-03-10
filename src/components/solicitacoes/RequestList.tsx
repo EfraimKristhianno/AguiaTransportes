@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Package, Hash, MapPin, User, Phone, DollarSign, Navigation, Pencil, Check, X } from 'lucide-react';
+import { Clock, Package, Hash, MapPin, User, Phone, DollarSign, Navigation, Pencil, Check, X, Truck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { useDrivers } from '@/hooks/useDrivers';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
@@ -100,7 +102,9 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
   const [trackingRequest, setTrackingRequest] = useState<any>(null);
   const [editingFreightId, setEditingFreightId] = useState<string | null>(null);
   const [freightEditValue, setFreightEditValue] = useState('');
+  const [editingDriverId, setEditingDriverId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { data: allDrivers = [] } = useDrivers();
   const { data: currentDriver } = useCurrentDriver();
   const driverId = role === 'motorista' ? currentDriver?.id : null;
   const { data: requests = [], isLoading } = useDeliveryRequests();
@@ -138,6 +142,22 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
   const handleFreightCancel = (e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingFreightId(null);
+  };
+
+  const handleDriverSave = async (requestId: string, driverId: string) => {
+    const updateValue = driverId === '__none__' ? null : driverId;
+    const { error } = await supabase
+      .from('delivery_requests')
+      .update({ driver_id: updateValue } as any)
+      .eq('id', requestId);
+    if (error) {
+      toast.error('Erro ao atualizar motorista');
+    } else {
+      toast.success('Motorista atualizado');
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
+    }
+    setEditingDriverId(null);
   };
 
   const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter, dateFrom, dateTo);
@@ -184,6 +204,42 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                     {request.transport_type || 'Transporte não especificado'}
                   </span>
                 </div>
+
+                {showFreightValue && (
+                  <div className="flex items-center gap-2 mb-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                    <Truck className="h-3 w-3 text-muted-foreground shrink-0" />
+                    {editingDriverId === request.id ? (
+                      <Select
+                        value={request.driver_id || '__none__'}
+                        onValueChange={(value) => handleDriverSave(request.id, value)}
+                      >
+                        <SelectTrigger className="h-7 w-48 text-sm">
+                          <SelectValue placeholder="Selecionar motorista" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Sem motorista</SelectItem>
+                          {allDrivers.map(d => (
+                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium">
+                          {request.drivers?.name || 'Sem motorista'}
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingDriverId(request.id); }}
+                          className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                          title="Alterar motorista"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
 
                 <div className="flex items-start gap-2 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
