@@ -205,7 +205,42 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                   </span>
                 </div>
 
-                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                {showFreightValue && (
+                  <div className="flex items-center gap-2 mb-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                    <Truck className="h-3 w-3 text-muted-foreground shrink-0" />
+                    {editingDriverId === request.id ? (
+                      <Select
+                        value={request.driver_id || '__none__'}
+                        onValueChange={(value) => handleDriverSave(request.id, value)}
+                      >
+                        <SelectTrigger className="h-7 w-48 text-sm">
+                          <SelectValue placeholder="Selecionar motorista" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Sem motorista</SelectItem>
+                          {allDrivers.map(d => (
+                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium">
+                          {request.drivers?.name || 'Sem motorista'}
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingDriverId(request.id); }}
+                          className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                          title="Alterar motorista"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+
                   <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="break-words">{request.origin_address}</p>
