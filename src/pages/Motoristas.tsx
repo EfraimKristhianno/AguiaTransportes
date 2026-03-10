@@ -25,7 +25,6 @@ const Motoristas = () => {
   const { data: drivers, isLoading } = useDrivers();
   
   const isDriver = role === 'motorista';
-  useDriverNotifications(isDriver);
   
   // Driver-specific data
   const { data: currentDriver, isLoading: isLoadingDriver } = useCurrentDriver();
