@@ -645,8 +645,8 @@ const Dashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-muted-foreground">{role === 'gestor' ? 'Motorista' : 'Solicitante'}</p>
-                    <p className="font-medium">{role === 'gestor' ? (item.driver?.name || 'Sem motorista') : ((item as any).requester || '-')}</p>
+                    <p className="text-muted-foreground">Motorista</p>
+                    <p className="font-medium">{(item as any).driver?.name || 'Sem motorista'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Material</p>
