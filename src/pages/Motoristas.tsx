@@ -41,14 +41,19 @@ const Motoristas = () => {
   const totalCompleted = drivers?.reduce((acc, d) => acc + d.completed_deliveries, 0) || 0;
   const totalActive = drivers?.reduce((acc, d) => acc + d.active_deliveries, 0) || 0;
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-      available: { label: 'Disponível', variant: 'outline' },
-      busy: { label: 'Em Trânsito', variant: 'default' },
-      offline: { label: 'Offline', variant: 'secondary' },
-    };
-    const config = statusConfig[status] || statusConfig.offline;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const getStatusBadge = (activeDeliveries: number) => {
+    if (activeDeliveries > 0) {
+      return (
+        <Badge className="bg-green-500 hover:bg-green-600 text-white border-green-500">
+          Online
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="destructive" className="bg-destructive hover:bg-destructive/90">
+        Offline
+      </Badge>
+    );
   };
 
   const getInitials = (name: string) => {
