@@ -72,21 +72,8 @@ const Motoristas = () => {
     return (
       <DashboardLayout 
         title="Minhas Corridas" 
-        subtitle={!isSubscribed ? 'Ativar notificações' : 'Visualize e aceite solicitações de coleta'}
+        subtitle="Visualize e aceite solicitações de coleta"
         icon={<TruckIcon className="h-5 w-5" />}
-        headerAction={
-          !isSubscribed ? (
-            <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
-              <Bell className="h-4 w-4 mr-1" />
-              Ativar
-            </Button>
-          ) : (
-            <Button size="sm" disabled className="shrink-0 bg-muted text-muted-foreground cursor-default hover:bg-muted">
-              <Bell className="h-4 w-4 mr-1" />
-              Ativo
-            </Button>
-          )
-        }
       >
         <div className="space-y-6">
           {/* Stats Cards for Driver */}
