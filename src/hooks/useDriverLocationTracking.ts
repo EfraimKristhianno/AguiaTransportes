@@ -20,8 +20,8 @@ export const useDriverLocationTracking = ({
       if (!driverId || !enabled) return;
 
       const now = Date.now();
-      // Throttle to every 10 seconds
-      if (now - lastSentRef.current < 10000) return;
+      // Throttle to every 3 seconds for near-realtime tracking
+      if (now - lastSentRef.current < 3000) return;
       lastSentRef.current = now;
 
       const { latitude, longitude, heading, speed } = position.coords;

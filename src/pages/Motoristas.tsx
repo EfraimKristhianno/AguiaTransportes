@@ -360,7 +360,7 @@ const Motoristas = () => {
                         {driver.active_deliveries}
                       </TableCell>
                       <TableCell className="text-center">
-                        {getStatusBadge(driver.status)}
+                        {getStatusBadge(driver.active_deliveries)}
                       </TableCell>
                       <TableCell className="text-center">
                         {driver.active_deliveries > 0 ? (

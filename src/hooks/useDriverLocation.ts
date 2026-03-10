@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DriverLocation {
@@ -10,9 +10,19 @@ interface DriverLocation {
   delivery_request_id: string | null;
 }
 
+const parseLocation = (d: any): DriverLocation => ({
+  latitude: d.latitude,
+  longitude: d.longitude,
+  heading: d.heading,
+  speed: d.speed,
+  updated_at: d.updated_at,
+  delivery_request_id: d.delivery_request_id,
+});
+
 export const useDriverLocation = (driverId: string | null) => {
   const [location, setLocation] = useState<DriverLocation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!driverId) {
@@ -20,33 +30,24 @@ export const useDriverLocation = (driverId: string | null) => {
       return;
     }
 
-    // Fetch initial location
     const fetchLocation = async () => {
       const { data } = await supabase
-        .from('driver_locations' as any)
+        .from('driver_locations')
         .select('*')
         .eq('driver_id', driverId)
-        .single();
+        .maybeSingle();
 
       if (data) {
-        const d = data as any;
-        setLocation({
-          latitude: d.latitude,
-          longitude: d.longitude,
-          heading: d.heading,
-          speed: d.speed,
-          updated_at: d.updated_at,
-          delivery_request_id: d.delivery_request_id,
-        });
+        setLocation(parseLocation(data));
       }
       setIsLoading(false);
     };
 
     fetchLocation();
 
-    // Subscribe to realtime changes
+    // Realtime subscription for instant updates
     const channel = supabase
-      .channel(`driver-location-${driverId}`)
+      .channel(`driver-location-rt-${driverId}`)
       .on(
         'postgres_changes',
         {
@@ -58,21 +59,27 @@ export const useDriverLocation = (driverId: string | null) => {
         (payload) => {
           const d = payload.new as any;
           if (d) {
-            setLocation({
-              latitude: d.latitude,
-              longitude: d.longitude,
-              heading: d.heading,
-              speed: d.speed,
-              updated_at: d.updated_at,
-              delivery_request_id: d.delivery_request_id,
-            });
+            setLocation(parseLocation(d));
           }
         }
       )
       .subscribe();
 
+    // Polling fallback every 5s to guarantee freshness
+    pollingRef.current = setInterval(async () => {
+      const { data } = await supabase
+        .from('driver_locations')
+        .select('*')
+        .eq('driver_id', driverId)
+        .maybeSingle();
+      if (data) {
+        setLocation(parseLocation(data));
+      }
+    }, 5000);
+
     return () => {
       supabase.removeChannel(channel);
+      if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [driverId]);
 
