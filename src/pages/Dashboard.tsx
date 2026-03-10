@@ -560,7 +560,7 @@ const Dashboard = () => {
                  <TableRow>
                    <TableHead>ID</TableHead>
                    <TableHead>Cliente</TableHead>
-                   <TableHead>{role === 'gestor' ? 'Motorista' : 'Solicitante'}</TableHead>
+                   <TableHead>Motorista</TableHead>
                    <TableHead>Material</TableHead>
                    <TableHead>Transporte</TableHead>
                    <TableHead>Status</TableHead>
