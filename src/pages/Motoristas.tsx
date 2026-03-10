@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin, Bell } from 'lucide-react';
+import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
