@@ -584,7 +584,7 @@ const Dashboard = () => {
                         {item.client?.phone && <p className="text-sm text-muted-foreground">{item.client.phone}</p>}
                       </div>
                     </TableCell>
-                    <TableCell>{role === 'gestor' ? (item.driver?.name || 'Sem motorista') : ((item as any).requester || '-')}</TableCell>
+                    <TableCell>{(item as any).driver?.name || 'Sem motorista'}</TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
