@@ -241,6 +241,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                 )}
 
 
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="break-words">{request.origin_address}</p>
