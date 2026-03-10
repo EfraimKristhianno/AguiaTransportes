@@ -102,7 +102,9 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
   const [trackingRequest, setTrackingRequest] = useState<any>(null);
   const [editingFreightId, setEditingFreightId] = useState<string | null>(null);
   const [freightEditValue, setFreightEditValue] = useState('');
+  const [editingDriverId, setEditingDriverId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { data: allDrivers = [] } = useDrivers();
   const { data: currentDriver } = useCurrentDriver();
   const driverId = role === 'motorista' ? currentDriver?.id : null;
   const { data: requests = [], isLoading } = useDeliveryRequests();
