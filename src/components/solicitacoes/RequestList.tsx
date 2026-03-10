@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Package, Hash, MapPin, User, Phone, DollarSign, Navigation, Pencil, Check, X } from 'lucide-react';
+import { Clock, Package, Hash, MapPin, User, Phone, DollarSign, Navigation, Pencil, Check, X, Truck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeliveryRequests } from '@/hooks/useDeliveryRequests';
@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { useDrivers } from '@/hooks/useDrivers';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const getStatusBadgeVariant = (status: string | null) => {
   switch (status) {
