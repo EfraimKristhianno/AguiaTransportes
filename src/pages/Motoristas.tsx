@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin, Bell } from 'lucide-react';
+import { Truck as TruckIcon, CheckCircle, Clock, Search, Package, MapPin } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentDriver, useDriverRequests } from '@/hooks/useDriverRequests';
 import { DriverRequestsTable } from '@/components/motoristas/DriverRequestsTable';
 import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests';
-import { useDriverNotifications } from '@/hooks/useDriverNotifications';
+
 import { supabase } from '@/integrations/supabase/client';
 import { DriverTrackingDialog } from '@/components/motoristas/DriverTrackingDialog';
 
@@ -25,7 +25,6 @@ const Motoristas = () => {
   const { data: drivers, isLoading } = useDrivers();
   
   const isDriver = role === 'motorista';
-  useDriverNotifications(isDriver);
   
   // Driver-specific data
   const { data: currentDriver, isLoading: isLoadingDriver } = useCurrentDriver();
@@ -66,75 +65,6 @@ const Motoristas = () => {
   };
 
   // Driver view - show available requests matching their transport types
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (!isDriver) return;
-    // Check if already subscribed via push or notification permission
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      navigator.serviceWorker.getRegistration('/sw-push.js').then((reg) => {
-        if (reg) {
-          reg.pushManager.getSubscription().then((sub) => {
-            if (sub) setIsSubscribed(true);
-          });
-        }
-      });
-    } else if ('Notification' in window && Notification.permission === 'granted') {
-      setIsSubscribed(true);
-    }
-  }, [isDriver]);
-
-  const handleEnableNotifications = async () => {
-    setIsSubscribed(true); // Instant UI feedback
-
-    try {
-      // 1. Get VAPID public key from edge function
-      const { data: vapidData, error: vapidError } = await supabase.functions.invoke('get-vapid-key');
-      if (vapidError || !vapidData?.publicKey) {
-        console.error('Failed to get VAPID key:', vapidError);
-        return;
-      }
-
-      // 2. Register push service worker
-      const registration = await navigator.serviceWorker.register('/sw-push.js');
-      await navigator.serviceWorker.ready;
-
-      // 3. Request notification permission
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        setIsSubscribed(false);
-        return;
-      }
-
-      // 4. Subscribe to push
-      const publicKeyBytes = Uint8Array.from(
-        atob(vapidData.publicKey.replace(/-/g, '+').replace(/_/g, '/')),
-        (c) => c.charCodeAt(0)
-      );
-
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: publicKeyBytes,
-      });
-
-      const subJson = subscription.toJSON();
-
-      // 5. Save subscription to Supabase
-      if (user) {
-        await (supabase as any).from('push_subscriptions').upsert({
-          user_id: user.id,
-          endpoint: subJson.endpoint!,
-          p256dh: subJson.keys!.p256dh!,
-          auth: subJson.keys!.auth!,
-        }, { onConflict: 'user_id,endpoint' });
-      }
-
-      console.log('[Push] Subscription saved successfully');
-    } catch (err) {
-      console.error('[Push] Error setting up push notifications:', err);
-    }
-  };
 
   if (isDriver) {
     const availableRequests = driverRequests.length;
@@ -142,21 +72,8 @@ const Motoristas = () => {
     return (
       <DashboardLayout 
         title="Minhas Corridas" 
-        subtitle={!isSubscribed ? 'Ativar notificações' : 'Visualize e aceite solicitações de coleta'}
+        subtitle="Visualize e aceite solicitações de coleta"
         icon={<TruckIcon className="h-5 w-5" />}
-        headerAction={
-          !isSubscribed ? (
-            <Button size="sm" onClick={handleEnableNotifications} className="shrink-0">
-              <Bell className="h-4 w-4 mr-1" />
-              Ativar
-            </Button>
-          ) : (
-            <Button size="sm" disabled className="shrink-0 bg-muted text-muted-foreground cursor-default hover:bg-muted">
-              <Bell className="h-4 w-4 mr-1" />
-              Ativo
-            </Button>
-          )
-        }
       >
         <div className="space-y-6">
           {/* Stats Cards for Driver */}
