@@ -144,6 +144,22 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
     setEditingFreightId(null);
   };
 
+  const handleDriverSave = async (requestId: string, driverId: string) => {
+    const updateValue = driverId === '__none__' ? null : driverId;
+    const { error } = await supabase
+      .from('delivery_requests')
+      .update({ driver_id: updateValue } as any)
+      .eq('id', requestId);
+    if (error) {
+      toast.error('Erro ao atualizar motorista');
+    } else {
+      toast.success('Motorista atualizado');
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequests'] });
+    }
+    setEditingDriverId(null);
+  };
+
   const filteredRequests = filterRequestsBySearch(requests, searchTerm, statusFilter, dateFrom, dateTo);
   return <div className="bg-card rounded-lg border h-full flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
       <ScrollArea className="flex-1">
