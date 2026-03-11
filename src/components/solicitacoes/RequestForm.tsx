@@ -139,6 +139,11 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
     },
   });
 
+  // Persist form data to localStorage
+  const { clearDraft } = useFormPersistence('request_form', form, {
+    exclude: isClient ? ['clientName', 'phone', 'email'] : [],
+  });
+
   // Auto-fill client data when profile loads
   useEffect(() => {
     if (isClient && userProfile) {
