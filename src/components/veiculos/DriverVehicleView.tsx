@@ -33,6 +33,7 @@ import { ptBR } from 'date-fns/locale';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
 import { toast } from 'sonner';
+import { useStatePersistence } from '@/hooks/useFormPersistence';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const DriverVehicleView = () => {
@@ -170,6 +171,11 @@ const DriverVehicleView = () => {
     maintenance_date: formatLocalDate(new Date())
   });
 
+  // Persist form drafts
+  const { clearDraft: clearLogDraft } = useStatePersistence('driver_log_form', logForm, (val) => setLogForm(val));
+  const { clearDraft: clearOilDraft } = useStatePersistence('driver_oil_form', oilForm, (val) => setOilForm(val));
+  const { clearDraft: clearMaintDraft } = useStatePersistence('driver_maint_form', maintForm, (val) => setMaintForm(val));
+
   const totalCost = logForm.liters && logForm.fuel_price ?
   (parseFloat(logForm.liters) * parseFloat(logForm.fuel_price)).toFixed(2) :
   '0.00';
@@ -196,6 +202,7 @@ const DriverVehicleView = () => {
         setLogDialogOpen(false);
         setLogForm({ vehicle_id: '', plate: '', log_date: formatLocalDate(new Date()), km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
         setLogFiles([]);
+        clearLogDraft();
       }
     });
   };
@@ -218,6 +225,7 @@ const DriverVehicleView = () => {
         setOilDialogOpen(false);
         setOilForm({ vehicle_id: '', plate: '', change_date: formatLocalDate(new Date()), km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
         setOilFiles([]);
+        clearOilDraft();
       }
     });
   };
@@ -239,6 +247,7 @@ const DriverVehicleView = () => {
         setMaintDialogOpen(false);
         setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: formatLocalDate(new Date()) });
         setMaintFiles([]);
+        clearMaintDraft();
       }
     });
   };

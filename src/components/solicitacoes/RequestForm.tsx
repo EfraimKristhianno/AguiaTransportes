@@ -18,6 +18,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useMaterialTypes } from '@/hooks/useMaterialTypes';
 import { useTransportTypes, useCreateDeliveryRequest, useUploadAttachment } from '@/hooks/useDeliveryRequests';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -136,6 +137,11 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       transportType: '',
       notes: '',
     },
+  });
+
+  // Persist form data to localStorage
+  const { clearDraft } = useFormPersistence('request_form', form, {
+    exclude: isClient ? ['clientName', 'phone', 'email'] : [],
   });
 
   // Auto-fill client data when profile loads
@@ -308,6 +314,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       } else {
         form.reset();
       }
+      clearDraft();
       setAttachments([]);
       setSchedulingDate(undefined);
       setSchedulingTime('');
@@ -343,6 +350,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
     } else {
       form.reset();
     }
+    clearDraft();
     setAttachments([]);
     setSchedulingDate(undefined);
     setSchedulingTime('');
