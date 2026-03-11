@@ -171,6 +171,11 @@ const DriverVehicleView = () => {
     maintenance_date: formatLocalDate(new Date())
   });
 
+  // Persist form drafts
+  const { clearDraft: clearLogDraft } = useStatePersistence('driver_log_form', logForm, (val) => setLogForm(val));
+  const { clearDraft: clearOilDraft } = useStatePersistence('driver_oil_form', oilForm, (val) => setOilForm(val));
+  const { clearDraft: clearMaintDraft } = useStatePersistence('driver_maint_form', maintForm, (val) => setMaintForm(val));
+
   const totalCost = logForm.liters && logForm.fuel_price ?
   (parseFloat(logForm.liters) * parseFloat(logForm.fuel_price)).toFixed(2) :
   '0.00';
