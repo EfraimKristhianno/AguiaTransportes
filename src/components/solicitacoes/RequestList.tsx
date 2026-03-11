@@ -205,7 +205,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                   </span>
                 </div>
 
-                {showFreightValue && (
+                {showFreightValue ? (
                   <div className="flex items-center gap-2 mb-2 flex-wrap" onClick={e => e.stopPropagation()}>
                     <Truck className="h-3 w-3 text-muted-foreground shrink-0" />
                     {editingDriverId === request.id ? (
@@ -237,6 +237,14 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
                         </button>
                       </>
                     )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground">Solicitante:</span>
+                    <span className="text-sm font-medium">
+                      {request.requester || 'Não informado'}
+                    </span>
                   </div>
                 )}
 
