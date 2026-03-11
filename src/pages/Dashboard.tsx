@@ -66,7 +66,7 @@ const Dashboard = () => {
   useRealtimeDeliveryRequests();
   const { data: allFreightPrices = [] } = useAllFreightPrices();
   const canEditDelete = role === 'admin' || role === 'gestor' || role === 'cliente';
-  const showPrices = role === 'admin' || role === 'gestor' || role === 'cliente';
+  const showPrices = role === 'admin' || role === 'gestor';
 
   // Get current driver record for driver users
   const {
