@@ -727,13 +727,11 @@ const Dashboard = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {(role === 'admin' || role === 'gestor')
-                ? `Excluir solicitação #${cancelRequestNumber}?`
-                : `Cancelar solicitação #${cancelRequestNumber}?`}
+              Solicitação #{cancelRequestNumber}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(role === 'admin' || role === 'gestor')
-                ? 'Esta solicitação será permanentemente excluída e o ID será resetado. Informe o motivo abaixo.'
+                ? 'Escolha entre cancelar (manter no sistema com status cancelada) ou excluir permanentemente. Informe o motivo abaixo.'
                 : 'Esta solicitação será marcada como cancelada. Informe o motivo abaixo.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -747,15 +745,34 @@ const Dashboard = () => {
               rows={3}
             />
           </div>
-          <AlertDialogFooter>
+          <AlertDialogFooter className={(role === 'admin' || role === 'gestor') ? 'flex flex-col sm:flex-row gap-2' : ''}>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleCancelRequest}
-              disabled={!cancelReason.trim()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {(role === 'admin' || role === 'gestor') ? 'Confirmar Exclusão' : 'Confirmar Cancelamento'}
-            </AlertDialogAction>
+            {(role === 'admin' || role === 'gestor') ? (
+              <>
+                <AlertDialogAction
+                  onClick={handleCancelRequest}
+                  disabled={!cancelReason.trim()}
+                  className="bg-amber-600 text-white hover:bg-amber-700"
+                >
+                  Confirmar: Cancelada
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={handleDeleteRequest}
+                  disabled={!cancelReason.trim()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Confirmar: Exclusão
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                onClick={handleCancelRequest}
+                disabled={!cancelReason.trim()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Confirmar Cancelamento
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
