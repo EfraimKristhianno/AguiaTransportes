@@ -657,8 +657,8 @@ const Dashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Motorista</p>
-                    <p className="font-medium">{(item as any).driver?.name || 'Sem motorista'}</p>
+                    <p className="text-muted-foreground">{isClient ? 'Solicitante' : 'Motorista'}</p>
+                    <p className="font-medium">{isClient ? ((item as any).requester || 'Não informado') : ((item as any).driver?.name || 'Sem motorista')}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Material</p>
