@@ -66,7 +66,7 @@ const Dashboard = () => {
   useRealtimeDeliveryRequests();
   const { data: allFreightPrices = [] } = useAllFreightPrices();
   const canEditDelete = role === 'admin' || role === 'gestor' || role === 'cliente';
-  const showPrices = role === 'admin' || role === 'gestor' || role === 'cliente';
+  const showPrices = role === 'admin' || role === 'gestor';
 
   // Get current driver record for driver users
   const {
@@ -572,7 +572,7 @@ const Dashboard = () => {
                  <TableRow>
                    <TableHead>ID</TableHead>
                    <TableHead>Cliente</TableHead>
-                   <TableHead>Motorista</TableHead>
+                   <TableHead>{isClient ? 'Solicitante' : 'Motorista'}</TableHead>
                    <TableHead>Material</TableHead>
                    <TableHead>Transporte</TableHead>
                    <TableHead>Status</TableHead>
@@ -596,7 +596,7 @@ const Dashboard = () => {
                         {item.client?.phone && <p className="text-sm text-muted-foreground">{item.client.phone}</p>}
                       </div>
                     </TableCell>
-                    <TableCell>{(item as any).driver?.name || 'Sem motorista'}</TableCell>
+                    <TableCell>{isClient ? ((item as any).requester || 'Não informado') : ((item as any).driver?.name || 'Sem motorista')}</TableCell>
                     <TableCell>{item.material_type?.name || '-'}</TableCell>
                     <TableCell>{item.vehicle?.type || item.transport_type || '-'}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
@@ -657,8 +657,8 @@ const Dashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Motorista</p>
-                    <p className="font-medium">{(item as any).driver?.name || 'Sem motorista'}</p>
+                    <p className="text-muted-foreground">{isClient ? 'Solicitante' : 'Motorista'}</p>
+                    <p className="font-medium">{isClient ? ((item as any).requester || 'Não informado') : ((item as any).driver?.name || 'Sem motorista')}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Material</p>
