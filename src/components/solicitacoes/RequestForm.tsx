@@ -314,6 +314,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
       } else {
         form.reset();
       }
+      clearDraft();
       setAttachments([]);
       setSchedulingDate(undefined);
       setSchedulingTime('');
