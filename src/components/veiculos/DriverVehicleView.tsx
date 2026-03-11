@@ -247,6 +247,7 @@ const DriverVehicleView = () => {
         setMaintDialogOpen(false);
         setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: formatLocalDate(new Date()) });
         setMaintFiles([]);
+        clearMaintDraft();
       }
     });
   };
