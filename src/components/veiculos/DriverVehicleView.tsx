@@ -225,6 +225,7 @@ const DriverVehicleView = () => {
         setOilDialogOpen(false);
         setOilForm({ vehicle_id: '', plate: '', change_date: formatLocalDate(new Date()), km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
         setOilFiles([]);
+        clearOilDraft();
       }
     });
   };
