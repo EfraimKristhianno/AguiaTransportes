@@ -33,6 +33,7 @@ import { ptBR } from 'date-fns/locale';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { AttachmentItem } from '@/components/shared/AttachmentItem';
 import { toast } from 'sonner';
+import { useStatePersistence } from '@/hooks/useFormPersistence';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const DriverVehicleView = () => {
