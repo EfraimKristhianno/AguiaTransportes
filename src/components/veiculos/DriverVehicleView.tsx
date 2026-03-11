@@ -202,6 +202,7 @@ const DriverVehicleView = () => {
         setLogDialogOpen(false);
         setLogForm({ vehicle_id: '', plate: '', log_date: formatLocalDate(new Date()), km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
         setLogFiles([]);
+        clearLogDraft();
       }
     });
   };
