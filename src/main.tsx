@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Force cache clear on load - v18
+// Force cache clear on load - v19
 if ('caches' in window) {
   caches.keys().then((names) => {
     names.forEach((name) => {
