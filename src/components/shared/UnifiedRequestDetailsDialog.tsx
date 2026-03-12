@@ -348,7 +348,7 @@ export const UnifiedRequestDetailsDialog = ({
     try {
       const { error } = await supabase
         .from('delivery_requests')
-        .update({ notes: notesText, updated_at: new Date().toISOString() })
+        .update({ notes: notesText, updated_at: brazilNowISO() })
         .eq('id', request.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });

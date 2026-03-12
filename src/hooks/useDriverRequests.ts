@@ -111,7 +111,7 @@ export const useAcceptDeliveryRequest = () => {
         .update({ 
           status: 'aceita',
           driver_id: driverId,
-          updated_at: new Date().toISOString()
+          updated_at: brazilNowISO()
         })
         .eq('id', requestId)
         .in('status', ['solicitada', 'enviada'])

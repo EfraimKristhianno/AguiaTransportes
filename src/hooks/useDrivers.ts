@@ -110,7 +110,7 @@ export const useUpdateDriver = () => {
     }) => {
       const { data, error } = await supabase
         .from('drivers')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: brazilNowISO() })
         .eq('id', driverId)
         .select()
         .single();

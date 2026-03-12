@@ -34,7 +34,7 @@ export const useDriverLocationTracking = ({
         heading: heading ?? null,
         speed: speed ?? null,
         delivery_request_id: activeDeliveryRequestId,
-        updated_at: new Date().toISOString(),
+        updated_at: brazilNowISO(),
       };
 
       // Upsert based on unique driver_id

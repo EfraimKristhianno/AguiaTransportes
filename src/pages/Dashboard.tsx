@@ -208,7 +208,7 @@ const Dashboard = () => {
     try {
       const { error } = await supabase
         .from('delivery_requests')
-        .update({ status: 'cancelada', notes: cancelReason.trim(), updated_at: new Date().toISOString() })
+        .update({ status: 'cancelada', notes: cancelReason.trim(), updated_at: brazilNowISO() })
         .eq('id', cancelRequestId);
       if (error) throw error;
       toast.success('Solicitação cancelada com sucesso!');

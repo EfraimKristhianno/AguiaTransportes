@@ -78,7 +78,7 @@ export async function saveAddressToHistory(address: string) {
       .from('address_history')
       .update({ 
         used_count: existing.used_count + 1, 
-        last_used_at: new Date().toISOString() 
+        last_used_at: brazilNowISO() 
       })
       .eq('id', existing.id);
   } else {
