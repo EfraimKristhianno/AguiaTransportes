@@ -30,6 +30,7 @@ import { AttachmentItem } from '@/components/shared/AttachmentItem';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
 import { resolveFreightRegion } from '@/lib/regionDetection';
+import { brazilNowISO } from '@/lib/utils';
 import { DollarSign } from 'lucide-react';
 
 interface RequestData {
@@ -348,7 +349,7 @@ export const UnifiedRequestDetailsDialog = ({
     try {
       const { error } = await supabase
         .from('delivery_requests')
-        .update({ notes: notesText, updated_at: new Date().toISOString() })
+        .update({ notes: notesText, updated_at: brazilNowISO() })
         .eq('id', request.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Driver, DriverWithStats } from '@/types/database';
 import { toast } from 'sonner';
+import { brazilNowISO } from '@/lib/utils';
 
 export const useDrivers = () => {
   return useQuery({
@@ -109,7 +110,7 @@ export const useUpdateDriver = () => {
     }) => {
       const { data, error } = await supabase
         .from('drivers')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: brazilNowISO() })
         .eq('id', driverId)
         .select()
         .single();

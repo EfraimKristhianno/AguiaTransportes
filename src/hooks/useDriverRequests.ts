@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { brazilNowISO } from '@/lib/utils';
 
 export interface DriverRequest {
   id: string;
@@ -110,7 +111,7 @@ export const useAcceptDeliveryRequest = () => {
         .update({ 
           status: 'aceita',
           driver_id: driverId,
-          updated_at: new Date().toISOString()
+          updated_at: brazilNowISO()
         })
         .eq('id', requestId)
         .in('status', ['solicitada', 'enviada'])

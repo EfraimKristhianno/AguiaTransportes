@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { brazilNowISO } from '@/lib/utils';
 
 interface UseDriverLocationTrackingProps {
   driverId: string | null;
@@ -33,7 +34,7 @@ export const useDriverLocationTracking = ({
         heading: heading ?? null,
         speed: speed ?? null,
         delivery_request_id: activeDeliveryRequestId,
-        updated_at: new Date().toISOString(),
+        updated_at: brazilNowISO(),
       };
 
       // Upsert based on unique driver_id

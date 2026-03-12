@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { brazilNowISO } from '@/lib/utils';
 
 interface UpdateStatusInput {
   requestId: string;
@@ -15,12 +16,13 @@ export const useUpdateRequestStatus = () => {
   return useMutation({
     mutationFn: async ({ requestId, status, attachmentPaths = [], notes }: UpdateStatusInput) => {
       // 1. Update the delivery request status (trigger will create history entry)
+      const now = brazilNowISO();
       const updateData: Record<string, unknown> = {
         status,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       };
       if (status === 'entregue') {
-        updateData.delivered_at = new Date().toISOString();
+        updateData.delivered_at = now;
       }
 
       const { error: updateError } = await supabase

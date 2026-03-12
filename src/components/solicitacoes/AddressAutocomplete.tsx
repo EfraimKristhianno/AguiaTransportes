@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { cn, brazilNowISO } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AddressAutocompleteProps {
@@ -78,7 +78,7 @@ export async function saveAddressToHistory(address: string) {
       .from('address_history')
       .update({ 
         used_count: existing.used_count + 1, 
-        last_used_at: new Date().toISOString() 
+        last_used_at: brazilNowISO() 
       })
       .eq('id', existing.id);
   } else {
