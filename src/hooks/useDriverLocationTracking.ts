@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { brazilNowISO } from '@/lib/utils';
 
 interface UseDriverLocationTrackingProps {
   driverId: string | null;
