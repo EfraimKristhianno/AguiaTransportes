@@ -5,6 +5,33 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const BRAZIL_TZ = 'America/Sao_Paulo';
+
+/**
+ * Returns the current date/time in Brazil timezone as an ISO string.
+ * Use this instead of new Date().toISOString() throughout the app.
+ */
+export function brazilNowISO(): string {
+  return new Date().toLocaleString('sv-SE', { timeZone: BRAZIL_TZ }).replace(' ', 'T') + '-03:00';
+}
+
+/**
+ * Returns today's date string "YYYY-MM-DD" in Brazil timezone.
+ */
+export function brazilTodayString(): string {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: BRAZIL_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  return parts; // en-CA format is YYYY-MM-DD
+}
+
+/**
+ * Returns a Date object representing the current time adjusted to Brazil timezone.
+ */
+export function brazilNow(): Date {
+  const str = new Date().toLocaleString('en-US', { timeZone: BRAZIL_TZ });
+  return new Date(str);
+}
+
 /**
  * Parse a "YYYY-MM-DD" date string into a local Date (avoids UTC shift).
  */
