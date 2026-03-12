@@ -105,6 +105,7 @@ export const RequestSearchBar = ({
                           onSelect={onDateFromChange}
                           locale={ptBR}
                           initialFocus
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -136,6 +137,7 @@ export const RequestSearchBar = ({
                           onSelect={onDateToChange}
                           locale={ptBR}
                           initialFocus
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
