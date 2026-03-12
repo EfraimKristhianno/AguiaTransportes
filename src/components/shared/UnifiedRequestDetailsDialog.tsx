@@ -30,6 +30,7 @@ import { AttachmentItem } from '@/components/shared/AttachmentItem';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
 import { resolveFreightRegion } from '@/lib/regionDetection';
+import { brazilNowISO } from '@/lib/utils';
 import { DollarSign } from 'lucide-react';
 
 interface RequestData {

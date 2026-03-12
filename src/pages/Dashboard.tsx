@@ -20,6 +20,7 @@ import { useRealtimeDeliveryRequests } from '@/hooks/useRealtimeDeliveryRequests
 import { RequestSearchBar, filterRequestsBySearch } from '@/components/shared/RequestSearchBar';
 import { useAllFreightPrices, getFreightPricesForRequest, formatSingleFreightPrice } from '@/hooks/useFreightPrices';
 import { resolveFreightRegion } from '@/lib/regionDetection';
+import { brazilNowISO } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
