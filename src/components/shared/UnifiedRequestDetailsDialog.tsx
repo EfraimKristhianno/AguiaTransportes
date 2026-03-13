@@ -250,7 +250,7 @@ export const UnifiedRequestDetailsDialog = ({
           hour12: false,
         }).formatToParts(date);
 
-        const getPart = (type: Intl.DateTimeFormatPartTypes) =>
+        const getPart = (type: string) =>
           parts.find((part) => part.type === type)?.value || '';
 
         return `${getPart('day')}/${getPart('month')}/${getPart('year')} às ${getPart('hour')}:${getPart('minute')}`;
