@@ -78,14 +78,17 @@ export interface CreateDeliveryRequestInput {
  
    return useMutation({
       mutationFn: async (request: CreateDeliveryRequestInput) => {
+        const now = brazilNowISO();
         const { data, error } = await supabase
           .from('delivery_requests')
           .insert({
             ...request,
             status: request.status || 'solicitada',
+            created_at: now,
+            updated_at: now,
           })
-         .select()
-         .single();
+          .select()
+          .single();
  
        if (error) throw error;
        return data;
