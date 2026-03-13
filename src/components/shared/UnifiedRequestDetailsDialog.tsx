@@ -232,9 +232,12 @@ export const UnifiedRequestDetailsDialog = ({
     if (!dateString) return '-';
 
     const normalized = dateString.trim().replace(' ', 'T');
+    const normalizedWithOffset = normalized
+      .replace(/([+-]\d{2})(\d{2})$/, '$1:$2')
+      .replace(/([+-]\d{2})$/, '$1:00');
 
-    if (hasTimezoneInfo(normalized)) {
-      const date = new Date(normalized);
+    if (hasTimezoneInfo(normalizedWithOffset)) {
+      const date = new Date(normalizedWithOffset);
 
       if (!Number.isNaN(date.getTime())) {
         const parts = new Intl.DateTimeFormat('pt-BR', {
