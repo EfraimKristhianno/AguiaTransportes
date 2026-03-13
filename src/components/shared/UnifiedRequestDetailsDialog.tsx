@@ -213,21 +213,51 @@ export const UnifiedRequestDetailsDialog = ({
 
   if (!request) return null;
 
-  const parseAsLocal = (dateString: string): Date => {
-    // Strip timezone info to treat stored time as local time
-    const clean = dateString.replace(/[Z+].*$/, '').replace(/T/, 'T');
-    const [datePart, timePart] = clean.split('T');
+  const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
+
+  const parseNaiveLocalDate = (dateString: string): Date => {
+    const normalized = dateString.trim().replace(' ', 'T');
+    const [datePart, timePart = '00:00:00'] = normalized.split('T');
     const [y, mo, d] = datePart.split('-').map(Number);
-    if (timePart) {
-      const [h, mi, s] = timePart.split(':').map(Number);
-      return new Date(y, mo - 1, d, h, mi, s || 0);
-    }
-    return new Date(y, mo - 1, d);
+    const [h, mi, s] = timePart.split(':').map(Number);
+    return new Date(y, (mo || 1) - 1, d || 1, h || 0, mi || 0, s || 0);
+  };
+
+  const hasTimezoneInfo = (dateString: string): boolean => {
+    const normalized = dateString.trim();
+    return /([zZ]|[+-]\d{2}(?::?\d{2})?)$/.test(normalized);
   };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
-    return format(parseAsLocal(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+
+    const normalized = dateString.trim().replace(' ', 'T');
+    const normalizedWithOffset = normalized
+      .replace(/([+-]\d{2})(\d{2})$/, '$1:$2')
+      .replace(/([+-]\d{2})$/, '$1:00');
+
+    if (hasTimezoneInfo(normalizedWithOffset)) {
+      const date = new Date(normalizedWithOffset);
+
+      if (!Number.isNaN(date.getTime())) {
+        const parts = new Intl.DateTimeFormat('pt-BR', {
+          timeZone: BRAZIL_TIMEZONE,
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }).formatToParts(date);
+
+        const getPart = (type: string) =>
+          parts.find((part) => part.type === type)?.value || '';
+
+        return `${getPart('day')}/${getPart('month')}/${getPart('year')} às ${getPart('hour')}:${getPart('minute')}`;
+      }
+    }
+
+    return format(parseNaiveLocalDate(normalized), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   };
 
   const currentStatusIndex = STATUS_FLOW.findIndex(s => s.value === request.status);
