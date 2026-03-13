@@ -247,8 +247,10 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
         scheduled_date: schedulingDate && schedulingTime
           ? (() => {
               const [h, m] = schedulingTime.split(':').map(Number);
-              // Parse date string manually to avoid UTC interpretation
-              const [year, month, day] = schedulingDate.split('-');
+              // Use local date components to avoid UTC shift
+              const year = schedulingDate.getFullYear();
+              const month = String(schedulingDate.getMonth() + 1).padStart(2, '0');
+              const day = String(schedulingDate.getDate()).padStart(2, '0');
               const hours = String(h).padStart(2, '0');
               const minutes = String(m).padStart(2, '0');
               return `${year}-${month}-${day}T${hours}:${minutes}:00-03:00`;
