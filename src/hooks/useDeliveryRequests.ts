@@ -1,5 +1,6 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { brazilNowISO } from '@/lib/utils';
  import { toast } from 'sonner';
  
 export interface DeliveryRequest {
@@ -77,14 +78,17 @@ export interface CreateDeliveryRequestInput {
  
    return useMutation({
       mutationFn: async (request: CreateDeliveryRequestInput) => {
+        const now = brazilNowISO();
         const { data, error } = await supabase
           .from('delivery_requests')
           .insert({
             ...request,
             status: request.status || 'solicitada',
+            created_at: now,
+            updated_at: now,
           })
-         .select()
-         .single();
+          .select()
+          .single();
  
        if (error) throw error;
        return data;
