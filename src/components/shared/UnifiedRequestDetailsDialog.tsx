@@ -352,6 +352,14 @@ export const UnifiedRequestDetailsDialog = ({
   const handleUpdateStatus = async (statusOverride?: string) => {
     const targetStatus = statusOverride || effectiveNextStatus;
     if (!targetStatus) return;
+
+    // Motorista: anexo obrigatório ao marcar como "coletada"
+    if (isDriver && targetStatus === 'coletada' && pendingFiles.length === 0) {
+      toast.error('É obrigatório anexar pelo menos um arquivo para confirmar a coleta.');
+      setDriverStepDialogOpen(true);
+      return;
+    }
+
     setIsUpdatingStatus(true);
     try {
       const paths: string[] = [];
