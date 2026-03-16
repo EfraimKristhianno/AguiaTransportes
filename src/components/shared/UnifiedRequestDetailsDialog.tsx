@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin, Phone, User, Package, Truck, Calendar, FileText,
   Navigation, Loader2, Hash, Check, Circle, Clock,
-  X, ChevronRight, ChevronDown, Send, Eye, Info,
+  X, ChevronRight, ChevronDown, Send, Eye, Info, Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
