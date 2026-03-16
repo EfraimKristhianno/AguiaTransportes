@@ -401,6 +401,56 @@ export const UnifiedRequestDetailsDialog = ({
     setExpandedSteps(prev => ({ ...prev, [stepValue]: !prev[stepValue] }));
   };
 
+  const handleStartEditStep = (stepValue: string, currentNotes: string | null) => {
+    setEditingStep(stepValue);
+    setStepEditNotes(currentNotes || '');
+    setStepEditFiles([]);
+  };
+
+  const handleSaveStepEdit = async (historyEntryId: string, stepValue: string) => {
+    if (!request) return;
+    setIsSavingStepEdit(true);
+    try {
+      // Upload new files
+      const newPaths: string[] = [];
+      for (const entry of stepEditFiles) {
+        const path = await uploadMutation.mutateAsync({ file: entry.file, requestId: request.id });
+        newPaths.push(path);
+      }
+
+      // Get existing attachments and merge
+      const existingAttachments = historyByStatus[stepValue]?.attachments || [];
+      const mergedAttachments = [...existingAttachments, ...newPaths];
+
+      const updateData: Record<string, unknown> = {};
+      if (stepEditNotes !== (historyByStatus[stepValue]?.notes || '')) {
+        updateData.notes = stepEditNotes || null;
+      }
+      if (newPaths.length > 0) {
+        updateData.attachments = mergedAttachments;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('delivery_request_status_history')
+          .update(updateData)
+          .eq('id', historyEntryId);
+        if (error) throw error;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['request_history'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      toast.success('Etapa atualizada com sucesso!');
+      setEditingStep(null);
+      setStepEditNotes('');
+      setStepEditFiles([]);
+    } catch (err: any) {
+      toast.error(`Erro ao salvar: ${err.message}`);
+    } finally {
+      setIsSavingStepEdit(false);
+    }
+  };
+
 
   // History by status for timeline
   const historyByStatus: Record<string, { id: string; changed_at: string; notes: string | null; attachments?: string[] }> = {};
