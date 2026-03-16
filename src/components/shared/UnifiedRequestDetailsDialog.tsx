@@ -778,6 +778,8 @@ export const UnifiedRequestDetailsDialog = ({
                               const stepDate = isSolicitada
                                 ? request.created_at
                                 : historyEntry?.changed_at;
+                              const isEditingThis = editingStep === step.value && !isSolicitada && isAdminOrGestor;
+                              const canEditStep = !isSolicitada && isAdminOrGestor && historyEntry?.id;
 
                               return (
                                 <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 border border-border">
@@ -789,33 +791,99 @@ export const UnifiedRequestDetailsDialog = ({
                                       </p>
                                     </div>
                                   )}
-                                  {stepNotes ? (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
-                                      <p className="text-sm">{stepNotes}</p>
-                                    </div>
-                                  ) : (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
-                                      <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
-                                    </div>
-                                  )}
-                                  {stepAttachments && stepAttachments.length > 0 ? (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                                        Anexos ({stepAttachments.length}):
-                                      </p>
-                                      <div className="space-y-1.5">
-                                        {stepAttachments.map((attachment: string, idx: number) => (
-                                          <AttachmentItem key={idx} path={attachment} index={idx} />
-                                        ))}
+
+                                  {isEditingThis ? (
+                                    <>
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                        <Textarea
+                                          value={stepEditNotes}
+                                          onChange={(e) => setStepEditNotes(e.target.value)}
+                                          placeholder="Adicione uma observação para esta etapa..."
+                                          className="min-h-[60px] resize-none text-sm"
+                                        />
                                       </div>
-                                    </div>
+                                      {stepAttachments && stepAttachments.length > 0 && (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                                            Anexos existentes ({stepAttachments.length}):
+                                          </p>
+                                          <div className="space-y-1.5">
+                                            {stepAttachments.map((attachment: string, idx: number) => (
+                                              <AttachmentItem key={idx} path={attachment} index={idx} />
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground mb-1">Adicionar anexos:</p>
+                                        <FileUploadArea files={stepEditFiles} onFilesChange={setStepEditFiles} />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="flex-1"
+                                          onClick={() => { setEditingStep(null); setStepEditNotes(''); setStepEditFiles([]); }}
+                                          disabled={isSavingStepEdit}
+                                        >
+                                          Cancelar
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          className="flex-1"
+                                          onClick={() => handleSaveStepEdit(historyEntry!.id, step.value)}
+                                          disabled={isSavingStepEdit}
+                                        >
+                                          {isSavingStepEdit ? (
+                                            <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Salvando...</>
+                                          ) : (
+                                            <><Send className="h-3 w-3 mr-1" /> Salvar</>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </>
                                   ) : (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
-                                      <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
-                                    </div>
+                                    <>
+                                      {stepNotes ? (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                          <p className="text-sm">{stepNotes}</p>
+                                        </div>
+                                      ) : (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                          <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
+                                        </div>
+                                      )}
+                                      {stepAttachments && stepAttachments.length > 0 ? (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                                            Anexos ({stepAttachments.length}):
+                                          </p>
+                                          <div className="space-y-1.5">
+                                            {stepAttachments.map((attachment: string, idx: number) => (
+                                              <AttachmentItem key={idx} path={attachment} index={idx} />
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
+                                          <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
+                                        </div>
+                                      )}
+                                      {canEditStep && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="w-full mt-1"
+                                          onClick={() => handleStartEditStep(step.value, stepNotes || null)}
+                                        >
+                                          <Pencil className="h-3 w-3 mr-1" /> Editar Etapa
+                                        </Button>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               );
