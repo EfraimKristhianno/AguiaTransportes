@@ -159,6 +159,10 @@ export const UnifiedRequestDetailsDialog = ({
   const [selectedNextStatus, setSelectedNextStatus] = useState<string | null>(null);
   
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
+  const [editingStep, setEditingStep] = useState<string | null>(null);
+  const [stepEditNotes, setStepEditNotes] = useState('');
+  const [stepEditFiles, setStepEditFiles] = useState<UploadedFile[]>([]);
+  const [isSavingStepEdit, setIsSavingStepEdit] = useState(false);
 
   // Manual close handler - the ONLY way to close this dialog
   const handleClose = () => {
