@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin, Phone, User, Package, Truck, Calendar, FileText,
   Navigation, Loader2, Hash, Check, Circle, Clock,
-  X, ChevronRight, ChevronDown, Send, Eye, Info,
+  X, ChevronRight, ChevronDown, Send, Eye, Info, Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -159,6 +159,10 @@ export const UnifiedRequestDetailsDialog = ({
   const [selectedNextStatus, setSelectedNextStatus] = useState<string | null>(null);
   
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
+  const [editingStep, setEditingStep] = useState<string | null>(null);
+  const [stepEditNotes, setStepEditNotes] = useState('');
+  const [stepEditFiles, setStepEditFiles] = useState<UploadedFile[]>([]);
+  const [isSavingStepEdit, setIsSavingStepEdit] = useState(false);
 
   // Manual close handler - the ONLY way to close this dialog
   const handleClose = () => {
@@ -397,22 +401,77 @@ export const UnifiedRequestDetailsDialog = ({
     setExpandedSteps(prev => ({ ...prev, [stepValue]: !prev[stepValue] }));
   };
 
+  const handleStartEditStep = (stepValue: string, currentNotes: string | null) => {
+    setEditingStep(stepValue);
+    setStepEditNotes(currentNotes || '');
+    setStepEditFiles([]);
+  };
+
+  const handleSaveStepEdit = async (historyEntryId: string, stepValue: string) => {
+    if (!request) return;
+    setIsSavingStepEdit(true);
+    try {
+      // Upload new files
+      const newPaths: string[] = [];
+      for (const entry of stepEditFiles) {
+        const path = await uploadMutation.mutateAsync({ file: entry.file, requestId: request.id });
+        newPaths.push(path);
+      }
+
+      // Get existing attachments and merge
+      const existingAttachments = historyByStatus[stepValue]?.attachments || [];
+      const mergedAttachments = [...existingAttachments, ...newPaths];
+
+      const updateData: Record<string, unknown> = {};
+      if (stepEditNotes !== (historyByStatus[stepValue]?.notes || '')) {
+        updateData.notes = stepEditNotes || null;
+      }
+      if (newPaths.length > 0) {
+        updateData.attachments = mergedAttachments;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('delivery_request_status_history')
+          .update(updateData)
+          .eq('id', historyEntryId);
+        if (error) throw error;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['request_history'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      toast.success('Etapa atualizada com sucesso!');
+      setEditingStep(null);
+      setStepEditNotes('');
+      setStepEditFiles([]);
+    } catch (err: any) {
+      toast.error(`Erro ao salvar: ${err.message}`);
+    } finally {
+      setIsSavingStepEdit(false);
+    }
+  };
+
 
   // History by status for timeline
-  const historyByStatus: Record<string, { changed_at: string; notes: string | null; attachments?: string[] }> = {};
+  const historyByStatus: Record<string, { id: string; changed_at: string; notes: string | null; attachments?: string[] }> = {};
   history.forEach((entry: any) => {
     const existing = historyByStatus[entry.status];
     if (!existing) {
       historyByStatus[entry.status] = {
+        id: entry.id,
         changed_at: entry.changed_at,
         notes: entry.notes,
         attachments: entry.attachments || [],
       };
     } else {
       // Merge: prefer entry with notes/attachments (handles duplicate trigger entries)
-      if (entry.notes && !existing.notes) existing.notes = entry.notes;
+      if (entry.notes && !existing.notes) {
+        existing.notes = entry.notes;
+        existing.id = entry.id;
+      }
       if (entry.attachments && entry.attachments.length > 0 && (!existing.attachments || existing.attachments.length === 0)) {
         existing.attachments = entry.attachments;
+        existing.id = entry.id;
       }
     }
   });
@@ -719,6 +778,8 @@ export const UnifiedRequestDetailsDialog = ({
                               const stepDate = isSolicitada
                                 ? request.created_at
                                 : historyEntry?.changed_at;
+                              const isEditingThis = editingStep === step.value && !isSolicitada && isAdminOrGestor;
+                              const canEditStep = !isSolicitada && isAdminOrGestor && historyEntry?.id;
 
                               return (
                                 <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 border border-border">
@@ -730,33 +791,99 @@ export const UnifiedRequestDetailsDialog = ({
                                       </p>
                                     </div>
                                   )}
-                                  {stepNotes ? (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
-                                      <p className="text-sm">{stepNotes}</p>
-                                    </div>
-                                  ) : (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
-                                      <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
-                                    </div>
-                                  )}
-                                  {stepAttachments && stepAttachments.length > 0 ? (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                                        Anexos ({stepAttachments.length}):
-                                      </p>
-                                      <div className="space-y-1.5">
-                                        {stepAttachments.map((attachment: string, idx: number) => (
-                                          <AttachmentItem key={idx} path={attachment} index={idx} />
-                                        ))}
+
+                                  {isEditingThis ? (
+                                    <>
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                        <Textarea
+                                          value={stepEditNotes}
+                                          onChange={(e) => setStepEditNotes(e.target.value)}
+                                          placeholder="Adicione uma observação para esta etapa..."
+                                          className="min-h-[60px] resize-none text-sm"
+                                        />
                                       </div>
-                                    </div>
+                                      {stepAttachments && stepAttachments.length > 0 && (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                                            Anexos existentes ({stepAttachments.length}):
+                                          </p>
+                                          <div className="space-y-1.5">
+                                            {stepAttachments.map((attachment: string, idx: number) => (
+                                              <AttachmentItem key={idx} path={attachment} index={idx} />
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground mb-1">Adicionar anexos:</p>
+                                        <FileUploadArea files={stepEditFiles} onFilesChange={setStepEditFiles} />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="flex-1"
+                                          onClick={() => { setEditingStep(null); setStepEditNotes(''); setStepEditFiles([]); }}
+                                          disabled={isSavingStepEdit}
+                                        >
+                                          Cancelar
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          className="flex-1"
+                                          onClick={() => handleSaveStepEdit(historyEntry!.id, step.value)}
+                                          disabled={isSavingStepEdit}
+                                        >
+                                          {isSavingStepEdit ? (
+                                            <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Salvando...</>
+                                          ) : (
+                                            <><Send className="h-3 w-3 mr-1" /> Salvar</>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </>
                                   ) : (
-                                    <div>
-                                      <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
-                                      <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
-                                    </div>
+                                    <>
+                                      {stepNotes ? (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                          <p className="text-sm">{stepNotes}</p>
+                                        </div>
+                                      ) : (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                                          <p className="text-sm text-muted-foreground italic">Nenhuma observação registrada</p>
+                                        </div>
+                                      )}
+                                      {stepAttachments && stepAttachments.length > 0 ? (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">
+                                            Anexos ({stepAttachments.length}):
+                                          </p>
+                                          <div className="space-y-1.5">
+                                            {stepAttachments.map((attachment: string, idx: number) => (
+                                              <AttachmentItem key={idx} path={attachment} index={idx} />
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div>
+                                          <p className="text-xs font-medium text-muted-foreground mb-1">Anexos:</p>
+                                          <p className="text-sm text-muted-foreground italic">Nenhum anexo registrado</p>
+                                        </div>
+                                      )}
+                                      {canEditStep && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="w-full mt-1"
+                                          onClick={() => handleStartEditStep(step.value, stepNotes || null)}
+                                        >
+                                          <Pencil className="h-3 w-3 mr-1" /> Editar Etapa
+                                        </Button>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               );
