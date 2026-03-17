@@ -109,7 +109,7 @@ export const RequestList = ({ searchTerm = '', statusFilter = 'all', dateFrom, d
   const driverId = role === 'motorista' ? currentDriver?.id : null;
   const { data: requests = [], isLoading } = useDeliveryRequests();
   const { data: allFreightPrices = [] } = useAllFreightPrices();
-  const showFreightValue = role === 'admin' || role === 'gestor';
+  const showFreightValue = role === 'admin' || role === 'gestor' || role === 'assistente_logistico';
 
   const handleFreightEdit = (e: React.MouseEvent, requestId: string, currentValue: string) => {
     e.stopPropagation();

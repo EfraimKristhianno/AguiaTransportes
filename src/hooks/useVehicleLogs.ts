@@ -171,7 +171,7 @@ export const useMaintenanceRecords = () => {
 
   return useQuery({
     queryKey: ['maintenance_records', currentDriver?.id, role],
-    enabled: role === 'admin' || role === 'gestor' || !!currentDriver?.id,
+    enabled: role === 'admin' || role === 'gestor' || role === 'assistente_logistico' || !!currentDriver?.id,
     queryFn: async () => {
       let query = supabase
         .from('maintenance_records')
