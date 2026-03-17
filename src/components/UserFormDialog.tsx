@@ -240,6 +240,7 @@ const UserFormDialog = ({
                     <SelectContent>
                       <SelectItem value="admin">{getRoleLabel('admin')}</SelectItem>
                       <SelectItem value="gestor">{getRoleLabel('gestor')}</SelectItem>
+                      <SelectItem value="assistente_logistico">{getRoleLabel('assistente_logistico')}</SelectItem>
                       <SelectItem value="motorista">{getRoleLabel('motorista')}</SelectItem>
                       <SelectItem value="cliente">{getRoleLabel('cliente')}</SelectItem>
                     </SelectContent>
