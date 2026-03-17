@@ -17,33 +17,34 @@ const allMenuItems = [{
   icon: LayoutDashboard,
   label: 'Dashboard',
   path: '/dashboard',
-  roles: ['admin', 'gestor', 'cliente', 'motorista'] as UserRole[]
+  roles: ['admin', 'gestor', 'assistente_logistico', 'cliente', 'motorista'] as UserRole[]
 }, {
   icon: FileText,
   label: 'Solicitações',
   path: '/solicitacoes',
-  roles: ['admin', 'gestor', 'cliente'] as UserRole[]
+  roles: ['admin', 'gestor', 'assistente_logistico', 'cliente'] as UserRole[]
 }, {
   icon: TruckIcon,
   label: 'Motoristas',
   path: '/motoristas',
-  roles: ['admin', 'gestor', 'motorista'] as UserRole[]
+  roles: ['admin', 'gestor', 'assistente_logistico', 'motorista'] as UserRole[]
 }, {
   icon: Car,
   label: 'Veículos',
   path: '/veiculos',
-  roles: ['admin', 'gestor', 'motorista'] as UserRole[]
+  roles: ['admin', 'gestor', 'assistente_logistico', 'motorista'] as UserRole[]
 }, {
   icon: Users,
   label: 'Usuários',
   path: '/usuarios',
-  roles: ['admin', 'gestor'] as UserRole[]
+  roles: ['admin', 'gestor', 'assistente_logistico'] as UserRole[]
 }];
 const getRoleLabel = (role: UserRole | null): string => {
   if (!role) return 'Usuário';
   const labels: Record<UserRole, string> = {
     admin: 'Administrador',
     gestor: 'Gestor',
+    assistente_logistico: 'Assistente Logístico',
     motorista: 'Motorista',
     cliente: 'Cliente'
   };

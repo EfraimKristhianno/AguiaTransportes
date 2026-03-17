@@ -48,7 +48,7 @@ export const useVehicleLogs = () => {
 
   return useQuery({
     queryKey: ['vehicle_logs', currentDriver?.id, role],
-    enabled: role === 'admin' || role === 'gestor' || !!currentDriver?.id,
+    enabled: role === 'admin' || role === 'gestor' || role === 'assistente_logistico' || !!currentDriver?.id,
     queryFn: async () => {
       let query = supabase
         .from('vehicle_logs')
@@ -73,7 +73,7 @@ export const useOilChangeRecords = () => {
 
   return useQuery({
     queryKey: ['oil_change_records', currentDriver?.id, role],
-    enabled: role === 'admin' || role === 'gestor' || !!currentDriver?.id,
+    enabled: role === 'admin' || role === 'gestor' || role === 'assistente_logistico' || !!currentDriver?.id,
     queryFn: async () => {
       let query = supabase
         .from('oil_change_records')
@@ -171,7 +171,7 @@ export const useMaintenanceRecords = () => {
 
   return useQuery({
     queryKey: ['maintenance_records', currentDriver?.id, role],
-    enabled: role === 'admin' || role === 'gestor' || !!currentDriver?.id,
+    enabled: role === 'admin' || role === 'gestor' || role === 'assistente_logistico' || !!currentDriver?.id,
     queryFn: async () => {
       let query = supabase
         .from('maintenance_records')

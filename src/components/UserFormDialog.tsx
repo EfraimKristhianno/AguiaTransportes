@@ -43,7 +43,7 @@ const userFormSchema = z.object({
   username: z.string().min(3, 'Usuário deve ter pelo menos 3 caracteres').max(50, 'Usuário muito longo'),
   phone: z.string().optional(),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
-  role: z.enum(['admin', 'gestor', 'motorista', 'cliente']),
+  role: z.enum(['admin', 'gestor', 'assistente_logistico', 'motorista', 'cliente']),
   vehicleTypes: z.array(z.string()).optional(),
 });
 
@@ -142,6 +142,7 @@ const UserFormDialog = ({
     const labels: Record<UserRole, string> = {
       admin: 'Administrador',
       gestor: 'Gestor',
+      assistente_logistico: 'Assistente Logístico',
       motorista: 'Motorista',
       cliente: 'Cliente',
     };
@@ -239,6 +240,7 @@ const UserFormDialog = ({
                     <SelectContent>
                       <SelectItem value="admin">{getRoleLabel('admin')}</SelectItem>
                       <SelectItem value="gestor">{getRoleLabel('gestor')}</SelectItem>
+                      <SelectItem value="assistente_logistico">{getRoleLabel('assistente_logistico')}</SelectItem>
                       <SelectItem value="motorista">{getRoleLabel('motorista')}</SelectItem>
                       <SelectItem value="cliente">{getRoleLabel('cliente')}</SelectItem>
                     </SelectContent>

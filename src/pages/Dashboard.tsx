@@ -66,8 +66,8 @@ const Dashboard = () => {
   const isDriver = role === 'motorista';
   useRealtimeDeliveryRequests();
   const { data: allFreightPrices = [] } = useAllFreightPrices();
-  const canEditDelete = role === 'admin' || role === 'gestor' || role === 'cliente';
-  const showPrices = role === 'admin' || role === 'gestor';
+  const canEditDelete = role === 'admin' || role === 'gestor' || role === 'assistente_logistico' || role === 'cliente';
+  const showPrices = role === 'admin' || role === 'gestor' || role === 'assistente_logistico';
 
   // Get current driver record for driver users
   const {
@@ -450,11 +450,11 @@ const Dashboard = () => {
       locale: ptBR
     });
   };
-  const dashboardTitle = isClient ? 'Minhas Solicitações' : isDriver ? 'Minhas Entregas' : role === 'gestor' ? 'Dashboard Gestor' : 'Dashboard Admin';
+  const dashboardTitle = isClient ? 'Minhas Solicitações' : isDriver ? 'Minhas Entregas' : (role === 'gestor' || role === 'assistente_logistico') ? 'Dashboard Gestor' : 'Dashboard Admin';
   const dashboardSubtitle = isClient ? 'Acompanhe suas solicitações de coleta' : isDriver ? 'Acompanhe suas entregas aceitas' : 'Visão geral do sistema de logística';
   return <DashboardLayout title={dashboardTitle} subtitle={dashboardSubtitle} icon={<LayoutDashboard className="h-5 w-5" />}>
       {/* Stats Cards */}
-      <div className={`mb-4 sm:mb-6 grid gap-3 grid-cols-2 lg:gap-4 ${(role === 'admin' || role === 'gestor') ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+      <div className={`mb-4 sm:mb-6 grid gap-3 grid-cols-2 lg:gap-4 ${(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         {/* Total Solicitações */}
         <Card className="border-border">
           <CardContent className="flex items-center justify-between p-4">
@@ -515,7 +515,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Total Fretes - apenas admin/gestor */}
-        {(role === 'admin' || role === 'gestor') && (
+        {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') && (
           <Card className="border-border col-span-2 lg:col-span-1">
             <CardContent className="flex items-center justify-between p-4">
               <div>
@@ -548,7 +548,7 @@ const Dashboard = () => {
       </div>
 
       {/* Export PDF Button - Admin/Gestor only */}
-      {(role === 'admin' || role === 'gestor') && filteredRequests.length > 0 && (
+      {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') && filteredRequests.length > 0 && (
         <div className="mb-4 flex justify-end">
           <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-2">
             <FileDown className="h-4 w-4" />
@@ -731,7 +731,7 @@ const Dashboard = () => {
               Solicitação #{cancelRequestNumber}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {(role === 'admin' || role === 'gestor')
+              {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico')
                 ? 'Escolha entre cancelar (manter no sistema com status cancelada) ou excluir permanentemente. Informe o motivo abaixo.'
                 : 'Esta solicitação será marcada como cancelada. Informe o motivo abaixo.'}
             </AlertDialogDescription>
@@ -746,9 +746,9 @@ const Dashboard = () => {
               rows={3}
             />
           </div>
-          <AlertDialogFooter className={(role === 'admin' || role === 'gestor') ? 'flex flex-col sm:flex-row gap-2' : ''}>
+          <AlertDialogFooter className={(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') ? 'flex flex-col sm:flex-row gap-2' : ''}>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
-            {(role === 'admin' || role === 'gestor') ? (
+            {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') ? (
               <>
                 <AlertDialogAction
                   onClick={handleCancelRequest}

@@ -746,7 +746,12 @@ export type Database = {
       user_roles_count: { Args: never; Returns: number }
     }
     Enums: {
-      app_role: "admin" | "gestor" | "motorista" | "cliente"
+      app_role:
+        | "admin"
+        | "gestor"
+        | "motorista"
+        | "cliente"
+        | "assistente_logistico"
       driver_type: "fixo" | "agregado"
       user_role: "admin" | "gestor" | "motorista" | "cliente"
     }
@@ -876,7 +881,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "gestor", "motorista", "cliente"],
+      app_role: [
+        "admin",
+        "gestor",
+        "motorista",
+        "cliente",
+        "assistente_logistico",
+      ],
       driver_type: ["fixo", "agregado"],
       user_role: ["admin", "gestor", "motorista", "cliente"],
     },
