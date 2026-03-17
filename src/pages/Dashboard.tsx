@@ -746,9 +746,9 @@ const Dashboard = () => {
               rows={3}
             />
           </div>
-          <AlertDialogFooter className={(role === 'admin' || role === 'gestor') ? 'flex flex-col sm:flex-row gap-2' : ''}>
+          <AlertDialogFooter className={(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') ? 'flex flex-col sm:flex-row gap-2' : ''}>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
-            {(role === 'admin' || role === 'gestor') ? (
+            {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') ? (
               <>
                 <AlertDialogAction
                   onClick={handleCancelRequest}
