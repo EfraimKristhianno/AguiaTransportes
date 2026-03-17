@@ -450,7 +450,7 @@ const Dashboard = () => {
       locale: ptBR
     });
   };
-  const dashboardTitle = isClient ? 'Minhas Solicitações' : isDriver ? 'Minhas Entregas' : role === 'gestor' ? 'Dashboard Gestor' : 'Dashboard Admin';
+  const dashboardTitle = isClient ? 'Minhas Solicitações' : isDriver ? 'Minhas Entregas' : (role === 'gestor' || role === 'assistente_logistico') ? 'Dashboard Gestor' : 'Dashboard Admin';
   const dashboardSubtitle = isClient ? 'Acompanhe suas solicitações de coleta' : isDriver ? 'Acompanhe suas entregas aceitas' : 'Visão geral do sistema de logística';
   return <DashboardLayout title={dashboardTitle} subtitle={dashboardSubtitle} icon={<LayoutDashboard className="h-5 w-5" />}>
       {/* Stats Cards */}
