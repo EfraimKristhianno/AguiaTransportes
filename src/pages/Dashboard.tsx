@@ -353,28 +353,46 @@ const Dashboard = () => {
       return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
     };
 
-    const tableData = filteredRequests.map(item => [
-      formatDateTimePdf(item.created_at),
-      String((item as any).request_number || '-'),
-      (item as any).client?.name || '-',
-      (item as any).driver?.name || '-',
-      item.transport_type || '-',
-      item.origin_address || '-',
-      item.destination_address || '-',
-      (item as any).requester || '-',
-      getFreightValue(item),
-    ]);
+    // Check if any filtered request belongs to Buhler ML or Buhler CS
+    const hasBuhler = filteredRequests.some((item: any) => {
+      const clientName = (item.client?.name || '').toLowerCase();
+      return clientName.includes('buhler ml') || clientName.includes('bühler ml') || clientName.includes('buhler cs') || clientName.includes('bühler cs');
+    });
+
+    const tableData = filteredRequests.map(item => {
+      const row = [
+        formatDateTimePdf(item.created_at),
+        String((item as any).request_number || '-'),
+        (item as any).client?.name || '-',
+        (item as any).driver?.name || '-',
+        item.transport_type || '-',
+        item.origin_address || '-',
+        item.destination_address || '-',
+        (item as any).requester || '-',
+        getFreightValue(item),
+      ];
+      if (hasBuhler) {
+        row.push((item as any).invoice_number || '-');
+        row.push((item as any).op_number || '-');
+      }
+      return row;
+    });
+
+    const headColumns = ['Data/Hora', 'ID', 'Cliente', 'Motorista', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete'];
+    if (hasBuhler) {
+      headColumns.push('N.F', 'O.P');
+    }
 
     autoTable(doc, {
-      head: [['Data/Hora', 'ID', 'Cliente', 'Motorista', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
+      head: [headColumns],
       body: tableData,
       startY: y,
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [211, 33, 39], fontSize: 8 },
       bodyStyles: { fontSize: 7 },
       columnStyles: {
-        5: { cellWidth: 45 },
-        6: { cellWidth: 45 },
+        5: { cellWidth: 40 },
+        6: { cellWidth: 40 },
       },
       margin: { left: 14 },
     });

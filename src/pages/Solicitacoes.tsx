@@ -100,27 +100,45 @@ const Solicitacoes = () => {
       return formatSingleFreightPrice(matched, region);
     };
 
-    const tableData = filteredRequests.map((item: any) => [
-      formatDate(item.scheduled_date || item.created_at),
-      item.clients?.name || '-',
-      item.drivers?.name || 'Sem motorista',
-      item.transport_type || '-',
-      item.origin_address || '-',
-      item.destination_address || '-',
-      item.requester || '-',
-      getFreightValue(item),
-    ]);
+    // Check if any filtered request belongs to Buhler ML or Buhler CS
+    const hasBuhler = filteredRequests.some((item: any) => {
+      const clientName = (item.clients?.name || '').toLowerCase();
+      return clientName.includes('buhler ml') || clientName.includes('bühler ml') || clientName.includes('buhler cs') || clientName.includes('bühler cs');
+    });
+
+    const tableData = filteredRequests.map((item: any) => {
+      const row = [
+        formatDate(item.scheduled_date || item.created_at),
+        item.clients?.name || '-',
+        item.drivers?.name || 'Sem motorista',
+        item.transport_type || '-',
+        item.origin_address || '-',
+        item.destination_address || '-',
+        item.requester || '-',
+        getFreightValue(item),
+      ];
+      if (hasBuhler) {
+        row.push(item.invoice_number || '-');
+        row.push(item.op_number || '-');
+      }
+      return row;
+    });
+
+    const headColumns = ['Data/Hora', 'Cliente', 'Motorista', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete'];
+    if (hasBuhler) {
+      headColumns.push('N.F', 'O.P');
+    }
 
     autoTable(doc, {
-      head: [['Data/Hora', 'Cliente', 'Motorista', 'Tipo Transporte', 'End. Coleta', 'End. Entrega', 'Solicitante', 'Valor Frete']],
+      head: [headColumns],
       body: tableData,
       startY: y,
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [211, 33, 39], fontSize: 8 },
       bodyStyles: { fontSize: 7 },
       columnStyles: {
-        4: { cellWidth: 45 },
-        5: { cellWidth: 45 },
+        4: { cellWidth: 40 },
+        5: { cellWidth: 40 },
       },
       margin: { left: 14 },
     });
