@@ -548,7 +548,7 @@ const Dashboard = () => {
       </div>
 
       {/* Export PDF Button - Admin/Gestor only */}
-      {(role === 'admin' || role === 'gestor') && filteredRequests.length > 0 && (
+      {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') && filteredRequests.length > 0 && (
         <div className="mb-4 flex justify-end">
           <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-2">
             <FileDown className="h-4 w-4" />
