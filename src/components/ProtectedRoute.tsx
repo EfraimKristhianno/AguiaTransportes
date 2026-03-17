@@ -9,12 +9,12 @@ interface ProtectedRouteProps {
 
 // Define route permissions
 const routePermissions: Record<string, UserRole[]> = {
-  '/dashboard': ['admin', 'gestor', 'cliente', 'motorista'],
-  '/solicitacoes': ['admin', 'gestor', 'motorista', 'cliente'],
-  '/usuarios': ['admin', 'gestor'],
-  '/motoristas': ['admin', 'gestor', 'motorista'],
-  '/veiculos': ['admin', 'gestor', 'motorista'],
-  '/clientes': ['admin', 'gestor'],
+  '/dashboard': ['admin', 'gestor', 'assistente_logistico', 'cliente', 'motorista'],
+  '/solicitacoes': ['admin', 'gestor', 'assistente_logistico', 'motorista', 'cliente'],
+  '/usuarios': ['admin', 'gestor', 'assistente_logistico'],
+  '/motoristas': ['admin', 'gestor', 'assistente_logistico', 'motorista'],
+  '/veiculos': ['admin', 'gestor', 'assistente_logistico', 'motorista'],
+  '/clientes': ['admin', 'gestor', 'assistente_logistico'],
 };
 
 const getDefaultRoute = (role: UserRole | null): string => {
