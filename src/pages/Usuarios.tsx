@@ -126,6 +126,7 @@ const Usuarios = () => {
     const colors: Record<UserRole, string> = {
       admin: "bg-destructive/10 text-destructive",
       gestor: "bg-primary/10 text-primary",
+      assistente_logistico: "bg-blue-100 text-blue-700",
       motorista: "bg-emerald-100 text-emerald-700",
       cliente: "bg-muted text-muted-foreground",
     };
