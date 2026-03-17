@@ -48,7 +48,7 @@ export const useVehicleLogs = () => {
 
   return useQuery({
     queryKey: ['vehicle_logs', currentDriver?.id, role],
-    enabled: role === 'admin' || role === 'gestor' || !!currentDriver?.id,
+    enabled: role === 'admin' || role === 'gestor' || role === 'assistente_logistico' || !!currentDriver?.id,
     queryFn: async () => {
       let query = supabase
         .from('vehicle_logs')
