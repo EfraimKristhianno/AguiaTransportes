@@ -731,7 +731,7 @@ const Dashboard = () => {
               Solicitação #{cancelRequestNumber}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {(role === 'admin' || role === 'gestor')
+              {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico')
                 ? 'Escolha entre cancelar (manter no sistema com status cancelada) ou excluir permanentemente. Informe o motivo abaixo.'
                 : 'Esta solicitação será marcada como cancelada. Informe o motivo abaixo.'}
             </AlertDialogDescription>
