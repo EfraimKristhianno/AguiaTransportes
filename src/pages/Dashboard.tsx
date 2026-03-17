@@ -515,7 +515,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Total Fretes - apenas admin/gestor */}
-        {(role === 'admin' || role === 'gestor') && (
+        {(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') && (
           <Card className="border-border col-span-2 lg:col-span-1">
             <CardContent className="flex items-center justify-between p-4">
               <div>
