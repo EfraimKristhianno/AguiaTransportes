@@ -10,7 +10,7 @@ const Veiculos = () => {
 
   const getSubtitle = () => {
     if (role === 'motorista') return 'Registros do seu veículo';
-    if (role === 'gestor') return 'Indicadores e gráficos da frota';
+    if (role === 'gestor' || role === 'assistente_logistico') return 'Indicadores e gráficos da frota';
     return 'Dashboard completo da frota';
   };
 
