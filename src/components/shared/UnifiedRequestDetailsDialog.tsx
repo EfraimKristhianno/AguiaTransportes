@@ -139,7 +139,7 @@ export const UnifiedRequestDetailsDialog = ({
   const { role } = useAuth();
   const isDriver = role === 'motorista';
   const isAdmin = role === 'admin';
-  const isAdminOrGestor = role === 'admin' || role === 'gestor';
+  const isAdminOrGestor = role === 'admin' || role === 'gestor' || role === 'assistente_logistico';
   const showFreightValue = isAdminOrGestor;
   const { data: allFreightPrices = [] } = useAllFreightPrices();
   const [adminSelectedStatus, setAdminSelectedStatus] = useState<string>('');

@@ -142,6 +142,7 @@ const UserFormDialog = ({
     const labels: Record<UserRole, string> = {
       admin: 'Administrador',
       gestor: 'Gestor',
+      assistente_logistico: 'Assistente Logístico',
       motorista: 'Motorista',
       cliente: 'Cliente',
     };

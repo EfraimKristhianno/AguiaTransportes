@@ -64,6 +64,7 @@ export const getDefaultRoute = (role: UserRole | null | undefined): string => {
   const defaultRoutes: Record<UserRole, string> = {
     admin: '/dashboard',
     gestor: '/dashboard',
+    assistente_logistico: '/dashboard',
     motorista: '/dashboard',
     cliente: '/dashboard',
   };

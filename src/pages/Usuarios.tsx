@@ -94,12 +94,13 @@ const Usuarios = () => {
     selectedUser?.role === "motorista" ? selectedUser?.auth_id : undefined
   );
 
-  const canManageUsers = currentUserRole === "admin" || currentUserRole === "gestor";
+  const canManageUsers = currentUserRole === "admin" || currentUserRole === "gestor" || currentUserRole === "assistente_logistico";
 
   const getRoleLabel = (role: UserRole): string => {
     const labels: Record<UserRole, string> = {
       admin: "Administrador",
       gestor: "Gestor",
+      assistente_logistico: "Assistente Logístico",
       motorista: "Motorista",
       cliente: "Cliente",
     };
@@ -110,6 +111,7 @@ const Usuarios = () => {
     const styles: Record<UserRole, string> = {
       admin: "bg-destructive/10 text-destructive border-destructive/20",
       gestor: "bg-primary/10 text-primary border-primary/20",
+      assistente_logistico: "bg-blue-50 text-blue-700 border-blue-200",
       motorista: "bg-emerald-50 text-emerald-700 border-emerald-200",
       cliente: "bg-muted text-muted-foreground border-border",
     };

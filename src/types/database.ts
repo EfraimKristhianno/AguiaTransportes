@@ -1,6 +1,6 @@
 // Database types based on Supabase tables
 
-export type UserRole = 'admin' | 'gestor' | 'motorista' | 'cliente';
+export type UserRole = 'admin' | 'gestor' | 'motorista' | 'cliente' | 'assistente_logistico';
 
 export interface User {
   id: string;
