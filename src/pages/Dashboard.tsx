@@ -262,7 +262,7 @@ const Dashboard = () => {
 
   // Calculate total freight value for admin/gestor
   const totalFreight = useMemo(() => {
-    if (role !== 'admin' && role !== 'gestor') return 0;
+    if (role !== 'admin' && role !== 'gestor' && role !== 'assistente_logistico') return 0;
     return filteredRequests.reduce((sum, item) => {
       if ((item as any).freight_override != null) return sum + Number((item as any).freight_override);
       const region = resolveFreightRegion((item as any).origin_address, item.destination_address);
