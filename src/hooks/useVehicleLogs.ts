@@ -73,7 +73,7 @@ export const useOilChangeRecords = () => {
 
   return useQuery({
     queryKey: ['oil_change_records', currentDriver?.id, role],
-    enabled: role === 'admin' || role === 'gestor' || !!currentDriver?.id,
+    enabled: role === 'admin' || role === 'gestor' || role === 'assistente_logistico' || !!currentDriver?.id,
     queryFn: async () => {
       let query = supabase
         .from('oil_change_records')
