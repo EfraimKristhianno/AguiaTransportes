@@ -454,7 +454,7 @@ const Dashboard = () => {
   const dashboardSubtitle = isClient ? 'Acompanhe suas solicitações de coleta' : isDriver ? 'Acompanhe suas entregas aceitas' : 'Visão geral do sistema de logística';
   return <DashboardLayout title={dashboardTitle} subtitle={dashboardSubtitle} icon={<LayoutDashboard className="h-5 w-5" />}>
       {/* Stats Cards */}
-      <div className={`mb-4 sm:mb-6 grid gap-3 grid-cols-2 lg:gap-4 ${(role === 'admin' || role === 'gestor') ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+      <div className={`mb-4 sm:mb-6 grid gap-3 grid-cols-2 lg:gap-4 ${(role === 'admin' || role === 'gestor' || role === 'assistente_logistico') ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         {/* Total Solicitações */}
         <Card className="border-border">
           <CardContent className="flex items-center justify-between p-4">
