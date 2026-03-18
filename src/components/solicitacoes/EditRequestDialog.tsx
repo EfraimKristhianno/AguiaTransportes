@@ -103,7 +103,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
           destination_company: data.destinationCompany || null,
           invoice_number: data.invoiceNumber || null,
           op_number: data.opNumber || null,
-          scheduled_date: data.scheduledDate || null,
+          scheduled_date: data.scheduledDate ? `${data.scheduledDate}-03:00` : null,
           material_type_id: data.materialTypeId,
           transport_type: data.transportType,
           notes: data.notes || null,
@@ -139,7 +139,9 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
 
   const parseLocalDate = (str: string): Date => {
     if (!str) return new Date();
-    const [datePart, timePart] = str.split('T');
+    // Remove timezone offset if present for local parsing
+    const cleanStr = str.replace(/[+-]\d{2}:\d{2}$/, '').replace(/[+-]\d{2}$/, '').replace(/Z$/, '');
+    const [datePart, timePart] = cleanStr.split('T');
     const [y, mo, d] = datePart.split('-').map(Number);
     if (timePart) {
       const [h, mi, s] = timePart.split(':').map(Number);
