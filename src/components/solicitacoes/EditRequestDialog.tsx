@@ -103,7 +103,7 @@ export const EditRequestDialog = ({ request, open, onOpenChange }: EditRequestDi
           destination_company: data.destinationCompany || null,
           invoice_number: data.invoiceNumber || null,
           op_number: data.opNumber || null,
-          scheduled_date: data.scheduledDate || null,
+          scheduled_date: data.scheduledDate ? `${data.scheduledDate}-03:00` : null,
           material_type_id: data.materialTypeId,
           transport_type: data.transportType,
           notes: data.notes || null,

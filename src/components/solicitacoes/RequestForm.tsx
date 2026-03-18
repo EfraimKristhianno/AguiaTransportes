@@ -255,7 +255,7 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               const minutes = String(m).padStart(2, '0');
               return `${year}-${month}-${day}T${hours}:${minutes}:00-03:00`;
             })()
-          : data.scheduledDate || null,
+          : data.scheduledDate ? `${data.scheduledDate}-03:00` : null,
         material_type_id: data.materialTypeId,
         transport_type: data.transportType,
         notes: data.notes || null,
