@@ -877,9 +877,9 @@ export const RequestForm = ({ onSuccess }: RequestFormProps) => {
               name="opNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>O.P.</FormLabel>
+                  <FormLabel>O.P / Número do Pedido</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Número da O.P." autoComplete="off" />
+                    <Input {...field} placeholder="O.P / Número do Pedido" autoComplete="off" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
