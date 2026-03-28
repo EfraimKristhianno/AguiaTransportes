@@ -39,7 +39,7 @@ export const RequestSearchBar = ({
   onSearchChange,
   statusFilter,
   onStatusChange,
-  placeholder = 'Buscar por ID, cliente, motorista, material, NF ou O.P...',
+  placeholder = 'Buscar por ID, cliente, motorista, material, transporte, NF ou O.P...',
   dateFrom,
   dateTo,
   onDateFromChange,
