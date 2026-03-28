@@ -212,6 +212,7 @@ export const filterRequestsBySearch = (
     const driverName = (request.drivers?.name || request.driver?.name || '').toLowerCase();
     const invoiceNumber = (request.invoice_number || '').toLowerCase();
     const opNumber = (request.op_number || '').toLowerCase();
+    const transportType = (request.transport_type || '').toLowerCase();
 
     return (
       requestNumber.includes(search) ||
@@ -219,7 +220,8 @@ export const filterRequestsBySearch = (
       driverName.includes(search) ||
       materialName.includes(search) ||
       invoiceNumber.includes(search) ||
-      opNumber.includes(search)
+      opNumber.includes(search) ||
+      transportType.includes(search)
     );
   });
 };
