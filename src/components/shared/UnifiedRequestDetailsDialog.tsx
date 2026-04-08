@@ -163,6 +163,7 @@ export const UnifiedRequestDetailsDialog = ({
   const [stepEditNotes, setStepEditNotes] = useState('');
   const [stepEditFiles, setStepEditFiles] = useState<UploadedFile[]>([]);
   const [isSavingStepEdit, setIsSavingStepEdit] = useState(false);
+  const [deletingPath, setDeletingPath] = useState<string | null>(null);
 
   // Manual close handler - the ONLY way to close this dialog
   const handleClose = () => {
@@ -484,6 +485,49 @@ export const UnifiedRequestDetailsDialog = ({
     }
   });
 
+  const handleDeleteAttachment = async (
+    path: string,
+    currentPaths: string[],
+    target: { kind: 'request' } | { kind: 'history'; historyEntryId: string },
+  ) => {
+    if (!isAdminOrGestor || !request) return;
+    if (!window.confirm('Remover este anexo?')) return;
+    if (deletingPath) return;
+    setDeletingPath(path);
+    try {
+      const { error: storageError } = await supabase.storage.from('request-attachments').remove([path]);
+      if (storageError) {
+        console.warn('Attachment delete: storage remove', storageError);
+      }
+
+      const next = currentPaths.filter((p) => p !== path);
+
+      if (target.kind === 'request') {
+        const { error } = await supabase
+          .from('delivery_requests')
+          .update({ attachments: next.length > 0 ? next : null, updated_at: brazilNowISO() })
+          .eq('id', request.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('delivery_request_status_history')
+          .update({ attachments: next.length > 0 ? next : null })
+          .eq('id', target.historyEntryId);
+        if (error) throw error;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['request_history'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['driverRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryRequestDetail'] });
+      toast.success('Anexo removido');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao remover anexo');
+    } finally {
+      setDeletingPath(null);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={() => { /* Block ALL Radix auto-close - only manual close allowed */ }}>
@@ -710,7 +754,20 @@ export const UnifiedRequestDetailsDialog = ({
                   </div>
                   <div className="grid gap-2">
                     {(request.attachments as string[]).map((path, index) => (
-                      <AttachmentItem key={path} path={path} index={index} />
+                      <AttachmentItem
+                        key={path}
+                        path={path}
+                        index={index}
+                        removeDisabled={deletingPath === path}
+                        onRemove={
+                          isAdminOrGestor
+                            ? () =>
+                                handleDeleteAttachment(path, request.attachments as string[], {
+                                  kind: 'request',
+                                })
+                            : undefined
+                        }
+                      />
                     ))}
                   </div>
                 </div>
@@ -818,7 +875,28 @@ export const UnifiedRequestDetailsDialog = ({
                                           </p>
                                           <div className="space-y-1.5">
                                             {stepAttachments.map((attachment: string, idx: number) => (
-                                              <AttachmentItem key={idx} path={attachment} index={idx} />
+                                              <AttachmentItem
+                                                key={attachment}
+                                                path={attachment}
+                                                index={idx}
+                                                removeDisabled={deletingPath === attachment}
+                                                onRemove={
+                                                  isAdminOrGestor
+                                                    ? isSolicitada
+                                                      ? () =>
+                                                          handleDeleteAttachment(attachment, stepAttachments, {
+                                                            kind: 'request',
+                                                          })
+                                                      : historyEntry?.id
+                                                        ? () =>
+                                                            handleDeleteAttachment(attachment, stepAttachments, {
+                                                              kind: 'history',
+                                                              historyEntryId: historyEntry.id,
+                                                            })
+                                                        : undefined
+                                                    : undefined
+                                                }
+                                              />
                                             ))}
                                           </div>
                                         </div>
@@ -871,7 +949,28 @@ export const UnifiedRequestDetailsDialog = ({
                                           </p>
                                           <div className="space-y-1.5">
                                             {stepAttachments.map((attachment: string, idx: number) => (
-                                              <AttachmentItem key={idx} path={attachment} index={idx} />
+                                              <AttachmentItem
+                                                key={attachment}
+                                                path={attachment}
+                                                index={idx}
+                                                removeDisabled={deletingPath === attachment}
+                                                onRemove={
+                                                  isAdminOrGestor
+                                                    ? isSolicitada
+                                                      ? () =>
+                                                          handleDeleteAttachment(attachment, stepAttachments, {
+                                                            kind: 'request',
+                                                          })
+                                                      : historyEntry?.id
+                                                        ? () =>
+                                                            handleDeleteAttachment(attachment, stepAttachments, {
+                                                              kind: 'history',
+                                                              historyEntryId: historyEntry.id,
+                                                            })
+                                                        : undefined
+                                                    : undefined
+                                                }
+                                              />
                                             ))}
                                           </div>
                                         </div>

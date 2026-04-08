@@ -27,7 +27,7 @@ import { useCurrentDriver } from '@/hooks/useDriverRequests';
 import { useVehicleLogs, useOilChangeRecords, useMaintenanceRecords, useCreateVehicleLog, useCreateOilChange, useCreateMaintenanceRecord, useUpdateVehicleLog, useDeleteVehicleLog, useUpdateOilChange, useDeleteOilChange, useUpdateMaintenanceRecord, useDeleteMaintenanceRecord, VehicleLog, OilChangeRecord, MaintenanceRecord } from '@/hooks/useVehicleLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench, Pencil, Trash2 } from 'lucide-react';
+import { Fuel, Gauge, Droplets, Plus, AlertTriangle, Calendar, Wrench, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import FileUploadArea, { type UploadedFile } from '@/components/shared/FileUploadArea';
@@ -54,6 +54,13 @@ const DriverVehicleView = () => {
   const [logDialogOpen, setLogDialogOpen] = useState(false);
   const [oilDialogOpen, setOilDialogOpen] = useState(false);
   const [maintDialogOpen, setMaintDialogOpen] = useState(false);
+
+  const [savingLog, setSavingLog] = useState(false);
+  const [savingOil, setSavingOil] = useState(false);
+  const [savingMaint, setSavingMaint] = useState(false);
+  const [savingEditLog, setSavingEditLog] = useState(false);
+  const [savingEditOil, setSavingEditOil] = useState(false);
+  const [savingEditMaint, setSavingEditMaint] = useState(false);
 
   // Filters
   const [filterType, setFilterType] = useState('all');
@@ -184,72 +191,78 @@ const DriverVehicleView = () => {
 
   const handleSubmitLog = async () => {
     if (!currentDriver?.id || !logForm.vehicle_id) return;
-    const attachmentPaths = await uploadFiles(logFiles, `logs/${currentDriver.id}`);
-    createLog.mutate({
-      vehicle_id: logForm.vehicle_id,
-      driver_id: currentDriver.id,
-      log_date: logForm.log_date,
-      km_initial: 0,
-      km_final: parseFloat(logForm.km_atual) || 0,
-      liters: logForm.liters ? parseFloat(logForm.liters) : undefined,
-      fuel_price: logForm.fuel_price ? parseFloat(logForm.fuel_price) : undefined,
-      total_cost: parseFloat(totalCost) || undefined,
-      fuel_type: logForm.fuel_type,
-      vehicle_plate: logForm.plate || undefined,
-      notes: logForm.notes ? `${logForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined
-    }, {
-      onSuccess: () => {
-        setLogDialogOpen(false);
-        setLogForm({ vehicle_id: '', plate: '', log_date: formatLocalDate(new Date()), km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
-        setLogFiles([]);
-        clearLogDraft();
-      }
-    });
+    setSavingLog(true);
+    try {
+      const attachmentPaths = await uploadFiles(logFiles, `logs/${currentDriver.id}`);
+      await createLog.mutateAsync({
+        vehicle_id: logForm.vehicle_id,
+        driver_id: currentDriver.id,
+        log_date: logForm.log_date,
+        km_initial: 0,
+        km_final: parseFloat(logForm.km_atual) || 0,
+        liters: logForm.liters ? parseFloat(logForm.liters) : undefined,
+        fuel_price: logForm.fuel_price ? parseFloat(logForm.fuel_price) : undefined,
+        total_cost: parseFloat(totalCost) || undefined,
+        fuel_type: logForm.fuel_type,
+        vehicle_plate: logForm.plate || undefined,
+        notes: logForm.notes ? `${logForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined
+      });
+      setLogDialogOpen(false);
+      setLogForm({ vehicle_id: '', plate: '', log_date: formatLocalDate(new Date()), km_atual: '', liters: '', fuel_price: '', fuel_type: 'diesel', notes: '' });
+      setLogFiles([]);
+      clearLogDraft();
+    } finally {
+      setSavingLog(false);
+    }
   };
 
   const handleSubmitOilChange = async () => {
     if (!currentDriver?.id || !oilForm.vehicle_id) return;
-    const attachmentPaths = await uploadFiles(oilFiles, `oil/${currentDriver.id}`);
-    createOilChange.mutate({
-      vehicle_id: oilForm.vehicle_id,
-      driver_id: currentDriver.id,
-      change_date: oilForm.change_date,
-      km_at_change: parseFloat(oilForm.km_at_change) || 0,
-      next_change_km: parseFloat(oilForm.next_change_km) || 0,
-      oil_type: oilForm.oil_type || undefined,
-      service_cost: oilForm.service_cost ? parseFloat(oilForm.service_cost) : undefined,
-      vehicle_plate: oilForm.plate || undefined,
-      notes: oilForm.notes ? `${oilForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined
-    }, {
-      onSuccess: () => {
-        setOilDialogOpen(false);
-        setOilForm({ vehicle_id: '', plate: '', change_date: formatLocalDate(new Date()), km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
-        setOilFiles([]);
-        clearOilDraft();
-      }
-    });
+    setSavingOil(true);
+    try {
+      const attachmentPaths = await uploadFiles(oilFiles, `oil/${currentDriver.id}`);
+      await createOilChange.mutateAsync({
+        vehicle_id: oilForm.vehicle_id,
+        driver_id: currentDriver.id,
+        change_date: oilForm.change_date,
+        km_at_change: parseFloat(oilForm.km_at_change) || 0,
+        next_change_km: parseFloat(oilForm.next_change_km) || 0,
+        oil_type: oilForm.oil_type || undefined,
+        service_cost: oilForm.service_cost ? parseFloat(oilForm.service_cost) : undefined,
+        vehicle_plate: oilForm.plate || undefined,
+        notes: oilForm.notes ? `${oilForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined
+      });
+      setOilDialogOpen(false);
+      setOilForm({ vehicle_id: '', plate: '', change_date: formatLocalDate(new Date()), km_at_change: '', next_change_km: '', oil_type: '', service_cost: '', notes: '' });
+      setOilFiles([]);
+      clearOilDraft();
+    } finally {
+      setSavingOil(false);
+    }
   };
 
   const handleSubmitMaintenance = async () => {
     if (!currentDriver?.id || !maintForm.vehicle_id || !maintForm.maintenance_type) return;
-    const attachmentPaths = await uploadFiles(maintFiles, `maintenance/${currentDriver.id}`);
-    createMaintenance.mutate({
-      vehicle_id: maintForm.vehicle_id,
-      driver_id: currentDriver.id,
-      maintenance_type: maintForm.maintenance_type,
-      vehicle_plate: maintForm.plate || '',
-      current_km: parseFloat(maintForm.current_km) || 0,
-      service_cost: maintForm.service_cost ? parseFloat(maintForm.service_cost) : undefined,
-      notes: maintForm.notes ? `${maintForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined,
-      maintenance_date: maintForm.maintenance_date
-    }, {
-      onSuccess: () => {
-        setMaintDialogOpen(false);
-        setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: formatLocalDate(new Date()) });
-        setMaintFiles([]);
-        clearMaintDraft();
-      }
-    });
+    setSavingMaint(true);
+    try {
+      const attachmentPaths = await uploadFiles(maintFiles, `maintenance/${currentDriver.id}`);
+      await createMaintenance.mutateAsync({
+        vehicle_id: maintForm.vehicle_id,
+        driver_id: currentDriver.id,
+        maintenance_type: maintForm.maintenance_type,
+        vehicle_plate: maintForm.plate || '',
+        current_km: parseFloat(maintForm.current_km) || 0,
+        service_cost: maintForm.service_cost ? parseFloat(maintForm.service_cost) : undefined,
+        notes: maintForm.notes ? `${maintForm.notes}${attachmentPaths.length ? `\n[anexos:${attachmentPaths.join(',')}]` : ''}` : attachmentPaths.length ? `[anexos:${attachmentPaths.join(',')}]` : undefined,
+        maintenance_date: maintForm.maintenance_date
+      });
+      setMaintDialogOpen(false);
+      setMaintForm({ vehicle_id: '', plate: '', maintenance_type: '', current_km: '', service_cost: '', notes: '', maintenance_date: formatLocalDate(new Date()) });
+      setMaintFiles([]);
+      clearMaintDraft();
+    } finally {
+      setSavingMaint(false);
+    }
   };
 
   // Edit handlers
@@ -271,23 +284,29 @@ const DriverVehicleView = () => {
 
   const handleUpdateLog = async () => {
     if (!editingLog || !editLogForm || !currentDriver?.id) return;
-    const newPaths = await uploadFiles(editLogNewFiles, `logs/${currentDriver.id}`);
-    const allPaths = [...editLogAttachments, ...newPaths];
-    const totalCostVal = editLogForm.liters && editLogForm.fuel_price ?
-    parseFloat(editLogForm.liters) * parseFloat(editLogForm.fuel_price) :
-    undefined;
-    updateLog.mutate({
-      id: editingLog.id,
-      vehicle_id: editLogForm.vehicle_id,
-      log_date: editLogForm.log_date,
-      km_final: parseFloat(editLogForm.km_atual) || 0,
-      liters: editLogForm.liters ? parseFloat(editLogForm.liters) : null,
-      fuel_price: editLogForm.fuel_price ? parseFloat(editLogForm.fuel_price) : null,
-      total_cost: totalCostVal || null,
-      fuel_type: editLogForm.fuel_type,
-      vehicle_plate: editLogForm.plate || null,
-      notes: buildNotesWithAttachments(editLogForm.notes || '', allPaths)
-    }, { onSuccess: () => setEditingLog(null) });
+    setSavingEditLog(true);
+    try {
+      const newPaths = await uploadFiles(editLogNewFiles, `logs/${currentDriver.id}`);
+      const allPaths = [...editLogAttachments, ...newPaths];
+      const totalCostVal = editLogForm.liters && editLogForm.fuel_price ?
+      parseFloat(editLogForm.liters) * parseFloat(editLogForm.fuel_price) :
+      undefined;
+      await updateLog.mutateAsync({
+        id: editingLog.id,
+        vehicle_id: editLogForm.vehicle_id,
+        log_date: editLogForm.log_date,
+        km_final: parseFloat(editLogForm.km_atual) || 0,
+        liters: editLogForm.liters ? parseFloat(editLogForm.liters) : null,
+        fuel_price: editLogForm.fuel_price ? parseFloat(editLogForm.fuel_price) : null,
+        total_cost: totalCostVal || null,
+        fuel_type: editLogForm.fuel_type,
+        vehicle_plate: editLogForm.plate || null,
+        notes: buildNotesWithAttachments(editLogForm.notes || '', allPaths)
+      });
+      setEditingLog(null);
+    } finally {
+      setSavingEditLog(false);
+    }
   };
 
   const openEditOil = (oil: OilChangeRecord) => {
@@ -308,19 +327,25 @@ const DriverVehicleView = () => {
 
   const handleUpdateOil = async () => {
     if (!editingOil || !editOilForm || !currentDriver?.id) return;
-    const newPaths = await uploadFiles(editOilNewFiles, `oil/${currentDriver.id}`);
-    const allPaths = [...editOilAttachments, ...newPaths];
-    updateOil.mutate({
-      id: editingOil.id,
-      vehicle_id: editOilForm.vehicle_id,
-      change_date: editOilForm.change_date,
-      km_at_change: parseFloat(editOilForm.km_at_change) || 0,
-      next_change_km: parseFloat(editOilForm.next_change_km) || 0,
-      oil_type: editOilForm.oil_type || null,
-      service_cost: editOilForm.service_cost ? parseFloat(editOilForm.service_cost) : null,
-      vehicle_plate: editOilForm.plate || null,
-      notes: buildNotesWithAttachments(editOilForm.notes || '', allPaths)
-    }, { onSuccess: () => setEditingOil(null) });
+    setSavingEditOil(true);
+    try {
+      const newPaths = await uploadFiles(editOilNewFiles, `oil/${currentDriver.id}`);
+      const allPaths = [...editOilAttachments, ...newPaths];
+      await updateOil.mutateAsync({
+        id: editingOil.id,
+        vehicle_id: editOilForm.vehicle_id,
+        change_date: editOilForm.change_date,
+        km_at_change: parseFloat(editOilForm.km_at_change) || 0,
+        next_change_km: parseFloat(editOilForm.next_change_km) || 0,
+        oil_type: editOilForm.oil_type || null,
+        service_cost: editOilForm.service_cost ? parseFloat(editOilForm.service_cost) : null,
+        vehicle_plate: editOilForm.plate || null,
+        notes: buildNotesWithAttachments(editOilForm.notes || '', allPaths)
+      });
+      setEditingOil(null);
+    } finally {
+      setSavingEditOil(false);
+    }
   };
 
   const openEditMaint = (m: MaintenanceRecord) => {
@@ -340,18 +365,24 @@ const DriverVehicleView = () => {
 
   const handleUpdateMaint = async () => {
     if (!editingMaint || !editMaintForm || !currentDriver?.id) return;
-    const newPaths = await uploadFiles(editMaintNewFiles, `maintenance/${currentDriver.id}`);
-    const allPaths = [...editMaintAttachments, ...newPaths];
-    updateMaint.mutate({
-      id: editingMaint.id,
-      vehicle_id: editMaintForm.vehicle_id,
-      maintenance_type: editMaintForm.maintenance_type,
-      vehicle_plate: editMaintForm.plate || '',
-      current_km: parseFloat(editMaintForm.current_km) || 0,
-      service_cost: editMaintForm.service_cost ? parseFloat(editMaintForm.service_cost) : null,
-      notes: buildNotesWithAttachments(editMaintForm.notes || '', allPaths),
-      maintenance_date: editMaintForm.maintenance_date
-    }, { onSuccess: () => setEditingMaint(null) });
+    setSavingEditMaint(true);
+    try {
+      const newPaths = await uploadFiles(editMaintNewFiles, `maintenance/${currentDriver.id}`);
+      const allPaths = [...editMaintAttachments, ...newPaths];
+      await updateMaint.mutateAsync({
+        id: editingMaint.id,
+        vehicle_id: editMaintForm.vehicle_id,
+        maintenance_type: editMaintForm.maintenance_type,
+        vehicle_plate: editMaintForm.plate || '',
+        current_km: parseFloat(editMaintForm.current_km) || 0,
+        service_cost: editMaintForm.service_cost ? parseFloat(editMaintForm.service_cost) : null,
+        notes: buildNotesWithAttachments(editMaintForm.notes || '', allPaths),
+        maintenance_date: editMaintForm.maintenance_date
+      });
+      setEditingMaint(null);
+    } finally {
+      setSavingEditMaint(false);
+    }
   };
 
   const handleDelete = () => {
@@ -573,8 +604,9 @@ const DriverVehicleView = () => {
               </div>
               <div><Label>Observações</Label><Textarea value={logForm.notes} onChange={(e) => setLogForm((p) => ({ ...p, notes: e.target.value }))} /></div>
               <FileUploadArea files={logFiles} onFilesChange={setLogFiles} />
-              <Button className="w-full" onClick={handleSubmitLog} disabled={createLog.isPending}>
-                {createLog.isPending ? 'Salvando...' : 'Salvar Registro'}
+              <Button className="w-full inline-flex items-center justify-center gap-2" onClick={handleSubmitLog} disabled={savingLog}>
+                {savingLog && <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />}
+                {savingLog ? 'Salvando...' : 'Salvar Registro'}
               </Button>
             </div>
           </DialogContent>
@@ -612,8 +644,9 @@ const DriverVehicleView = () => {
               <div><Label>Custo do Serviço (R$)</Label><Input type="number" step="0.01" min="0" placeholder="0.00" value={oilForm.service_cost} onChange={(e) => setOilForm((p) => ({ ...p, service_cost: e.target.value }))} /></div>
               <div><Label>Observações</Label><Textarea value={oilForm.notes} onChange={(e) => setOilForm((p) => ({ ...p, notes: e.target.value }))} /></div>
               <FileUploadArea files={oilFiles} onFilesChange={setOilFiles} />
-              <Button className="w-full" onClick={handleSubmitOilChange} disabled={createOilChange.isPending}>
-                {createOilChange.isPending ? 'Salvando...' : 'Registrar Troca'}
+              <Button className="w-full inline-flex items-center justify-center gap-2" onClick={handleSubmitOilChange} disabled={savingOil}>
+                {savingOil && <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />}
+                {savingOil ? 'Salvando...' : 'Registrar Troca'}
               </Button>
             </div>
           </DialogContent>
@@ -670,8 +703,9 @@ const DriverVehicleView = () => {
                 <Textarea value={maintForm.notes} onChange={(e) => setMaintForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Descreva o serviço realizado..." />
               </div>
               <FileUploadArea files={maintFiles} onFilesChange={setMaintFiles} />
-              <Button className="w-full" onClick={handleSubmitMaintenance} disabled={createMaintenance.isPending}>
-                {createMaintenance.isPending ? 'Salvando...' : 'Enviar'}
+              <Button className="w-full inline-flex items-center justify-center gap-2" onClick={handleSubmitMaintenance} disabled={savingMaint}>
+                {savingMaint && <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />}
+                {savingMaint ? 'Salvando...' : 'Enviar'}
               </Button>
             </div>
           </DialogContent>
@@ -869,7 +903,10 @@ const DriverVehicleView = () => {
                 </div>
             }
               <FileUploadArea files={editLogNewFiles} onFilesChange={setEditLogNewFiles} />
-              <Button className="w-full" onClick={handleUpdateLog} disabled={updateLog.isPending}>{updateLog.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
+              <Button className="w-full inline-flex items-center justify-center gap-2" onClick={handleUpdateLog} disabled={savingEditLog}>
+                {savingEditLog && <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />}
+                {savingEditLog ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
             </div>
           }
         </DialogContent>
@@ -914,7 +951,10 @@ const DriverVehicleView = () => {
                 </div>
             }
               <FileUploadArea files={editOilNewFiles} onFilesChange={setEditOilNewFiles} />
-              <Button className="w-full" onClick={handleUpdateOil} disabled={updateOil.isPending}>{updateOil.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
+              <Button className="w-full inline-flex items-center justify-center gap-2" onClick={handleUpdateOil} disabled={savingEditOil}>
+                {savingEditOil && <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />}
+                {savingEditOil ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
             </div>
           }
         </DialogContent>
@@ -966,7 +1006,10 @@ const DriverVehicleView = () => {
                 </div>
             }
               <FileUploadArea files={editMaintNewFiles} onFilesChange={setEditMaintNewFiles} />
-              <Button className="w-full" onClick={handleUpdateMaint} disabled={updateMaint.isPending}>{updateMaint.isPending ? 'Salvando...' : 'Salvar Alterações'}</Button>
+              <Button className="w-full inline-flex items-center justify-center gap-2" onClick={handleUpdateMaint} disabled={savingEditMaint}>
+                {savingEditMaint && <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />}
+                {savingEditMaint ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
             </div>
           }
         </DialogContent>

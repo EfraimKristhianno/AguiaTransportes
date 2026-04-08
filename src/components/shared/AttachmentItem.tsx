@@ -7,13 +7,21 @@ interface AttachmentItemProps {
   index: number;
   bucket?: string;
   onRemove?: () => void;
+  /** When true, the remove control stays visible but is not clickable */
+  removeDisabled?: boolean;
 }
 
 const isImagePath = (path: string) => /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
 
 const getAttachmentName = (path: string) => path.split('/').pop() || path;
 
-export const AttachmentItem = ({ path, index, bucket = 'request-attachments', onRemove }: AttachmentItemProps) => {
+export const AttachmentItem = ({
+  path,
+  index,
+  bucket = 'request-attachments',
+  onRemove,
+  removeDisabled,
+}: AttachmentItemProps) => {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +70,16 @@ export const AttachmentItem = ({ path, index, bucket = 'request-attachments', on
           />
         </a>
         {onRemove && (
-          <button onClick={onRemove} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:bg-destructive/80">
+          <button
+            type="button"
+            disabled={removeDisabled}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:bg-destructive/80 disabled:opacity-50 disabled:pointer-events-none"
+          >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
@@ -82,7 +99,16 @@ export const AttachmentItem = ({ path, index, bucket = 'request-attachments', on
         {getAttachmentName(path)}
       </a>
       {onRemove && (
-        <button onClick={onRemove} className="text-destructive hover:text-destructive/80">
+        <button
+          type="button"
+          disabled={removeDisabled}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="text-destructive hover:text-destructive/80 disabled:opacity-50 disabled:pointer-events-none"
+        >
           <X className="h-3.5 w-3.5" />
         </button>
       )}

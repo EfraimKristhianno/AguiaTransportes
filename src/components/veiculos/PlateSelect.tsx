@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 // Predefined plates per vehicle type
 const PLATES_BY_TYPE: Record<string, string[]> = {
   'Fiorino': ['DQL2J70', 'DUF9D81', 'MGE9I59'],
-  'Caminhão (3/4)': ['AJI8I19'],
+  'Caminhão (3/4)': ['AJI8I17'],
 };
 
 interface PlateSelectProps {
