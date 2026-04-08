@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { KmInput, formatKmDisplay } from '@/components/ui/km-input';
 import PlateSelect from '@/components/veiculos/PlateSelect';
+import { canonicalVehiclePlate, platesMatch } from '@/lib/vehiclePlates';
 
 const formatLocalDate = (date: Date): string => {
   const year = date.getFullYear();
@@ -404,13 +405,13 @@ const DriverVehicleView = () => {
 
     const plates = new Set<string>();
     logs.forEach((l) => {
-      if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(l.vehicle_plate);
+      if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(canonicalVehiclePlate(l.vehicle_plate));
     });
     oilRecords.forEach((o) => {
-      if (o.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(o.vehicle_id))) plates.add(o.vehicle_plate);
+      if (o.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(o.vehicle_id))) plates.add(canonicalVehiclePlate(o.vehicle_plate));
     });
     maintenanceRecords.forEach((m) => {
-      if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(m.vehicle_plate);
+      if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(canonicalVehiclePlate(m.vehicle_plate));
     });
     return Array.from(plates).sort();
   })();
@@ -430,7 +431,7 @@ const DriverVehicleView = () => {
     }
     if (filterPlate !== 'all') {
       const actualPlate = plate || driverVehicles.find((v: any) => v.id === vehicleId)?.plate;
-      if (actualPlate !== filterPlate) return false;
+      if (!platesMatch(actualPlate, filterPlate)) return false;
     }
     return true;
   };
@@ -739,7 +740,7 @@ const DriverVehicleView = () => {
                 <TableRow key={log.id}>
                       <TableCell>{format(parseDateString(log.log_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{log.vehicle?.type || '-'}</TableCell>
-                      <TableCell>{log.vehicle_plate || log.vehicle?.plate || '-'}</TableCell>
+                      <TableCell>{canonicalVehiclePlate(log.vehicle_plate || log.vehicle?.plate) || '-'}</TableCell>
                       <TableCell className="font-medium">{formatKmDisplay(log.km_final)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{log.fuel_type}</Badge>
@@ -787,7 +788,7 @@ const DriverVehicleView = () => {
                 <TableRow key={oil.id}>
                       <TableCell>{format(parseDateString(oil.change_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{oil.vehicle?.type || '-'}</TableCell>
-                      <TableCell>{oil.vehicle_plate || oil.vehicle?.plate || '-'}</TableCell>
+                      <TableCell>{canonicalVehiclePlate(oil.vehicle_plate || oil.vehicle?.plate) || '-'}</TableCell>
                       <TableCell className="font-medium">{formatKmDisplay(oil.km_at_change)}</TableCell>
                       <TableCell>{formatKmDisplay(oil.next_change_km)}</TableCell>
                       <TableCell>{oil.oil_type || '-'}</TableCell>
@@ -831,7 +832,7 @@ const DriverVehicleView = () => {
                 <TableRow key={m.id}>
                       <TableCell>{format(parseDateString(m.maintenance_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{m.vehicle?.type || '-'}</TableCell>
-                      <TableCell>{m.vehicle_plate || m.vehicle?.plate || '-'}</TableCell>
+                      <TableCell>{canonicalVehiclePlate(m.vehicle_plate || m.vehicle?.plate) || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={m.maintenance_type === 'corretiva' ? 'destructive' : m.maintenance_type === 'preventiva' ? 'default' : 'secondary'}>
                           {m.maintenance_type === 'preventiva' ? 'Preventiva' : m.maintenance_type === 'corretiva' ? 'Corretiva' : m.maintenance_type === 'preditiva' ? 'Preditiva' : m.maintenance_type}

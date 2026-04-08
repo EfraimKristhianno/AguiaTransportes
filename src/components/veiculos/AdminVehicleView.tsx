@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { formatKmDisplay } from '@/components/ui/km-input';
+import { canonicalVehiclePlate, platesMatch } from '@/lib/vehiclePlates';
 import VehicleHistoryDialog from './VehicleHistoryDialog';
 import VehicleHistoryGrids from './VehicleHistoryGrids';
 
@@ -85,19 +86,19 @@ const AdminVehicleView = () => {
     
     // Get plates from operational records
     logs.forEach(l => {
-      if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(l.vehicle_plate);
+      if (l.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(l.vehicle_id))) plates.add(canonicalVehiclePlate(l.vehicle_plate));
     });
     oilRecords.forEach(o => {
-      if (o.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(o.vehicle_id))) plates.add(o.vehicle_plate);
+      if (o.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(o.vehicle_id))) plates.add(canonicalVehiclePlate(o.vehicle_plate));
     });
     maintenanceRecords.forEach(m => {
-      if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(m.vehicle_plate);
+      if (m.vehicle_plate && (!typeFilteredIds || typeFilteredIds.has(m.vehicle_id))) plates.add(canonicalVehiclePlate(m.vehicle_plate));
     });
     
     // Also include plates from vehicles table (excluding generic TIPO- plates)
     allVehicles.forEach((v: any) => {
       if (v.plate && !v.plate.startsWith('TIPO-') && (!typeFilteredIds || typeFilteredIds.has(v.id))) {
-        plates.add(v.plate);
+        plates.add(canonicalVehiclePlate(v.plate));
       }
     });
     
@@ -122,9 +123,9 @@ const AdminVehicleView = () => {
   // Build a map of vehicle_id -> real plate from operational records
   const vehicleIdToPlateMap = useMemo(() => {
     const map = new Map<string, string>();
-    logs.forEach(l => { if (l.vehicle_plate) map.set(l.vehicle_id, l.vehicle_plate); });
-    oilRecords.forEach(o => { if (o.vehicle_plate) map.set(o.vehicle_id, o.vehicle_plate); });
-    maintenanceRecords.forEach(m => { if (m.vehicle_plate) map.set(m.vehicle_id, m.vehicle_plate); });
+    logs.forEach(l => { if (l.vehicle_plate) map.set(l.vehicle_id, canonicalVehiclePlate(l.vehicle_plate)); });
+    oilRecords.forEach(o => { if (o.vehicle_plate) map.set(o.vehicle_id, canonicalVehiclePlate(o.vehicle_plate)); });
+    maintenanceRecords.forEach(m => { if (m.vehicle_plate) map.set(m.vehicle_id, canonicalVehiclePlate(m.vehicle_plate)); });
     return map;
   }, [logs, oilRecords, maintenanceRecords]);
 
@@ -132,11 +133,11 @@ const AdminVehicleView = () => {
   const plateMatchedVehicleIds = useMemo(() => {
     if (plateFilter === 'all') return null; // null means no plate filter
     const ids = new Set<string>();
-    logs.forEach(l => { if (l.vehicle_plate === plateFilter) ids.add(l.vehicle_id); });
-    oilRecords.forEach(o => { if (o.vehicle_plate === plateFilter) ids.add(o.vehicle_id); });
-    maintenanceRecords.forEach(m => { if (m.vehicle_plate === plateFilter) ids.add(m.vehicle_id); });
+    logs.forEach(l => { if (platesMatch(l.vehicle_plate, plateFilter)) ids.add(l.vehicle_id); });
+    oilRecords.forEach(o => { if (platesMatch(o.vehicle_plate, plateFilter)) ids.add(o.vehicle_id); });
+    maintenanceRecords.forEach(m => { if (platesMatch(m.vehicle_plate, plateFilter)) ids.add(m.vehicle_id); });
     // Also match from vehicles table
-    allVehicles.forEach((v: any) => { if (v.plate === plateFilter) ids.add(v.id); });
+    allVehicles.forEach((v: any) => { if (platesMatch(v.plate, plateFilter)) ids.add(v.id); });
     return ids;
   }, [plateFilter, logs, oilRecords, maintenanceRecords, allVehicles]);
 
@@ -162,7 +163,7 @@ const AdminVehicleView = () => {
 
   // Filtered logs based on filtered vehicles, date range AND plate filter
   const filteredLogs = useMemo(() => {
-    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || l.vehicle_plate === plateFilter) && (fuelTypeFilter === 'all' || l.fuel_type === fuelTypeFilter));
+    return logs.filter(l => filteredVehicleIdsSetAll.has(l.vehicle_id) && isInDateRange(l.log_date) && (plateFilter === 'all' || platesMatch(l.vehicle_plate, plateFilter)) && (fuelTypeFilter === 'all' || l.fuel_type === fuelTypeFilter));
   }, [logs, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeFilter]);
 
   // Vehicle IDs that have logs with the selected fuel type
@@ -175,12 +176,12 @@ const AdminVehicleView = () => {
 
   // Filtered oil records based on filtered vehicles, date range, plate filter AND fuel type vehicle restriction
   const filteredOilRecords = useMemo(() => {
-    return oilRecords.filter(o => filteredVehicleIdsSetAll.has(o.vehicle_id) && isInDateRange(o.change_date) && (plateFilter === 'all' || o.vehicle_plate === plateFilter) && (!fuelTypeVehicleIds || fuelTypeVehicleIds.has(o.vehicle_id)));
+    return oilRecords.filter(o => filteredVehicleIdsSetAll.has(o.vehicle_id) && isInDateRange(o.change_date) && (plateFilter === 'all' || platesMatch(o.vehicle_plate, plateFilter)) && (!fuelTypeVehicleIds || fuelTypeVehicleIds.has(o.vehicle_id)));
   }, [oilRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeVehicleIds]);
 
   // Filtered maintenance records based on filtered vehicles, date range, plate filter AND fuel type vehicle restriction
   const filteredMaintenanceRecords = useMemo(() => {
-    return maintenanceRecords.filter(m => filteredVehicleIdsSetAll.has(m.vehicle_id) && isInDateRange(m.maintenance_date) && (plateFilter === 'all' || m.vehicle_plate === plateFilter) && (!fuelTypeVehicleIds || fuelTypeVehicleIds.has(m.vehicle_id)));
+    return maintenanceRecords.filter(m => filteredVehicleIdsSetAll.has(m.vehicle_id) && isInDateRange(m.maintenance_date) && (plateFilter === 'all' || platesMatch(m.vehicle_plate, plateFilter)) && (!fuelTypeVehicleIds || fuelTypeVehicleIds.has(m.vehicle_id)));
   }, [maintenanceRecords, filteredVehicleIdsSetAll, startDate, endDate, plateFilter, fuelTypeVehicleIds]);
 
   // Global stats (filtered by vehicle + date)
@@ -239,7 +240,7 @@ const AdminVehicleView = () => {
       ...vOil.map(o => o.vehicle_plate).filter(Boolean),
       ...vMaint.map(m => m.vehicle_plate).filter(Boolean),
     ];
-    const displayPlate = allPlates.length > 0 ? allPlates[0] : v.plate;
+    const displayPlate = canonicalVehiclePlate(allPlates.length > 0 ? allPlates[0] : v.plate);
     return { ...v, currentKm, totalLiters, totalCost, oilCost, latestOil, oilWarning, lastKm, maintCount, maintCost, displayPlate };
   });
 
@@ -423,7 +424,7 @@ const AdminVehicleView = () => {
             
             const getVehicleKey = (vehicleId: string, plate?: string | null) => {
               const vehicle = allVehicles.find((v: any) => v.id === vehicleId);
-              const displayPlate = plate || vehicle?.plate || 'N/A';
+              const displayPlate = canonicalVehiclePlate(plate || vehicle?.plate) || 'N/A';
               const typeName = vehicle ? getVehiclePrefix(vehicle.type) : 'N/A';
               return `${typeName} - ${displayPlate}`;
             };
@@ -532,7 +533,7 @@ const AdminVehicleView = () => {
                 
                 if (price > 0) {
                   const vehicle = allVehicles.find((v: any) => v.id === req.vehicle_id);
-                  const realPlate = vehicle ? (vehicleIdToPlateMap.get(vehicle.id) || vehicle.plate) : null;
+                  const realPlate = vehicle ? (vehicleIdToPlateMap.get(vehicle.id) || canonicalVehiclePlate(vehicle.plate)) : null;
                   const label = realPlate && !realPlate.startsWith('TIPO-') ? realPlate : (req.transport_type || 'Sem placa');
                   freightByPlate[label] = (freightByPlate[label] || 0) + price;
                 }
